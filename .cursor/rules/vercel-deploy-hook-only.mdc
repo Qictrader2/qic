@@ -1,0 +1,27 @@
+---
+description: Always deploy frontend to Vercel via deploy hook only
+alwaysApply: true
+---
+
+# Vercel: Deploy Hook Only
+
+Deploy the frontend to Vercel **only via the Deploy Hook**. Do not tell the user to "push to main and let Vercel deploy" (Vercel’s built-in deploy on push is disabled). A GitHub Action auto-triggers the hook on every push to `main` once the repo secret `VERCEL_DEPLOY_HOOK_URL` is set.
+
+## When deploying the frontend
+
+1. **After pushing to main:** A deploy is triggered automatically by the GitHub Action (if `VERCEL_DEPLOY_HOOK_URL` is set in repo Secrets).
+2. **Manual trigger** (without pushing, or to deploy immediately): From the workspace root run:
+   ```bash
+   ./scripts/trigger-vercel-deploy.sh
+   ```
+3. **Backend + frontend:** Run `./scripts/deploy-both.sh` from the workspace root.
+
+## Setup (one-time)
+
+- The deploy hook URL is stored in `scripts/.vercel-deploy-hook` (gitignored). If missing, the user runs `./scripts/setup-vercel-hook.sh` and pastes the URL from Vercel → Settings → Git → Deploy Hooks.
+- So that only the hook triggers builds, Vercel should have **Ignored Build Step** set to `exit 0` (Settings → Git). See `Frontend/VERCEL_DEPLOYMENT.md` and `scripts/README.md`.
+
+## Do not
+
+- Rely on or suggest "push to main and Vercel will deploy."
+- Suggest redeploying from the Vercel dashboard as the normal flow (only as a fallback if the hook is unavailable).

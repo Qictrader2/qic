@@ -1,3 +1,11 @@
+# Vercel deploy hook URL (contains secret URL - do not commit)
+scripts/.vercel-deploy-hook
+.vercel
 .env
+
+# Claude Code workflow guide (shared across PCs, not committed)
+CLAUDE-CODE-WORKFLOW.md
+
+# Claude Code ticket artifacts (created/deleted by /ticket and /golive)
 .current-ticket
 ticket-plans/

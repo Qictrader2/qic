@@ -1,0 +1,29 @@
+---
+description: When to use separate worker/subagent to split tasks
+alwaysApply: true
+---
+
+# Using Workers (Subagents) to Split Tasks
+
+Use the **worker/subagent** feature to split work across separate agents when it makes the response faster or more thorough.
+
+## When to launch a worker
+
+- **Parallel work**: Multiple independent steps (e.g. explore codebase in one place + run tests in another). Launch 2–4 workers in parallel when steps don’t depend on each other.
+- **Broad exploration**: “How does X work?”, “Where is Y?”, “What’s the structure of Z?” — use an **explore** worker with thoroughness “quick”, “medium”, or “very thorough”.
+- **Shell/commands**: Git, installs, builds, scripts — use a **shell** worker so the main agent stays focused on code/design.
+- **Research or multi-step work**: Deep search, multi-file refactors, or follow-up steps — use a **generalPurpose** worker with a clear, self-contained task description.
+
+## When not to use a worker
+
+- **Single, narrow question** (e.g. “Where is ClientError defined?”) — use grep/read directly.
+- **Quick, few-step tasks** — handle in the main turn.
+- **Tasks that need your current context** — don’t delegate if the worker wouldn’t have enough info.
+
+## How to use
+
+- **One message, multiple workers**: Prefer one user turn with several worker launches (e.g. explore + shell) when tasks are independent.
+- **Describe the task fully**: Workers don’t see the rest of the chat; put all needed context (paths, goals, constraints) in the worker prompt.
+- **Say what you want back**: Specify what the worker should return (e.g. “list of file paths”, “summary of how auth works”) so you can use it in the main reply.
+
+Split tasks across workers when it clearly improves speed or quality; otherwise keep the work in the main agent.

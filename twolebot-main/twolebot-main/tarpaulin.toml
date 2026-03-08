@@ -1,0 +1,56 @@
+# Cargo tarpaulin configuration for code coverage
+# Run: cargo tarpaulin --config tarpaulin.toml
+
+[default]
+# Output format - generate both HTML report and lcov for CI
+out = ["Html", "Lcov"]
+
+# Output directory for reports
+output-dir = "coverage"
+
+# Skip files that are auto-generated or external
+exclude-files = [
+    "target/*",
+    "tests/*",
+    "frontend/*",
+]
+
+# Exclude certain functions/modules from coverage
+# (e.g., main entry points that are hard to test)
+ignore = [
+    "*::main",
+]
+
+# Include all packages in the workspace
+all = true
+
+# Run tests in release mode for faster execution
+release = false
+
+# Timeout per test in seconds
+timeout = "300"
+
+# Follow spawned processes after exec (useful when tests exec another binary)
+follow-exec = true
+
+# Skip clean to speed up repeated runs
+skip-clean = false
+
+# Verbose output
+verbose = false
+
+# Branch coverage (experimental)
+branch = false
+
+# Line coverage (default)
+line = true
+
+# Fail if coverage drops below threshold
+# fail-under = 60
+
+[ci]
+# CI-specific configuration
+out = ["Lcov", "Xml"]
+output-dir = "coverage"
+fail-under = 50
+verbose = true

@@ -1,0 +1,54 @@
+---
+description: Core engineering principles for all Qictrader code (Rust backend, TypeScript frontend, all services)
+alwaysApply: true
+---
+
+# Engineering Principles
+
+Write code that is correct by construction. Prefer the compiler/type-checker catching bugs over tests over humans.
+
+## Types First
+
+- Define or update types/interfaces BEFORE writing logic
+- Use enums/unions for domain concepts (status, currency, payment type) — never raw strings
+- Make invalid states unrepresentable: if it compiles/type-checks, it's valid
+- Exhaustive matching — no catch-all `_ =>` or `default:` that silently swallows new variants
+
+## Error Handling
+
+- Every error path must be explicitly handled — no swallowing errors
+- Rust: no `.unwrap()` / `.expect()` in production; use `?` or `map_err`
+- TypeScript: every API call handles both success and error; no empty `catch {}`
+- Design errors as typed variants, not string messages
+
+## Auth & Security
+
+- Every handler that accepts auth MUST verify the user is authorized for the SPECIFIC resource, not just authenticated
+- Never suppress or skip authorization checks
+
+## Frontend ↔ Backend Contract
+
+- The backend uses `#[serde(rename_all = "camelCase")]` — Rust `snake_case` fields become `camelCase` in JSON
+- When sending data TO the backend, map frontend field names to the backend's expected camelCase names (e.g. `type` → `offerType`, `type` → `paymentType`)
+- When receiving data FROM the backend, map backend field names back (e.g. `paymentType` → `type`)
+- Always check the backend Rust struct definition to confirm exact field names before writing API calls
+- Backend list endpoints may return flat arrays; don't assume `{ items: [...], total }` wrappers
+
+## Pure Logic, Side Effects at the Edges
+
+- Core domain logic should be pure and testable without IO or mocks
+- Push side effects (API calls, DB, network) to the boundaries (handlers, hooks, pages)
+- Immutable by default
+
+## Testing
+
+- Tests make real assertions about specific values — not just "status != 404"
+- Property tests > integration > unit (Rust); integration > unit (frontend)
+- All tests pass before pushing
+
+## Commit Discipline
+
+- One logical change per commit
+- Message describes what AND why
+- Build passes before pushing — no "fix build" follow-up chains
+- Never include secrets in commits
