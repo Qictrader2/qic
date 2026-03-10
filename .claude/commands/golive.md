@@ -76,19 +76,14 @@ Find the ticket ID using this priority order:
 
 **1. From $ARGUMENTS** — scan for a pattern matching `[A-Z]+-\d+` (e.g. `ES-001`, `AUTH-004`).
 
-**2. From git log** — commits made via `/ticket` are stamped with the ticket ID as the message prefix (`ES-001: description`). Extract it with:
+**2. From the current branch name** — ticket branches follow the format `TICKET-ID/description`:
 ```bash
-git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
+git branch --show-current | cut -d'/' -f1
 ```
-Also check submodule logs:
-```bash
-cd frontend && git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
-cd qictrader-backend-rs && git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
-```
-Use the first match found across any of the three repos.
+If the result contains a `-` and digits (matches `[A-Z]+-\d+`), it's a valid ticket ID. Use it.
 
-**If no ticket ID found in either place** → skip the move and tell the user:
-> "Could not identify a ticket ID — card not moved. Run `/golive TICKET-ID` to move it manually."
+**If neither yields a ticket ID** — skip the move and tell the user:
+> "Not on a ticket branch and no ticket ID in arguments — card not moved. Run `/golive TICKET-ID` to move it manually."
 
 **Once ticket ID is known**, fetch the card from the Qictrader Dev board:
 ```

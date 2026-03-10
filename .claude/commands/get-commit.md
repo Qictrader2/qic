@@ -14,22 +14,22 @@ The repo layout:
 
 ## PROCESS
 
-### Step 1: Check for active ticket
+### Step 1: Check for active ticket branch
 
-Before anything else, check if a ticket is in progress:
+Read the ticket ID from the current branch name:
 
 ```bash
-cat .current-ticket 2>/dev/null || echo ""
+git branch --show-current
 ```
 
-If the file exists and contains a ticket ID (e.g. `ES-001`), that ID **must** be prepended to every commit message in this session as `TICKET-ID: ` (e.g. `ES-001: implement escrow lock`).
-
-If `.current-ticket` is empty or missing, commit messages use the normal format (emoji prefix).
-
-After all commits succeed, delete the file:
+If the branch name contains a `/` (e.g. `ES-001/escrow-release-flow`), extract the ticket ID as everything before the first `/`:
 ```bash
-rm -f .current-ticket
+TICKET=$(git branch --show-current | cut -d'/' -f1)
 ```
+
+If the branch is `main`, `develop`, or has no `/` — no active ticket. Use normal emoji-prefix commit format.
+
+If a ticket ID is found, every commit in this run **must** be prefixed: `ES-001: description`.
 
 ### Step 2: Inspect all changes
 

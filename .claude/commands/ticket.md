@@ -315,20 +315,20 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] TypeScript: no empty catch blocks, no silent failures
 ```
 
-### Write the ticket ID to `.current-ticket` — MANDATORY
+### Create a ticket branch — MANDATORY
 
-Before doing any other work, write the ticket ID to `.current-ticket` in the repo root:
+Before doing any other work, check out a branch named `TICKET-ID/short-description`:
 
 ```bash
-echo "TICKET-ID" > /path/to/repo/.current-ticket
+git checkout -b ES-001/escrow-release-flow
 ```
 
-For example, if implementing ES-001:
-```bash
-echo "ES-001" > .current-ticket
-```
+Rules:
+- Branch name format: `TICKET-ID/kebab-case-description` — the `/` is the separator
+- If already on the correct ticket branch (branch starts with the ticket ID), skip this step
+- If on `main` or a different ticket branch, always create a new branch
 
-This file is gitignored. It persists through context clears so `/get-commit` can always find the ticket ID and stamp it into the commit message — even if this session ends before committing.
+The branch name is the ticket state. It survives context clears, survives failed commits, and is automatically scoped to the work. `/get-commit` and `/golive` both read the ticket ID from `git branch --show-current | cut -d'/' -f1` — no extra files needed.
 
 ---
 
