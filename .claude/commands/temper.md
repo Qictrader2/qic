@@ -101,10 +101,25 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > - IDOR vulnerabilities — any endpoint that takes a resource ID without verifying the caller owns it
 > - Missing input validation at system boundaries
 >
+> **5. SELF-CONTRADICTION & INTERNAL CONFLICTS**
+> Read the diff carefully for logic that contradicts itself or conflicts with other parts of the same changeset:
+> - A function that is added but called with incompatible arguments elsewhere in the diff
+> - A state transition that is both allowed and disallowed in different parts of the change
+> - A value computed one way in one place and a different way in another (e.g. escrow amount calculated differently across two call sites)
+> - A type or field that is defined one way but used as if it were another
+> - Config or constants that are set to conflicting values
+> - Comments that describe behaviour opposite to the code
+> - Any two parts of the diff that, if both shipped, would produce contradictory runtime behaviour
+>
+> If ANY self-contradiction or internal conflict is found, list it clearly and mark the whole report as **NEEDS_CLARIFICATION**. Do not attempt to resolve it — that requires human intent.
+>
 > Provide the diff and code content as context. Return the report in this format:
 >
 > ```
 > ## Temper Report
+>
+> ### ⚠️ NEEDS_CLARIFICATION (if any contradictions found — list BEFORE other issues)
+> 1. [file:line vs file:line] — what contradicts what — what the two interpretations are
 >
 > ### HIGH Issues
 > 1. [file:line] — description — why it matters
@@ -126,6 +141,23 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > ```
 
 Pass the full diff output and relevant file contents to the subagent as context.
+
+---
+
+## STEP 3b: CLARIFY (if contradictions found)
+
+**⛔ If the subagent returned any NEEDS_CLARIFICATION items — STOP HERE.**
+
+Do not fix anything yet. Present the contradictions to the user clearly:
+
+> "Before I can fix anything, I found conflicting logic in this diff that needs your call:
+>
+> 1. [contradiction 1 description]
+> 2. [contradiction 2 description]
+>
+> Which behaviour is correct?"
+
+Wait for the user's answers before continuing to Step 4.
 
 ---
 
