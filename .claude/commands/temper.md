@@ -73,6 +73,10 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > - Integration tests that don't assert the DB state after the operation (only assert the return value)
 > - Missing IDOR test: endpoint takes a resource ID — no test that a different user's request is rejected
 >
+> LOW (wasted tests — not wrong, just not useful):
+> - Property tests that only test `serde` round-trips (`deserialize(serialize(x)) == x`) — `serde` is battle-tested; this is testing the library, not your code, unless you have a custom serializer with business logic
+> - Property tests on pure struct construction with no transformation
+>
 > GOOD property test characteristics to note:
 > - Tests a mathematical invariant: commutativity, associativity, idempotency, monotonicity, round-trip
 > - Generator covers the full domain including edges (0, u64::MAX, negative if signed)

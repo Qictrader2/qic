@@ -367,24 +367,116 @@ Test priority (write in this order):
 
 ### 1. Property-Based Tests (Rust — preferred for pure logic)
 
-Use `proptest` or `quickcheck`. If a function has a logical invariant, test it with generated inputs.
+Use `proptest` or `quickcheck`. A property test must assert a **relationship** between inputs and outputs — not just that the output exists.
+
+#### What makes a property test NON-TRIVIAL
+
+A non-trivial property tests a mathematical invariant that would catch real bugs:
+
+**Invariant types to target:**
+
+| Type | What to test |
+|------|-------------|
+| Monotonicity | Higher input → higher output (fee grows with amount) |
+| Boundedness | Output always within expected range (fee ≤ amount, fee ≥ 0) |
+| Round-trip | `decode(encode(x)) == x` for any x |
+| Commutativity | `f(a, b) == f(b, a)` where it should hold |
+| Idempotency | `f(f(x)) == f(x)` for operations that should settle |
+| Exhaustiveness | Every valid transition accepted, every invalid one rejected |
+| Conservation | `buyer_balance + seller_balance + fees == original_amount` |
+| Ordering | If `a < b` then `process(a) < process(b)` |
+
+**Generator coverage rules:**
+- Cover the FULL domain: include 0, 1, `u64::MAX`, and the boundaries of any business rule
+- If the function has a known threshold (e.g., fee changes above 10,000 USDT), the generator must span it
+- Use `prop_oneof!` to explicitly include edge cases alongside random values:
 
 ```rust
-#[cfg(test)]
-mod tests {
-    use proptest::prelude::*;
-
-    proptest! {
-        #[test]
-        fn fee_calculation_never_exceeds_principal(amount in 1u64..1_000_000u64) {
-            let fee = calculate_fee(amount);
-            prop_assert!(fee <= amount, "fee {} exceeded amount {}", fee, amount);
+proptest! {
+    #[test]
+    fn fee_is_bounded_and_monotone(
+        a in prop_oneof![Just(0u64), Just(1), Just(u64::MAX / 2), 0u64..u64::MAX / 2],
+        b in prop_oneof![Just(0u64), Just(1), Just(u64::MAX / 2), 0u64..u64::MAX / 2],
+    ) {
+        let fee_a = calculate_fee(a);
+        let fee_b = calculate_fee(b);
+        // Bounded: fee never exceeds principal
+        prop_assert!(fee_a <= a, "fee {} exceeds amount {}", fee_a, a);
+        // Monotone: larger amount → larger or equal fee
+        if a <= b {
+            prop_assert!(fee_a <= fee_b, "fee not monotone: f({})={} > f({})={}", a, fee_a, b, fee_b);
         }
     }
 }
 ```
 
-Good candidates: fee calculations, state machine transitions, serialization round-trips, amount arithmetic.
+**State machine exhaustiveness — test ALL invalid transitions:**
+```rust
+proptest! {
+    #[test]
+    fn only_valid_trade_transitions_are_accepted(
+        from in any::<TradeStatus>(),
+        to in any::<TradeStatus>(),
+    ) {
+        let result = from.can_transition_to(to);
+        // Cross-check against the explicit allow-list
+        let allowed = VALID_TRANSITIONS.contains(&(from, to));
+        prop_assert_eq!(result, allowed,
+            "{:?} -> {:?}: got {}, expected {}", from, to, result, allowed);
+    }
+}
+```
+
+**Conservation law — money must balance:**
+```rust
+proptest! {
+    #[test]
+    fn escrow_release_conserves_value(amount in 1u64..1_000_000_000u64) {
+        let (buyer_receives, seller_receives, platform_fee) = split_escrow(amount);
+        prop_assert_eq!(
+            buyer_receives + seller_receives + platform_fee, amount,
+            "value not conserved: {} + {} + {} != {}",
+            buyer_receives, seller_receives, platform_fee, amount
+        );
+    }
+}
+```
+
+#### Anti-patterns — these are TRIVIAL and will be rejected by `/temper`
+
+```rust
+// TRIVIAL — asserts nothing about the relationship between input and output
+proptest! {
+    fn fee_is_ok(amount in 0u64..1000u64) {
+        let fee = calculate_fee(amount);
+        prop_assert!(fee.is_some()); // passes even if fee = amount (total loss)
+    }
+}
+
+// TRIVIAL — not a property test, just a single example
+proptest! {
+    fn fee_example() {
+        let fee = calculate_fee(100);
+        prop_assert_eq!(fee, 1); // this is a unit test dressed as a property test
+    }
+}
+
+// TRIVIAL — duplicates the implementation
+proptest! {
+    fn fee_matches(amount in 0u64..1000u64) {
+        let fee = calculate_fee(amount);
+        prop_assert_eq!(fee, amount * FEE_RATE / 10_000); // same formula as production
+    }
+}
+```
+
+**What to property-test:**
+Fee calculations, state machine transitions, amount arithmetic, split/distribution logic — anything with mathematical invariants that could silently be wrong.
+
+**What NOT to property-test:**
+- Serde encode/decode round-trips — `serde_json` and `serde` are battle-tested libraries. Testing `deserialize(serialize(x)) == x` is testing the library, not your code. Skip it unless you have a custom serializer with real business logic.
+- Simple struct construction — generating a struct and asserting it was constructed correctly is just a unit test with extra steps
+- Pure delegation — if your function just calls another function with no transformation, there's nothing to property-test
 
 ### 2. Integration Tests (Rust)
 
@@ -449,6 +541,7 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 
 ```
 [ ] cargo build passes
+[ ] cargo test passes (ALL tests — no failures, no ignored)
 [ ] cargo clippy -- -D warnings passes (zero warnings)
 [ ] grep for `let _ =` returns nothing outside tests
 [ ] No .unwrap()/.expect() in production code
@@ -456,6 +549,8 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] Auth checks: every handler verifies resource ownership
 [ ] DB migration written if schema changed
 [ ] Property tests written for pure logic with invariants
+[ ] Property tests assert RELATIONSHIPS between input/output (not just is_ok/is_some)
+[ ] Property test generators cover full domain including edges (0, MAX, boundaries)
 [ ] Integration tests cover the happy path and key failure paths
 [ ] TypeScript typecheck passes
 [ ] TypeScript: no empty catch blocks, no silent failures
