@@ -1,0 +1,6 @@
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/Qictrader2/Frontend.git
+[submodule "qictrader-backend-rs"]
+	path = qictrader-backend-rs
+	url = https://github.com/Qictrader2/qictrader-backend-rs.git
