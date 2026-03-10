@@ -32,19 +32,19 @@ Stack:
 ## STEP 1: FIND TICKET
 
 **Trello credentials (hardcoded — do not ask the user for these):**
-- API Key: `d0f2319aeb29e279616c592d97677692`
-- Token: `ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0`
+- API Key: `d0f2319aeb29e279616c592d79677692`
+- Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
 
 Arguments: `$ARGUMENTS`
 
 If `$ARGUMENTS` looks like a Trello card ID or short URL, fetch it directly:
 ```
-https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d97677692&token=ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0&fields=name,desc,labels,checklists,attachments&checklists=all
+https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=name,desc,labels,checklists,attachments&checklists=all
 ```
 
 Otherwise, search the QIC board for a matching card:
 ```
-https://api.trello.com/1/search?query={ARGUMENTS}&key=d0f2319aeb29e279616c592d97677692&token=ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0&modelTypes=cards&cards_limit=5
+https://api.trello.com/1/search?query={ARGUMENTS}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&cards_limit=5
 ```
 
 - If multiple results: show the list and ask the user which card to implement
@@ -59,19 +59,19 @@ Fetch ALL context from the card before touching anything:
 
 1. **Comments** — fetch all card comments (actions of type `commentCard`):
    ```
-   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d97677692&token=ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0&filter=commentCard&limit=1000
+   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&filter=commentCard&limit=1000
    ```
    Read every comment, oldest to newest. Comments contain design decisions, corrections, and context that overrides the original description.
 
 2. **History / activity** — fetch full card action log:
    ```
-   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d97677692&token=ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0&limit=1000
+   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&limit=1000
    ```
    Look for: moves between lists (signals progress/blockers), label changes, checklist completions.
 
 3. **Attachments** — check for links, mockups, or specs:
    ```
-   https://api.trello.com/1/cards/{id}/attachments?key=d0f2319aeb29e279616c592d97677692&token=ATTA36ac291783275f0d046d254f4d981089871602356997 0be9464b6c6a363385fd0CAB02F0
+   https://api.trello.com/1/cards/{id}/attachments?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
    ```
 
 4. **Video links** — if any comment or description contains a video URL (YouTube, Loom, etc.) that has NOT been described in text, flag it to the user:
