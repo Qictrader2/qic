@@ -1,6 +1,6 @@
 ---
 description: QIC go-live — deploy frontend + backend and move the Trello ticket to Dev Complete.
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, WebFetch
 ---
 
 You are deploying QIC Trader to production. This commits everything, pushes to Vercel + Heroku, and moves the ticket to Dev Complete in Trello.
@@ -22,8 +22,9 @@ Arguments: `$ARGUMENTS`
 │  1. CHECK         →  Confirm there is something to deploy        │
 │  2. COMMIT        →  Commit all submodules + root                │
 │  3. DEPLOY        →  Push to Vercel (frontend) + Heroku (backend)│
-│  4. MOVE TICKET   →  Move Trello card to Dev Complete            │
-│  5. REPORT        →  Confirm what was deployed and moved         │
+│  4. FIND TICKET   →  Resolve Trello card ID with 100% accuracy  │
+│  5. MOVE TICKET   →  Move Trello card to Dev Complete            │
+│  6. REPORT        →  Confirm what was deployed and moved         │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -32,9 +33,9 @@ Arguments: `$ARGUMENTS`
 ## STEP 1: CHECK
 
 ```bash
-git status
-cd frontend && git status
-cd qictrader-backend-rs && git status
+git -C /home/schalk/git/qic status
+git -C /home/schalk/git/qic/frontend status
+git -C /home/schalk/git/qic/qictrader-backend-rs status
 ```
 
 If everything is already clean (nothing to commit) and there are no deploy-only flags in $ARGUMENTS, confirm with the user whether to deploy the current HEAD anyway or stop.
@@ -70,39 +71,68 @@ Note: `commit-all.sh --deploy` triggers:
 
 ---
 
-## STEP 4: MOVE TICKET
+## STEP 4: FIND TICKET — exact card ID resolution
 
-Find the ticket ID using this priority order:
+Resolve the Trello card ID using this priority order. Stop at the first match.
 
-**1. From $ARGUMENTS** — scan for a pattern matching `[A-Z]+-\d+` (e.g. `ES-001`, `AUTH-004`).
+**Priority 1: `Ticket-Id:` git trailer in recent commits**
 
-**2. From the current branch name** — ticket branches follow the format `TICKET-ID/description`:
+This is the most reliable source — the card ID was embedded at commit time by `/get-commit`.
+
 ```bash
-git branch --show-current | cut -d'/' -f1
-```
-If the result contains a `-` and digits (matches `[A-Z]+-\d+`), it's a valid ticket ID. Use it.
-
-**If neither yields a ticket ID** — skip the move and tell the user:
-> "Not on a ticket branch and no ticket ID in arguments — card not moved. Run `/golive TICKET-ID` to move it manually."
-
-**Once ticket ID is known**, fetch the card from the Qictrader Dev board:
-```
-https://api.trello.com/1/search?query={TICKET_ID}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&idBoards=69a5bb4b56b71b138fb3f2be&cards_limit=10
+git -C /home/schalk/git/qic log -20 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
 ```
 
-From the results, pick the card whose `name` starts with the ticket ID. If multiple match, prefer the one NOT already in Dev Complete, Human Reviewed, or QIC Reviewed lists.
+If that returns a non-empty hex string (24 chars), use it. This is the Trello card ID — no search needed.
 
-Move it to Dev Complete:
+If the root repo has no trailer (e.g., only submodule ref updates), also check submodules:
+```bash
+git -C /home/schalk/git/qic/qictrader-backend-rs log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
+git -C /home/schalk/git/qic/frontend log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
 ```
-PUT https://api.trello.com/1/cards/{cardId}
-  key=d0f2319aeb29e279616c592d79677692
-  token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
-  idList=69adb791e90fb428655d9ad3
+
+**Priority 2: `.current-ticket` breadcrumb file**
+
+Fallback if commits were made without `/get-commit` (e.g., manual commit):
+
+```bash
+head -1 /home/schalk/git/qic/.current-ticket 2>/dev/null
 ```
+
+If that returns a non-empty hex string, use it.
+
+**Priority 3: From $ARGUMENTS**
+
+If $ARGUMENTS contains what looks like a Trello card ID (24-char hex string), use it directly.
+
+If $ARGUMENTS contains a ticket label like `ES-001`, search for it:
+```
+https://api.trello.com/1/search?query={TICKET_LABEL}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&idBoards=69a5bb4b56b71b138fb3f2be&cards_limit=10
+```
+
+**If none of the above yields a card ID** — skip the move and tell the user:
+> "No Trello card ID found in git trailers, .current-ticket, or arguments — card not moved. Run `/golive <card-id>` to move it manually."
 
 ---
 
-## STEP 5: REPORT
+## STEP 5: MOVE TICKET
+
+Once the Trello card ID is known, move it directly — no search needed:
+
+```
+PUT https://api.trello.com/1/cards/{cardId}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&idList=69adb791e90fb428655d9ad3
+```
+
+Before moving, optionally fetch the card to confirm it exists and get its name for the report:
+```
+GET https://api.trello.com/1/cards/{cardId}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=name,idList
+```
+
+If the card is already in Dev Complete or a later column, skip the move and note it.
+
+---
+
+## STEP 6: REPORT
 
 Print a clean summary:
 
@@ -111,7 +141,8 @@ Print a clean summary:
 
 **Deployed:** frontend (Vercel) + backend (Heroku)
 **Commit:** [sha] [message]
-**Ticket moved:** [TICKET-ID] "[card name]" → Dev Complete
+**Ticket moved:** "[card name]" → Dev Complete
+**Card ID source:** git trailer / .current-ticket / argument
 ```
 
 Or if ticket could not be moved:
@@ -125,10 +156,24 @@ Or if ticket could not be moved:
 
 ---
 
+## CLEANUP
+
+After a successful go-live (deploy succeeded AND ticket moved), delete the breadcrumb:
+
+```bash
+rm -f /home/schalk/git/qic/.current-ticket
+```
+
+This prevents stale ticket IDs from leaking into the next `/ticket` cycle. The git trailer in the commit history is the permanent record.
+
+---
+
 ## RULES
 
 - Never move the ticket unless the deploy succeeds
 - If deploy partially fails (e.g. Heroku succeeds but Vercel fails), report both outcomes and do NOT move the ticket
 - If the ticket is already in Dev Complete or a later column, skip the move and note it
+- The `Ticket-Id:` git trailer is the primary source of truth — `.current-ticket` is only a fallback
+- Always report which source the card ID came from (trailer / file / argument) so the user can verify
 
 $ARGUMENTS

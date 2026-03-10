@@ -14,22 +14,23 @@ The repo layout:
 
 ## PROCESS
 
-### Step 1: Check for active ticket branch
+### Step 1: Check for active ticket
 
-Read the ticket ID from the current branch name:
+Read the Trello card ID and ticket label from `.current-ticket` in the monorepo root:
 
 ```bash
-git branch --show-current
+cat /home/schalk/git/qic/.current-ticket 2>/dev/null
 ```
 
-If the branch name contains a `/` (e.g. `ES-001/escrow-release-flow`), extract the ticket ID as everything before the first `/`:
-```bash
-TICKET=$(git branch --show-current | cut -d'/' -f1)
-```
+The file has up to two lines:
+- **Line 1:** Trello hex card ID (e.g. `69a5bb4b56b71b138fb3f2be`) — REQUIRED
+- **Line 2:** Ticket label (e.g. `ES-001`) — OPTIONAL
 
-If the branch is `main`, `develop`, or has no `/` — no active ticket. Use normal emoji-prefix commit format.
+If the file exists and line 1 is non-empty:
+- Store the card ID — it will be embedded as a `Ticket-Id:` git trailer in every commit
+- If line 2 exists, prefix commit messages with the ticket label: `ES-001: description`
 
-If a ticket ID is found, every commit in this run **must** be prefixed: `ES-001: description`.
+If the file does not exist or is empty — no active ticket. Use normal emoji-prefix commit format.
 
 ### Step 2: Inspect all changes
 
@@ -67,18 +68,38 @@ If a repo has unrelated changes mixed together, **decide yourself** based on log
 
 **Never ask the user if you should split. Just do it if it makes sense. YOLO.**
 
-### Step 5: Commit each repo
+### Step 5: Commit each repo with Ticket-Id trailer
 
 For each repo with changes, stage and commit in this order:
 1. `qictrader-backend-rs/` — backend first
 2. `frontend/` — frontend second
 3. `/` (root) — root last (it tracks the updated submodule refs)
 
-Stage all changes in each repo before committing (unless splitting — then stage by logical group):
+**CRITICAL: Every commit MUST include the `Ticket-Id:` git trailer if `.current-ticket` exists.**
+
+The trailer goes at the end of the commit message body, separated by a blank line:
+
 ```bash
-cd qictrader-backend-rs && git add -A && git commit -m "..."
-cd frontend && git add -A && git commit -m "..."
-cd .. && git add -A && git commit -m "..."
+cd qictrader-backend-rs && git add -A && git commit -m "$(cat <<'EOF'
+ES-001: implement atomic escrow lock
+
+- Add single-transaction escrow locking in repo layer
+- Guard state transitions with can_transition_to()
+
+Ticket-Id: 69a5bb4b56b71b138fb3f2be
+EOF
+)"
+```
+
+If no active ticket, commit without the trailer:
+```bash
+cd frontend && git add -A && git commit -m "$(cat <<'EOF'
+✨ Add withdrawal confirmation dialog
+
+- New ConfirmWithdrawal component with amount validation
+- Wired to existing withdrawal API endpoint
+EOF
+)"
 ```
 
 For splits, stage specific files:
@@ -86,6 +107,8 @@ For splits, stage specific files:
 git add src/api/trades.rs src/services/trades.rs && git commit -m "..."
 git add src/api/payments.rs src/services/payments.rs && git commit -m "..."
 ```
+
+**Every split commit still gets the same `Ticket-Id:` trailer.**
 
 ### Step 6: Push all
 
@@ -105,6 +128,8 @@ Report the final status of all three pushes.
 **SAVE POINT:**
 ```
 SAVE POINT
+
+Ticket-Id: 69a5bb4b56b71b138fb3f2be
 ```
 
 **SCRATCHPAD:**
@@ -126,10 +151,12 @@ TICKET-ID: [Concise imperative description]
 
 - Point 1: What changed and why
 - Point 2: What changed and why
+
+Ticket-Id: 69a5bb4b56b71b138fb3f2be
 ```
 e.g. `ES-001: implement atomic escrow lock with single DB transaction`
 
-Emojis:
+Emojis (only used when no active ticket):
 - ✨ New feature
 - 🔧 Config/tooling
 - 🐛 Bug fix
@@ -144,10 +171,14 @@ Emojis:
 **Root repo commit** (when only submodule refs changed):
 ```
 🔗 Update submodule refs (frontend + backend)
+
+Ticket-Id: 69a5bb4b56b71b138fb3f2be
 ```
 or reference the feature if both submodules changed for the same reason:
 ```
-✨ Add withdrawal flow (frontend + backend)
+ES-001: Add withdrawal flow (frontend + backend)
+
+Ticket-Id: 69a5bb4b56b71b138fb3f2be
 ```
 
 ---
@@ -161,5 +192,7 @@ or reference the feature if both submodules changed for the same reason:
 - **Commit message in imperative mood** — "Add feature" not "Added feature"
 - **Root commits last** — always after submodules so the refs are up to date
 - Use `git add -A` within each submodule directory — never `git add` from root with submodule paths
+- **Ticket-Id trailer is mandatory** when `.current-ticket` exists — every commit, no exceptions
+- **Do NOT delete `.current-ticket`** — it persists until the next `/ticket` overwrites it or the user manually removes it
 
 $ARGUMENTS

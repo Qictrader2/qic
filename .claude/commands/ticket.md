@@ -16,14 +16,15 @@ Stack:
 ```
 ┌───────────────────────────────────────────────────────────────────┐
 │  1. FIND TICKET       →  Search Trello for the ticket             │
-│  2. DEEP READ         →  Comments, history, attachments, videos   │
-│  3. EXPLORE CODEBASE  →  Read relevant files, map the change      │
-│  4. CLARIFY           →  Ask questions — STOP and wait for answer │
-│  5. TYPES FIRST       →  Define types/enums before implementation │
-│  6. IMPLEMENT         →  Write production code, no mocks/TODOs    │
-│  7. MIGRATE           →  Write migration if DB is touched         │
-│  8. TEST              →  Property-based > integration > unit      │
-│  9. VERIFY            →  Build + suppression scan + Clippy        │
+│  2. STAMP TICKET      →  Write Trello card ID to .current-ticket  │
+│  3. DEEP READ         →  Comments, history, attachments, videos   │
+│  4. EXPLORE CODEBASE  →  Read relevant files, map the change      │
+│  5. CLARIFY           →  Ask questions — STOP and wait for answer │
+│  6. TYPES FIRST       →  Define types/enums before implementation │
+│  7. IMPLEMENT         →  Write production code, no mocks/TODOs    │
+│  8. MIGRATE           →  Write migration if DB is touched         │
+│  9. TEST              →  Property-based > integration > unit      │
+│  10. VERIFY           →  Build + suppression scan + Clippy        │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -39,7 +40,7 @@ Arguments: `$ARGUMENTS`
 
 If `$ARGUMENTS` looks like a Trello card ID or short URL, fetch it directly:
 ```
-https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=name,desc,labels,checklists,attachments&checklists=all
+https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=id,name,desc,labels,checklists,attachments&checklists=all
 ```
 
 Otherwise, search the QIC board for a matching card:
@@ -51,9 +52,37 @@ https://api.trello.com/1/search?query={ARGUMENTS}&key=d0f2319aeb29e279616c592d79
 - If no results: ask the user to clarify the ticket name or paste the card URL
 - Tell user: "Implementing ticket: [card name]"
 
+**IMPORTANT:** Note the card's `id` field from the API response — this is the Trello hex ID (e.g. `69a5bb4b56b71b138fb3f2be`). You need it for Step 2.
+
 ---
 
-## STEP 2: DEEP READ
+## STEP 2: STAMP TICKET — MANDATORY
+
+Write the Trello card ID to `.current-ticket` in the monorepo root. This file is `.gitignore`d — it is a local breadcrumb that survives context clears and failed commits.
+
+```bash
+echo '69a5bb4b56b71b138fb3f2be' > /home/schalk/git/qic/.current-ticket
+```
+
+The file contains ONLY the Trello hex card ID — one line, no whitespace, no other content. This is what `/get-commit` reads to embed the trailer and what `/golive` uses as a fallback.
+
+Also extract the ticket label (e.g. `ES-001`) from the card name if it starts with a ticket prefix pattern (`[A-Z]+-\d+`). If found, include it on a second line:
+
+```bash
+printf '%s\n%s\n' '69a5bb4b56b71b138fb3f2be' 'ES-001' > /home/schalk/git/qic/.current-ticket
+```
+
+Format:
+```
+LINE 1: Trello hex card ID (required)
+LINE 2: Ticket label like ES-001 (optional, only if card name starts with one)
+```
+
+Tell the user: "Ticket stamped: [card ID] ([ticket label if any])"
+
+---
+
+## STEP 3: DEEP READ
 
 Fetch ALL context from the card before touching anything:
 
@@ -75,12 +104,12 @@ Fetch ALL context from the card before touching anything:
    ```
 
 4. **Video links** — if any comment or description contains a video URL (YouTube, Loom, etc.) that has NOT been described in text, flag it to the user:
-   > "⚠️ There is an undescribed video link in this ticket: [url]. I cannot watch it. Please summarise what it shows before I continue."
+   > "There is an undescribed video link in this ticket: [url]. I cannot watch it. Please summarise what it shows before I continue."
    Wait for the user's summary before proceeding.
 
 ---
 
-## STEP 3: EXPLORE CODEBASE
+## STEP 4: EXPLORE CODEBASE
 
 Before writing a single line of code:
 
@@ -88,7 +117,7 @@ Before writing a single line of code:
    - `qictrader-backend-rs/docs/intended-entity-state-machines.md` — what we are aiming for
    - `qictrader-backend-rs/docs/as-built-state-machines.md` — how it is actually implemented today
 
-   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BOLT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 4) before proceeding.
+   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BUILT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 5) before proceeding.
 
 2. Identify which parts of the codebase are affected:
    - Backend only? Frontend only? Both?
@@ -99,9 +128,9 @@ Before writing a single line of code:
 
 ---
 
-## STEP 4: CLARIFY
+## STEP 5: CLARIFY
 
-**⛔ STOP HERE — do not write any code yet ⛔**
+**STOP HERE — do not write any code yet**
 
 Based on everything you have read (ticket, comments, history, codebase), identify anything that is ambiguous or missing. Ask the user all clarifying questions in a single message. Examples:
 
@@ -109,13 +138,13 @@ Based on everything you have read (ticket, comments, history, codebase), identif
 - "Should this endpoint be accessible to unauthenticated users or only logged-in users?"
 - "There are two existing fee calculation functions — which should this extend?"
 
-Wait for the user's answers before continuing to Step 5.
+Wait for the user's answers before continuing to Step 6.
 
 If everything is crystal clear and there is genuinely nothing ambiguous, state what you understood and proceed.
 
 ---
 
-## STEP 5: TYPES FIRST (Rust)
+## STEP 6: TYPES FIRST (Rust)
 
 If the ticket touches the Rust backend:
 
@@ -128,7 +157,7 @@ If the ticket touches the Rust backend:
 
 ---
 
-## STEP 6: IMPLEMENT
+## STEP 7: IMPLEMENT
 
 ### Rust Backend Rules
 
@@ -181,7 +210,7 @@ auth.require_participant(trade.buyer_id, trade.seller_id)?;
 
 ---
 
-## STEP 7: MIGRATIONS
+## STEP 8: MIGRATIONS
 
 If the ticket touches the database (new table, new column, index change, constraint):
 
@@ -198,7 +227,7 @@ If the ticket touches the database (new table, new column, index change, constra
 
 ---
 
-## STEP 8: TESTS
+## STEP 9: TESTS
 
 Test priority (write in this order):
 
@@ -229,9 +258,9 @@ mod tests {
 ```
 
 Good candidates for property tests:
-- Fee calculations (invariant: fee ≤ amount, fee ≥ 0)
+- Fee calculations (invariant: fee <= amount, fee >= 0)
 - State machine transitions (invariant: terminal states have no valid transitions)
-- Serialization round-trips (invariant: serialize → deserialize = identity)
+- Serialization round-trips (invariant: serialize -> deserialize = identity)
 - Amount arithmetic (invariant: no overflow, correct precision)
 
 ### 2. Integration Tests (Rust)
@@ -278,7 +307,7 @@ fn trade_status_pending_can_transition_to_active() {
 
 ---
 
-## STEP 9: VERIFY
+## STEP 10: VERIFY
 
 Run ALL of the following before declaring done:
 
@@ -314,21 +343,6 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] bun run build passes (if frontend touched)
 [ ] TypeScript: no empty catch blocks, no silent failures
 ```
-
-### Create a ticket branch — MANDATORY
-
-Before doing any other work, check out a branch named `TICKET-ID/short-description`:
-
-```bash
-git checkout -b ES-001/escrow-release-flow
-```
-
-Rules:
-- Branch name format: `TICKET-ID/kebab-case-description` — the `/` is the separator
-- If already on the correct ticket branch (branch starts with the ticket ID), skip this step
-- If on `main` or a different ticket branch, always create a new branch
-
-The branch name is the ticket state. It survives context clears, survives failed commits, and is automatically scoped to the work. `/get-commit` and `/golive` both read the ticket ID from `git branch --show-current | cut -d'/' -f1` — no extra files needed.
 
 ---
 
