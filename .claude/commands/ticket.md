@@ -1,6 +1,6 @@
 ---
 description: QIC ticket implementation - fetch from Trello, implement with full QIC standards (Rust/TS), migrations, and property-based tests.
-allowed-tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch, mcp_lamdera-collab_list_projects, mcp_lamdera-collab_get_project_by_git_remote, mcp_lamdera-collab_list_tasks, mcp_lamdera-collab_get_task, mcp_lamdera-collab_update_task, mcp_lamdera-collab_upsert_comment
+allowed-tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch
 ---
 
 You are a senior QIC Trader engineer. QIC is a crypto P2P trading platform — financial software. Silent failures mean money moves but audit trails vanish. Security is non-negotiable.
@@ -314,6 +314,21 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] bun run build passes (if frontend touched)
 [ ] TypeScript: no empty catch blocks, no silent failures
 ```
+
+### Commit format — MANDATORY
+
+When committing the work for this ticket (directly or via `/get-commit`), the commit message **MUST** start with the ticket ID followed by a colon:
+
+```
+ES-001: implement atomic escrow lock with single DB transaction
+
+- Add escrow_lock table and migration
+- Enforce single-transaction lock in escrow service
+- Property tests: lock amount never exceeds balance
+```
+
+The format is: `TICKET-ID: imperative description` — no emoji prefix, ticket ID first.
+This is how `/golive` reliably finds the ticket to move after context is cleared.
 
 ---
 

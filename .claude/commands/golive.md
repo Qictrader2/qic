@@ -72,23 +72,38 @@ Note: `commit-all.sh --deploy` triggers:
 
 ## STEP 4: MOVE TICKET
 
-Find the ticket ID from $ARGUMENTS. Look for a pattern like `ES-001`, `AUTH-004`, `TF-002`, etc.
+Find the ticket ID using this priority order:
 
-If no ticket ID in $ARGUMENTS, check git log for the most recent commit message — the ticket ID is usually in the message prefix.
+**1. From $ARGUMENTS** — scan for a pattern matching `[A-Z]+-\d+` (e.g. `ES-001`, `AUTH-004`).
 
-Search for the card on the Qictrader Dev board:
+**2. From git log** — commits made via `/ticket` are stamped with the ticket ID as the message prefix (`ES-001: description`). Extract it with:
+```bash
+git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
 ```
-https://api.trello.com/1/search?query={TICKET_ID}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&idBoards=69a5bb4b56b71b138fb3f2be&cards_limit=5
+Also check submodule logs:
+```bash
+cd frontend && git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
+cd qictrader-backend-rs && git log --oneline -20 | grep -oP '^[a-f0-9]+ \K[A-Z]+-\d+(?=:)' | head -1
 ```
+Use the first match found across any of the three repos.
+
+**If no ticket ID found in either place** → skip the move and tell the user:
+> "Could not identify a ticket ID — card not moved. Run `/golive TICKET-ID` to move it manually."
+
+**Once ticket ID is known**, fetch the card from the Qictrader Dev board:
+```
+https://api.trello.com/1/search?query={TICKET_ID}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&idBoards=69a5bb4b56b71b138fb3f2be&cards_limit=10
+```
+
+From the results, pick the card whose `name` starts with the ticket ID. If multiple match, prefer the one NOT already in Dev Complete, Human Reviewed, or QIC Reviewed lists.
 
 Move it to Dev Complete:
 ```
-PUT https://api.trello.com/1/cards/{cardId}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&idList=69adb791e90fb428655d9ad3
+PUT https://api.trello.com/1/cards/{cardId}
+  key=d0f2319aeb29e279616c592d79677692
+  token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
+  idList=69adb791e90fb428655d9ad3
 ```
-
-If no ticket ID can be determined → skip this step and tell the user: "Could not identify a ticket ID — card not moved. Run `/golive TICKET-ID` to move it manually."
-
-If multiple cards match the search → pick the one currently in "To Do" or "Backlog" (not already in Done/Blocked).
 
 ---
 
