@@ -84,12 +84,18 @@ Fetch ALL context from the card before touching anything:
 
 Before writing a single line of code:
 
-1. Identify which parts of the codebase are affected:
+1. **Read the design intent documents first — always:**
+   - `qictrader-backend-rs/docs/intended-entity-state-machines.md` — what we are aiming for
+   - `qictrader-backend-rs/docs/as-built-state-machines.md` — how it is actually implemented today
+
+   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BOLT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 4) before proceeding.
+
+2. Identify which parts of the codebase are affected:
    - Backend only? Frontend only? Both?
    - Which files / modules are most likely involved?
-2. Read those files — understand the existing patterns before touching anything
-3. Check for related types in `qictrader-backend-rs/src/types/` and `src/models/`
-4. Check for existing service functions in `src/services/` before creating new ones
+3. Read those files — understand the existing patterns before touching anything
+4. Check for related types in `qictrader-backend-rs/src/types/` and `src/models/`
+5. Check for existing service functions in `src/services/` before creating new ones
 
 ---
 

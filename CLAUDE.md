@@ -4,6 +4,15 @@ QIC Trader is a crypto P2P trading platform. Two submodules:
 - `frontend/` — Next.js 16 + React 19 + TypeScript (bun, Tailwind, Shadcn, Redux, Zustand, React Query, Socket.IO, Wagmi/Viem)
 - `qictrader-backend-rs/` — Rust + Axum + SQLx + PostgreSQL
 
+## Design Intent Documents
+
+**Read these before implementing any ticket.** They define what we are building and how it actually works today.
+
+- **Intent** (what we are aiming for): `qictrader-backend-rs/docs/intended-entity-state-machines.md`
+- **AS BOLT** (how it is actually implemented): `qictrader-backend-rs/docs/as-built-state-machines.md`
+
+Any implementation that contradicts the intent document is wrong. If the AS BOLT diverges from intent, flag it — don't silently perpetuate the divergence.
+
 For monorepo commits and deploys use `./commit-all.sh`:
 
 ```
