@@ -56,6 +56,30 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 
 > You are a senior security and quality reviewer for QIC Trader — a crypto P2P trading platform. Analyse the provided git diff and code for the following dimensions. Return a structured report with every finding classified as HIGH, MEDIUM, or LOW.
 >
+> **0. TEST QUALITY** — evaluate every test file touched or added in this diff:
+>
+> HIGH (trivial / harmful tests):
+> - Property tests that only check `result.is_ok()` or `result.is_some()` — they pass even when logic is completely wrong
+> - Property tests with a single hardcoded example (`proptest! { fn f() { let x = 5; ... } }`) — not property tests
+> - Property tests that generate inputs but assert nothing about relationships between input and output
+> - Tests with no assertions at all
+> - Tests named `test_it_works`, `test_happy_path`, etc — names that reveal no business rule
+> - Tests that duplicate the implementation (computing the same formula in the test body as in production)
+> - `#[test] fn foo() { foo_fn(); }` — called but return value discarded, no assertion
+>
+> MEDIUM (weak tests):
+> - Unit tests for pure functions that only cover the trivial happy path, ignoring: boundary values, overflow/underflow, zero amounts, maximum amounts
+> - Property tests with too-narrow generators (e.g. `1u64..10u64` when the domain is `0..u64::MAX`)
+> - Integration tests that don't assert the DB state after the operation (only assert the return value)
+> - Missing IDOR test: endpoint takes a resource ID — no test that a different user's request is rejected
+>
+> GOOD property test characteristics to note:
+> - Tests a mathematical invariant: commutativity, associativity, idempotency, monotonicity, round-trip
+> - Generator covers the full domain including edges (0, u64::MAX, negative if signed)
+> - Asserts a relationship between inputs and outputs, not just that the output exists
+> - Multiple independent properties tested for the same function
+> - State machine tests: every invalid transition is explicitly rejected, every valid one accepted
+>
 > **1. INTENT ALIGNMENT**
 > Does the implementation match what the design intent documents describe? Flag any drift between what was intended and what was built. Flag any new drift introduced (AS BOLT diverging further from intent).
 >
@@ -130,6 +154,10 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > ### LOW Issues
 > 1. [file:line] — description (noted, not fixing)
 >
+> ### Test Quality
+> - STRONG / WEAK / MISSING / TRIVIAL: [list specific test names and findings]
+> - For each trivial or missing test: what invariant should be tested instead
+>
 > ### Intent Alignment
 > - ALIGNED / DRIFT DETECTED: description
 >
@@ -181,11 +209,17 @@ Run all applicable checks after fixes:
 # If Rust was touched:
 cd qictrader-backend-rs && cargo build 2>&1
 cd qictrader-backend-rs && cargo clippy -- -D warnings 2>&1
+cd qictrader-backend-rs && cargo test 2>&1
 cd qictrader-backend-rs && grep -rn 'let _ =' src/ | grep -v '#\[cfg(test)\]'
 
 # If TypeScript was touched:
 cd frontend && bun run build 2>&1 | tail -30
 ```
+
+**Tests must pass.** If any test fails:
+1. Check whether the test itself is wrong (trivial/incorrect assertion) or the implementation is wrong
+2. Fix whichever is broken — do NOT skip or comment out failing tests
+3. If a test reveals a real bug in the implementation, fix the implementation
 
 If build fails after fixes → fix the build before proceeding.
 
@@ -208,9 +242,13 @@ Print the final report:
 ### LOW Issues (noted):
 1. [file:line] — description
 
+### Test Quality: STRONG / WEAK / TRIVIAL / MISSING
+- [specific findings per test file]
+
 ### Intent Alignment: ALIGNED / DRIFT DETECTED
 ### Migration Compliance: COMPLIANT / MISSING / N/A
 ### Build: ✅ passes / ❌ FAILED
+### Tests: ✅ N passed / ❌ N failed
 
 VERDICT: APPROVED / NEEDS_FIXES / BLOCKED
 ```
