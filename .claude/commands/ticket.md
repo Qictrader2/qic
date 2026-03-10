@@ -1,6 +1,6 @@
 ---
 description: QIC ticket implementation - fetch from Trello, implement with full QIC standards (Rust/TS), migrations, and property-based tests.
-allowed-tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch
+allowed-tools: Agent, Bash, Read, Write, Edit, MultiEdit, Grep, Glob, WebFetch
 ---
 
 You are a senior QIC Trader engineer. QIC is a crypto P2P trading platform — financial software. Silent failures mean money moves but audit trails vanish. Security is non-negotiable.
@@ -11,15 +11,43 @@ Stack:
 
 ---
 
+## ⛔ DO NOT COMMIT
+
+This skill ends after verification. It does NOT commit, push, or deploy.
+The pipeline after this skill is:
+1. `/temper` — deep code review, fix issues
+2. `/git-commit` — commit across all submodules
+3. `/golive` — deploy and move Trello card to Dev Complete
+
+Do not invoke any of these. Do not run `git commit`. Do not run `git push`.
+
+---
+
+## ON RESUME AFTER CONTEXT CLEAR
+
+If this appears to be a resumed session (conversation summary present):
+
+1. Check for an existing plan file:
+   ```bash
+   ls /home/schalk/git/qic/ticket-plans/ 2>/dev/null
+   cat /home/schalk/git/qic/.current-ticket 2>/dev/null
+   ```
+2. If a plan file exists, read it — it contains the full confirmed implementation plan
+3. Run `git diff` in both submodules to see what has already been done
+4. Tell the user what was done and what remains, then continue from where implementation left off
+
+---
+
 # THE TICKET FLOW
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│  1. FIND TICKET       →  Search Trello for the ticket             │
+│  1. FIND TICKET       →  Fetch or select the Trello card          │
 │  2. STAMP TICKET      →  Write Trello card ID to .current-ticket  │
 │  3. DEEP READ         →  Comments, history, attachments, videos   │
-│  4. EXPLORE CODEBASE  →  Read relevant files, map the change      │
+│  4. EXPLORE CODEBASE  →  Design intent docs first, then code      │
 │  5. CLARIFY           →  Ask questions — STOP and wait for answer │
+│     → Write plan file after answers received                      │
 │  6. TYPES FIRST       →  Define types/enums before implementation │
 │  7. IMPLEMENT         →  Write production code, no mocks/TODOs    │
 │  8. MIGRATE           →  Write migration if DB is touched         │
@@ -38,33 +66,83 @@ Stack:
 
 Arguments: `$ARGUMENTS`
 
-If `$ARGUMENTS` looks like a Trello card ID or short URL, fetch it directly:
+### Path A — Vague selection ("pick the most important", "next ticket", "choose one", etc.)
+
+If `$ARGUMENTS` is a vague selection phrase rather than a specific card name or ID, launch a subagent to select the highest-priority card from the board:
+
+```
+Launch Agent with this prompt:
+
+  Fetch the QIC Trello board and return the highest-priority card that needs work.
+
+  Credentials:
+    API Key: d0f2319aeb29e279616c592d79677692
+    Token: ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
+
+  Steps:
+  1. Fetch all boards for this account:
+     GET https://api.trello.com/1/members/me/boards?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=id,name
+
+  2. Find the QIC board (name contains "QIC").
+
+  3. Fetch all lists on that board:
+     GET https://api.trello.com/1/boards/{boardId}/lists?key=...&token=...&fields=id,name,pos
+
+  4. Fetch all open cards:
+     GET https://api.trello.com/1/boards/{boardId}/cards/open?key=...&token=...&fields=id,name,desc,labels,idList,pos&checklists=all
+
+  5. Select the highest-priority card using this ranking:
+     - Prefer lists whose name suggests "To Do", "Backlog", "Ready", or "In Progress"
+     - Within a list: Bug label > any other label > no label
+     - Within same label tier: lower pos value = higher priority
+     - Skip cards in lists named "Done", "Completed", "Dev Complete", "Deployed"
+
+  6. Fetch the full card details including all comments:
+     GET https://api.trello.com/1/cards/{cardId}?key=...&token=...&fields=id,name,desc,labels,checklists,attachments&checklists=all
+     GET https://api.trello.com/1/cards/{cardId}/actions?key=...&token=...&filter=commentCard&limit=1000
+
+  Return as plain text:
+    CARD_ID: {hex id}
+    CARD_NAME: {full name}
+    CARD_DESC: {description}
+    LABELS: {comma-separated label names}
+    COMMENTS: {all comment text, oldest first, separated by ---}
+    LIST_NAME: {list the card is in}
+```
+
+Wait for the subagent to return. Use its result as the source of truth for the card ID, name, description, and comments — do not re-fetch them.
+
+### Path B — Specific card ID or short URL
+
+Fetch directly:
 ```
 https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=id,name,desc,labels,checklists,attachments&checklists=all
 ```
 
-Otherwise, search the QIC board for a matching card:
+### Path C — Search by name or keyword
+
 ```
 https://api.trello.com/1/search?query={ARGUMENTS}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&cards_limit=5
 ```
 
 - If multiple results: show the list and ask the user which card to implement
 - If no results: ask the user to clarify the ticket name or paste the card URL
-- Tell user: "Implementing ticket: [card name]"
 
-**IMPORTANT:** Note the card's `id` field from the API response — this is the Trello hex ID (e.g. `69a5bb4b56b71b138fb3f2be`). You need it for Step 2.
+---
+
+Tell the user: "Implementing ticket: **[card name]**"
+
+**IMPORTANT:** Note the card's `id` field — this is the Trello hex ID (e.g. `69a5bb4b56b71b138fb3f2be`). You need it for Step 2.
 
 ---
 
 ## STEP 2: STAMP TICKET — MANDATORY
 
-Write the Trello card ID to `.current-ticket` in the monorepo root. This file is `.gitignore`d — it is a local breadcrumb that survives context clears and failed commits.
+Write the Trello card ID to `.current-ticket` in the monorepo root:
 
 ```bash
-echo '69a5bb4b56b71b138fb3f2be' > /home/schalk/git/qic/.current-ticket
+printf '%s\n' '69a5bb4b56b71b138fb3f2be' > /home/schalk/git/qic/.current-ticket
 ```
-
-The file contains ONLY the Trello hex card ID — one line, no whitespace, no other content. This is what `/get-commit` reads to embed the trailer and what `/golive` uses as a fallback.
 
 Also extract the ticket label (e.g. `ES-001`) from the card name if it starts with a ticket prefix pattern (`[A-Z]+-\d+`). If found, include it on a second line:
 
@@ -84,13 +162,15 @@ Tell the user: "Ticket stamped: [card ID] ([ticket label if any])"
 
 ## STEP 3: DEEP READ
 
-Fetch ALL context from the card before touching anything:
+Fetch ALL context from the card before touching any code. Complete this step fully before moving to Step 4.
 
-1. **Comments** — fetch all card comments (actions of type `commentCard`):
+If you arrived via Path A (subagent), you already have the description and comments — skip those fetches and proceed to history and attachments.
+
+1. **Comments** — fetch all card comments (if not already fetched via subagent):
    ```
    https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&filter=commentCard&limit=1000
    ```
-   Read every comment, oldest to newest. Comments contain design decisions, corrections, and context that overrides the original description.
+   Read every comment, oldest to newest. Comments contain design decisions and corrections that override the original description.
 
 2. **History / activity** — fetch full card action log:
    ```
@@ -107,40 +187,94 @@ Fetch ALL context from the card before touching anything:
    > "There is an undescribed video link in this ticket: [url]. I cannot watch it. Please summarise what it shows before I continue."
    Wait for the user's summary before proceeding.
 
+All ticket content — description, comments, constraints — is now in context. Proceed to Step 4.
+
 ---
 
 ## STEP 4: EXPLORE CODEBASE
 
-Before writing a single line of code:
+Read the design intent documents first, then the relevant code. Do not write any code during this step.
 
-1. **Read the design intent documents first — always:**
+1. **Read design intent — always, before any code:**
    - `qictrader-backend-rs/docs/intended-entity-state-machines.md` — what we are aiming for
    - `qictrader-backend-rs/docs/as-built-state-machines.md` — how it is actually implemented today
 
-   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BUILT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 5) before proceeding.
+   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BUILT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 5).
 
-2. Identify which parts of the codebase are affected:
-   - Backend only? Frontend only? Both?
-   - Which files / modules are most likely involved?
-3. Read those files — understand the existing patterns before touching anything
-4. Check for related types in `qictrader-backend-rs/src/types/` and `src/models/`
-5. Check for existing service functions in `src/services/` before creating new ones
+2. Identify which parts of the codebase are affected: backend only, frontend only, or both.
+
+3. Read the relevant files — understand existing patterns before touching anything.
+
+4. Check for related types in `qictrader-backend-rs/src/types/` and `src/models/`.
+
+5. Check for existing service functions in `src/services/` before creating new ones.
 
 ---
 
-## STEP 5: CLARIFY
+## STEP 5: CLARIFY — THE ONLY STOP
 
-**STOP HERE — do not write any code yet**
+**STOP HERE — do not write any code yet.**
 
-Based on everything you have read (ticket, comments, history, codebase), identify anything that is ambiguous or missing. Ask the user all clarifying questions in a single message. Examples:
+You have now read: the ticket description, all comments, the design intent document, and the relevant code. Based on everything, identify anything ambiguous or missing.
 
+Ask the user all clarifying questions in a single message. Examples:
 - "The ticket says 'add a fee' — is this a flat amount or a percentage? Where is the rate configured?"
 - "Should this endpoint be accessible to unauthenticated users or only logged-in users?"
 - "There are two existing fee calculation functions — which should this extend?"
+- "The AS BUILT diverges from intent here: [description]. Should I align to intent or match AS BUILT?"
 
-Wait for the user's answers before continuing to Step 6.
+Wait for the user's answers before continuing.
 
 If everything is crystal clear and there is genuinely nothing ambiguous, state what you understood and proceed.
+
+### After answers are received — write the plan file
+
+Once you have clarity (either from user answers or because nothing was ambiguous), write the plan file:
+
+```bash
+mkdir -p /home/schalk/git/qic/ticket-plans
+```
+
+Create `/home/schalk/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md` if no label):
+
+```markdown
+# {TICKET-LABEL}: {Card Name}
+
+**Trello ID:** {card-id}
+**Date:** {today}
+
+## What the ticket wants
+{1–3 sentence summary}
+
+## Key constraints from comments
+{Bullet list of important notes from comments that override the description}
+
+## Design intent alignment
+{Does this touch a state machine? What does intended-entity-state-machines.md say?
+ Does AS BUILT diverge? If so, which are we following?}
+
+## Clarifying answers
+{User's answers, or "No ambiguities — proceeding"}
+
+## Implementation plan
+
+### Files to change
+- `path/to/file.rs` — {what changes and why}
+- `path/to/file.tsx` — {what changes and why}
+
+### Files NOT to change
+- `path/to/file.rs` — {reason}
+
+### DB migration needed?
+{Yes — {what} / No}
+
+### Tests to write
+- {test description}
+```
+
+Tell the user the plan file has been written, then proceed to Step 6.
+
+The plan file is deleted by `/golive` when the ticket is completed. Do not delete it yourself.
 
 ---
 
@@ -233,7 +367,7 @@ Test priority (write in this order):
 
 ### 1. Property-Based Tests (Rust — preferred for pure logic)
 
-Use `proptest` or `quickcheck`. Scott Walshe-style: if a function has a logical invariant, test it with generated inputs.
+Use `proptest` or `quickcheck`. If a function has a logical invariant, test it with generated inputs.
 
 ```rust
 #[cfg(test)]
@@ -246,26 +380,13 @@ mod tests {
             let fee = calculate_fee(amount);
             prop_assert!(fee <= amount, "fee {} exceeded amount {}", fee, amount);
         }
-
-        #[test]
-        fn valid_status_transitions_are_reversible_or_terminal(
-            status in any_trade_status()
-        ) {
-            // test the invariant
-        }
     }
 }
 ```
 
-Good candidates for property tests:
-- Fee calculations (invariant: fee <= amount, fee >= 0)
-- State machine transitions (invariant: terminal states have no valid transitions)
-- Serialization round-trips (invariant: serialize -> deserialize = identity)
-- Amount arithmetic (invariant: no overflow, correct precision)
+Good candidates: fee calculations, state machine transitions, serialization round-trips, amount arithmetic.
 
 ### 2. Integration Tests (Rust)
-
-For repo functions and service orchestration:
 
 ```rust
 #[sqlx::test]
@@ -277,21 +398,19 @@ async fn test_create_trade_sets_initial_status(pool: PgPool) {
 
 ### 3. API / E2E Tests (TypeScript)
 
-Follow existing test patterns in `frontend/e2e/tests/`:
+Follow existing test patterns in `frontend/e2e/tests/`. Auth + IDOR tests are critical:
 
 ```typescript
-// Auth + IDOR test (use security/idor.test.ts as template)
 test('seller cannot release escrow for a trade they are not party to', async () => {
   const { buyer, seller, thirdParty } = await createTwoUserFixture();
   const trade = await createTrade(buyer, seller);
-
   const res = await thirdParty.post(`/api/trades/${trade.id}/release`);
-  expect(res.status).toBe(403); // not 404, not 500 — explicit 403
+  expect(res.status).toBe(403);
   expect(await res.json()).toMatchObject({ error: expect.any(String) });
 });
 ```
 
-Test naming: describe the business rule being tested, not the implementation.
+Test naming: describe the business rule, not the implementation.
 - GOOD: `"buyer cannot release escrow they do not own"`
 - BAD: `"test escrow release endpoint"`
 
@@ -319,16 +438,14 @@ cd qictrader-backend-rs && cargo clippy -- -D warnings 2>&1
 cd qictrader-backend-rs && grep -rn 'let _ =' src/ | grep -v '#\[cfg(test)\]'
 ```
 
-Every `let _ =` match from the grep = a bug. Fix it.
-Clippy warnings = rejected. Fix them.
+Every `let _ =` match = a bug. Fix it. Clippy warnings = rejected. Fix them.
 
 ### TypeScript
 ```bash
-cd frontend && bun run build 2>&1 | tail -30
 cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 ```
 
-### Sign-off checklist before finishing:
+### Sign-off checklist:
 
 ```
 [ ] cargo build passes
@@ -340,9 +457,12 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] DB migration written if schema changed
 [ ] Property tests written for pure logic with invariants
 [ ] Integration tests cover the happy path and key failure paths
-[ ] bun run build passes (if frontend touched)
+[ ] TypeScript typecheck passes
 [ ] TypeScript: no empty catch blocks, no silent failures
 ```
+
+When verification passes, tell the user:
+> "Implementation complete. Run `/temper` to review, then `/git-commit` to commit, then `/golive` to deploy."
 
 ---
 
@@ -356,5 +476,4 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 6. **Property tests first** for pure functions with mathematical invariants
 7. **Financial operations never swallow errors** — propagate or log with full context
 8. **Auth is not optional** — every resource endpoint must verify ownership
-
-$ARGUMENTS
+9. **Do not commit** — `/temper` → `/git-commit` → `/golive` handles that

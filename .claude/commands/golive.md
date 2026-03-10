@@ -158,13 +158,19 @@ Or if ticket could not be moved:
 
 ## CLEANUP
 
-After a successful go-live (deploy succeeded AND ticket moved), delete the breadcrumb:
+After a successful go-live (deploy succeeded AND ticket moved), delete the breadcrumb and plan file:
 
 ```bash
 rm -f /home/schalk/git/qic/.current-ticket
+
+# Delete the plan file for this ticket (label or card ID)
+TICKET_LABEL=$(sed -n '2p' /home/schalk/git/qic/.current-ticket 2>/dev/null)
+CARD_ID=$(head -1 /home/schalk/git/qic/.current-ticket 2>/dev/null)
+rm -f "/home/schalk/git/qic/ticket-plans/${TICKET_LABEL}.md"
+rm -f "/home/schalk/git/qic/ticket-plans/${CARD_ID}.md"
 ```
 
-This prevents stale ticket IDs from leaking into the next `/ticket` cycle. The git trailer in the commit history is the permanent record.
+This prevents stale ticket IDs and plan files from leaking into the next `/ticket` cycle. The git trailer in the commit history is the permanent record.
 
 ---
 
