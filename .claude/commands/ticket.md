@@ -315,20 +315,20 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 [ ] TypeScript: no empty catch blocks, no silent failures
 ```
 
-### Commit format — MANDATORY
+### Write the ticket ID to `.current-ticket` — MANDATORY
 
-When committing the work for this ticket (directly or via `/get-commit`), the commit message **MUST** start with the ticket ID followed by a colon:
+Before doing any other work, write the ticket ID to `.current-ticket` in the repo root:
 
-```
-ES-001: implement atomic escrow lock with single DB transaction
-
-- Add escrow_lock table and migration
-- Enforce single-transaction lock in escrow service
-- Property tests: lock amount never exceeds balance
+```bash
+echo "TICKET-ID" > /path/to/repo/.current-ticket
 ```
 
-The format is: `TICKET-ID: imperative description` — no emoji prefix, ticket ID first.
-This is how `/golive` reliably finds the ticket to move after context is cleared.
+For example, if implementing ES-001:
+```bash
+echo "ES-001" > .current-ticket
+```
+
+This file is gitignored. It persists through context clears so `/get-commit` can always find the ticket ID and stamp it into the commit message — even if this session ends before committing.
 
 ---
 

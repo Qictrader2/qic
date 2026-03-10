@@ -14,7 +14,24 @@ The repo layout:
 
 ## PROCESS
 
-### Step 1: Inspect all changes
+### Step 1: Check for active ticket
+
+Before anything else, check if a ticket is in progress:
+
+```bash
+cat .current-ticket 2>/dev/null || echo ""
+```
+
+If the file exists and contains a ticket ID (e.g. `ES-001`), that ID **must** be prepended to every commit message in this session as `TICKET-ID: ` (e.g. `ES-001: implement escrow lock`).
+
+If `.current-ticket` is empty or missing, commit messages use the normal format (emoji prefix).
+
+After all commits succeed, delete the file:
+```bash
+rm -f .current-ticket
+```
+
+### Step 2: Inspect all changes
 
 Run these in parallel to get the full picture:
 
@@ -27,7 +44,7 @@ cd frontend && git status && git diff --staged && git diff && git log -3 --oneli
 cd qictrader-backend-rs && git status && git diff --staged && git diff && git log -3 --oneline
 ```
 
-### Step 2: Categorise each submodule + root independently
+### Step 3: Categorise each submodule + root independently
 
 For **each** of the three repos (root, frontend, backend), classify:
 
@@ -39,7 +56,7 @@ For **each** of the three repos (root, frontend, backend), classify:
 | **NORMAL** | Coherent, shippable set of changes |
 | **SPLIT** | Truly unrelated changes mixed together |
 
-### Step 3: Handle SPLIT autonomously (no asking)
+### Step 4: Handle SPLIT autonomously (no asking)
 
 If a repo has unrelated changes mixed together, **decide yourself** based on logical grouping:
 
@@ -50,7 +67,7 @@ If a repo has unrelated changes mixed together, **decide yourself** based on log
 
 **Never ask the user if you should split. Just do it if it makes sense. YOLO.**
 
-### Step 4: Commit each repo
+### Step 5: Commit each repo
 
 For each repo with changes, stage and commit in this order:
 1. `qictrader-backend-rs/` — backend first
@@ -70,7 +87,7 @@ git add src/api/trades.rs src/services/trades.rs && git commit -m "..."
 git add src/api/payments.rs src/services/payments.rs && git commit -m "..."
 ```
 
-### Step 5: Push all
+### Step 6: Push all
 
 After all commits, push each repo:
 ```bash
@@ -95,13 +112,22 @@ SAVE POINT
 SCRATCHPAD: [brief description]
 ```
 
-**NORMAL:**
+**NORMAL (no active ticket):**
 ```
 [emoji] [Concise imperative description]
 
 - Point 1: What changed and why
 - Point 2: What changed and why
 ```
+
+**NORMAL (active ticket from `.current-ticket`):**
+```
+TICKET-ID: [Concise imperative description]
+
+- Point 1: What changed and why
+- Point 2: What changed and why
+```
+e.g. `ES-001: implement atomic escrow lock with single DB transaction`
 
 Emojis:
 - ✨ New feature
