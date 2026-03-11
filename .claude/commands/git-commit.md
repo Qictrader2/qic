@@ -19,7 +19,7 @@ The repo layout:
 Read the Trello card ID and ticket label from `.current-ticket` in the monorepo root:
 
 ```bash
-cat /home/schalk/git/qic/.current-ticket 2>/dev/null
+cat /home/marcello/git/qic/.current-ticket 2>/dev/null
 ```
 
 The file has up to two lines:

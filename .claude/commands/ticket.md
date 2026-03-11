@@ -29,8 +29,8 @@ If this appears to be a resumed session (conversation summary present):
 
 1. Check for an existing plan file:
    ```bash
-   ls /home/schalk/git/qic/ticket-plans/ 2>/dev/null
-   cat /home/schalk/git/qic/.current-ticket 2>/dev/null
+   ls /home/marcello/git/qic/ticket-plans/ 2>/dev/null
+   cat /home/marcello/git/qic/.current-ticket 2>/dev/null
    ```
 2. If a plan file exists, read it — it contains the full confirmed implementation plan
 3. Run `git diff` in both submodules to see what has already been done
@@ -141,13 +141,13 @@ Tell the user: "Implementing ticket: **[card name]**"
 Write the Trello card ID to `.current-ticket` in the monorepo root:
 
 ```bash
-printf '%s\n' '69a5bb4b56b71b138fb3f2be' > /home/schalk/git/qic/.current-ticket
+printf '%s\n' '69a5bb4b56b71b138fb3f2be' > /home/marcello/git/qic/.current-ticket
 ```
 
 Also extract the ticket label (e.g. `ES-001`) from the card name if it starts with a ticket prefix pattern (`[A-Z]+-\d+`). If found, include it on a second line:
 
 ```bash
-printf '%s\n%s\n' '69a5bb4b56b71b138fb3f2be' 'ES-001' > /home/schalk/git/qic/.current-ticket
+printf '%s\n%s\n' '69a5bb4b56b71b138fb3f2be' 'ES-001' > /home/marcello/git/qic/.current-ticket
 ```
 
 Format:
@@ -232,10 +232,10 @@ If everything is crystal clear and there is genuinely nothing ambiguous, state w
 Once you have clarity (either from user answers or because nothing was ambiguous), write the plan file:
 
 ```bash
-mkdir -p /home/schalk/git/qic/ticket-plans
+mkdir -p /home/marcello/git/qic/ticket-plans
 ```
 
-Create `/home/schalk/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md` if no label):
+Create `/home/marcello/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md` if no label):
 
 ```markdown
 # {TICKET-LABEL}: {Card Name}
