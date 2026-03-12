@@ -16,8 +16,7 @@ Stack:
 This skill ends after verification. It does NOT commit, push, or deploy.
 The pipeline after this skill is:
 1. `/temper` — deep code review, fix issues
-2. `/git-commit` — commit across all submodules
-3. `/golive` — deploy and move Trello card to Dev Complete
+2. `/golive` — commit, push, deploy (parallel), and move Trello card to Dev Complete
 
 Do not invoke any of these. Do not run `git commit`. Do not run `git push`.
 
@@ -557,7 +556,7 @@ cd frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1
 ```
 
 When verification passes, tell the user:
-> "Implementation complete. Run `/temper` to review, then `/git-commit` to commit, then `/golive` to deploy."
+> "Implementation complete. Run `/temper` to review, then `/golive` to commit, deploy, and move the ticket."
 
 ---
 
@@ -571,4 +570,4 @@ When verification passes, tell the user:
 6. **Property tests first** for pure functions with mathematical invariants
 7. **Financial operations never swallow errors** — propagate or log with full context
 8. **Auth is not optional** — every resource endpoint must verify ownership
-9. **Do not commit** — `/temper` → `/git-commit` → `/golive` handles that
+9. **Do not commit** — `/temper` → `/golive` handles that
