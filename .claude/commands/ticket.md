@@ -43,15 +43,14 @@ If this appears to be a resumed session (conversation summary present):
 ┌───────────────────────────────────────────────────────────────────┐
 │  1. FIND TICKET       →  Fetch or select the Trello card          │
 │  2. STAMP TICKET      →  Write Trello card ID to .current-ticket  │
-│  3. DEEP READ         →  Comments, history, attachments, videos   │
-│  4. EXPLORE CODEBASE  →  Design intent docs first, then code      │
-│  5. CLARIFY           →  Ask questions — STOP and wait for answer │
+│  3. GATHER CONTEXT    →  Trello + codebase IN PARALLEL            │
+│  4. CLARIFY           →  Ask questions — STOP and wait for answer │
 │     → Write plan file after answers received                      │
-│  6. TYPES FIRST       →  Define types/enums before implementation │
-│  7. IMPLEMENT         →  Write production code, no mocks/TODOs    │
-│  8. MIGRATE           →  Write migration if DB is touched         │
-│  9. TEST              →  Property-based > integration > unit      │
-│  10. VERIFY           →  Build + suppression scan + Clippy        │
+│  5. TYPES FIRST       →  Define types/enums before implementation │
+│  6. IMPLEMENT         →  Subagent per layer + inline quality gate │
+│  7. MIGRATE           →  Write migration if DB is touched         │
+│  8. TEST              →  Property-based > integration > unit      │
+│  9. VERIFY            →  Build + suppression scan + Clippy        │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -159,58 +158,78 @@ Tell the user: "Ticket stamped: [card ID] ([ticket label if any])"
 
 ---
 
-## STEP 3: DEEP READ
+## STEP 3: GATHER CONTEXT (parallel)
 
-Fetch ALL context from the card before touching any code. Complete this step fully before moving to Step 4.
+Launch **two subagents in parallel** to gather all context before writing any code. This keeps the main conversation context lean — subagents hold the raw data and return only structured summaries.
 
-If you arrived via Path A (subagent), you already have the description and comments — skip those fetches and proceed to history and attachments.
+### Subagent A: Trello Deep Read
 
-1. **Comments** — fetch all card comments (if not already fetched via subagent):
-   ```
-   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&filter=commentCard&limit=1000
-   ```
-   Read every comment, oldest to newest. Comments contain design decisions and corrections that override the original description.
+Launch an Agent with this task (pass the card ID and description you already have):
 
-2. **History / activity** — fetch full card action log:
-   ```
-   https://api.trello.com/1/cards/{id}/actions?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&limit=1000
-   ```
-   Look for: moves between lists (signals progress/blockers), label changes, checklist completions.
+```
+Fetch all remaining context for Trello card {card_id}.
 
-3. **Attachments** — check for links, mockups, or specs:
-   ```
-   https://api.trello.com/1/cards/{id}/attachments?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
-   ```
+Credentials:
+  API Key: d0f2319aeb29e279616c592d79677692
+  Token: ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
 
-4. **Video links** — if any comment or description contains a video URL (YouTube, Loom, etc.) that has NOT been described in text, flag it to the user:
+1. Fetch all comments (oldest first):
+   GET https://api.trello.com/1/cards/{id}/actions?key=...&token=...&filter=commentCard&limit=1000
+
+2. Fetch full activity log:
+   GET https://api.trello.com/1/cards/{id}/actions?key=...&token=...&limit=1000
+   Note: list moves (progress/blockers), label changes, checklist completions.
+
+3. Fetch attachments:
+   GET https://api.trello.com/1/cards/{id}/attachments?key=...&token=...
+
+Return as plain text:
+  COMMENTS: {all comment text, oldest first, separated by ---}
+  ACTIVITY: {notable list moves, label changes, checklist completions}
+  ATTACHMENTS: {list of attachment names and URLs}
+  VIDEO_LINKS: {any YouTube/Loom URLs found in comments or description that lack text descriptions — "NONE" if none found}
+```
+
+If you arrived via Path A (subagent) in Step 1, you already have comments — tell Subagent A to skip comment fetch and only get history + attachments.
+
+### Subagent B: Codebase Exploration
+
+Launch an Agent (subagent_type: Explore, thoroughness: "very thorough") with this task:
+
+```
+Read the QIC Trader design intent documents and explore the codebase for ticket context.
+
+Ticket: "{ticket_name}"
+Description: "{ticket_description}"
+
+1. Read design intent — ALWAYS:
+   - qictrader-backend-rs/docs/intended-entity-state-machines.md — what we are aiming for
+   - qictrader-backend-rs/docs/as-built-state-machines.md — how it is actually implemented today
+
+2. Based on the ticket description:
+   - Identify which parts of the codebase are affected (backend, frontend, or both)
+   - Read relevant source files — understand existing patterns
+   - Check for related types in src/types/ and src/models/
+   - Check for existing service functions in src/services/
+
+Return:
+  INTENT_ALIGNMENT: {Does this touch a state machine? What does intent doc say? Does AS BUILT diverge?}
+  AFFECTED_FILES: {list of files that will need changes, with brief description of current state}
+  EXISTING_PATTERNS: {relevant types, services, helpers already in place}
+  CONCERNS: {anything that looks like it could conflict or needs attention}
+```
+
+### After both subagents return
+
+1. If Subagent A found **VIDEO_LINKS** (not "NONE"), flag them to the user:
    > "There is an undescribed video link in this ticket: [url]. I cannot watch it. Please summarise what it shows before I continue."
    Wait for the user's summary before proceeding.
 
-All ticket content — description, comments, constraints — is now in context. Proceed to Step 4.
+2. Combine both summaries into your working context. Proceed to Step 4.
 
 ---
 
-## STEP 4: EXPLORE CODEBASE
-
-Read the design intent documents first, then the relevant code. Do not write any code during this step.
-
-1. **Read design intent — always, before any code:**
-   - `qictrader-backend-rs/docs/intended-entity-state-machines.md` — what we are aiming for
-   - `qictrader-backend-rs/docs/as-built-state-machines.md` — how it is actually implemented today
-
-   If your ticket touches any state machine or entity lifecycle, make sure your implementation aligns with intent. If AS BUILT already diverges from intent in the area you are touching, flag it in your clarifying questions (Step 5).
-
-2. Identify which parts of the codebase are affected: backend only, frontend only, or both.
-
-3. Read the relevant files — understand existing patterns before touching anything.
-
-4. Check for related types in `qictrader-backend-rs/src/types/` and `src/models/`.
-
-5. Check for existing service functions in `src/services/` before creating new ones.
-
----
-
-## STEP 5: CLARIFY — THE ONLY STOP
+## STEP 4: CLARIFY — THE ONLY STOP
 
 **STOP HERE — do not write any code yet.**
 
@@ -271,13 +290,13 @@ Create `/home/marcello/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md
 - {test description}
 ```
 
-Tell the user the plan file has been written, then proceed to Step 6.
+Tell the user the plan file has been written, then proceed to Step 5.
 
 The plan file is deleted by `/golive` when the ticket is completed. Do not delete it yourself.
 
 ---
 
-## STEP 6: TYPES FIRST (Rust)
+## STEP 5: TYPES FIRST (Rust)
 
 If the ticket touches the Rust backend:
 
@@ -290,7 +309,52 @@ If the ticket touches the Rust backend:
 
 ---
 
-## STEP 7: IMPLEMENT
+## STEP 6: IMPLEMENT
+
+### Context Management — Delegate to Subagents
+
+To prevent context window exhaustion, delegate each implementation layer to a subagent. The main conversation holds only the plan and subagent summaries — subagents hold the full file contents.
+
+**Implementation units** (run sequentially — each depends on the previous):
+
+| Order | Unit | Subagent task |
+|-------|------|---------------|
+| 1 | Types/Models | Define new types, enums, structs in `src/types/` and `src/models/` |
+| 2 | Repo layer | Write SQL queries in `src/repo/` |
+| 3 | Service layer | Write business logic in `src/services/` |
+| 4 | Handler layer | Wire up API endpoints in `src/api/` |
+| 5 | Frontend | Components, pages, API calls (if applicable) |
+
+For each unit, launch an Agent with:
+- The full plan file contents (read from `ticket-plans/{TICKET}.md`)
+- The specific files to read and modify
+- The coding standards relevant to that layer (from this prompt)
+- What the previous units produced (new type names, function signatures, etc.)
+
+The subagent reads files, makes edits, runs the Post-Write Quality Gate (see below), and returns a **summary only**:
+- Files changed and what was added/modified
+- New public API (function signatures, types exported) that the next layer needs
+- Any issues encountered or decisions made
+
+The main conversation **never reads full file contents** during implementation — only the plan and subagent summaries. This is what prevents context exhaustion on large tickets.
+
+**Exception:** trivial edits (< 10 lines, single file) can be done directly without a subagent.
+
+**Skipping empty units:** if a unit has no work (e.g., no types to define, no migration needed), skip it — don't launch an empty subagent.
+
+### Post-Write Quality Gate
+
+Every subagent MUST run these checks on its own output before returning. Every direct edit MUST be followed by these checks. This catches the class of bugs that /temper currently finds post-hoc.
+
+After writing or editing each file, check:
+
+1. **Suppression scan**: `grep -n 'let _ =' {file}` — any match on a Result = fix immediately
+2. **Unsafe defaults**: any `unwrap_or(...)` / `unwrap_or_default()` on a value with financial or security meaning? (prices, balances, FX rates, auth results) — use `Option` propagation or explicit match with logging instead
+3. **Dead code**: did you replace a function? Delete the old one. Did you add a struct field? Is it actually consumed? Did you remove a field? Remove it from all construction sites.
+4. **Import hygiene**: any unused imports from refactoring?
+5. **Consistency**: does the new code use the same error handling style and naming conventions as surrounding code?
+
+If any check fails, fix it before returning the summary / moving to the next unit. Do not defer to /temper.
 
 ### Rust Backend Rules
 
@@ -343,7 +407,7 @@ auth.require_participant(trade.buyer_id, trade.seller_id)?;
 
 ---
 
-## STEP 8: MIGRATIONS
+## STEP 7: MIGRATIONS
 
 If the ticket touches the database (new table, new column, index change, constraint):
 
@@ -360,7 +424,7 @@ If the ticket touches the database (new table, new column, index change, constra
 
 ---
 
-## STEP 9: TESTS
+## STEP 8: TESTS
 
 Test priority (write in this order):
 
@@ -517,7 +581,7 @@ fn trade_status_pending_can_transition_to_active() {
 
 ---
 
-## STEP 10: VERIFY
+## STEP 9: VERIFY
 
 Run ALL of the following before declaring done:
 

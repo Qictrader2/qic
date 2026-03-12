@@ -67,6 +67,12 @@ If the file exists and line 1 is non-empty:
 
 If the file does not exist or is empty — no active ticket. Use emoji-prefix commit format.
 
+Based on the inspection results, determine which repos have changes:
+- **HAS_BACKEND_CHANGES**: true if backend has uncommitted changes, untracked files, or staged changes
+- **HAS_FRONTEND_CHANGES**: true if frontend has uncommitted changes, untracked files, or staged changes
+
+These flags drive Steps 2–4: **skip commit, push, and deploy entirely for repos with no changes.** Do not inspect, diff, push, or deploy a clean repo — it wastes time.
+
 If everything is already clean (nothing to commit in any repo) and $ARGUMENTS has no special flags, confirm with the user whether to deploy current HEAD or stop.
 
 ---
@@ -141,17 +147,21 @@ Ticket-Id: 69a5bb4b56b71b138fb3f2be
 
 ## STEP 3: PUSH
 
-Push each repo. Run these **in parallel**:
+**Only push repos that had commits in Step 2.** Skip clean repos entirely.
 
+Push changed submodules **in parallel**:
+
+If backend was committed:
 ```bash
 cd /home/marcello/git/qic/qictrader-backend-rs && git push
 ```
 
+If frontend was committed:
 ```bash
 cd /home/marcello/git/qic/frontend && git push
 ```
 
-After both complete, push root:
+After submodule pushes complete, push root (if it was committed):
 ```bash
 cd /home/marcello/git/qic && git push
 ```
@@ -160,23 +170,25 @@ If a push is rejected (remote ahead), run `git pull --rebase` then push again. N
 
 ---
 
-## STEP 4: DEPLOY — PARALLEL
+## STEP 4: DEPLOY — CONDITIONAL + PARALLEL
 
-**Run frontend and backend deploys simultaneously.** Use two parallel Bash tool calls:
+**Only deploy repos that had new commits pushed in Step 3.** If a repo had NO CHANGES in Step 1 (nothing to commit, already up to date with remote), skip its deploy entirely — do not touch it.
 
-### Backend → Heroku (Bash call 1)
+If both repos need deploying, run them **in parallel**. If only one needs deploying, run just that one.
+
+### Backend → Heroku (only if HAS_BACKEND_CHANGES)
 
 ```bash
 cd /home/marcello/git/qic/qictrader-backend-rs && git push heroku main 2>&1
 ```
 
-### Frontend → Vercel (Bash call 2)
+### Frontend → Vercel (only if HAS_FRONTEND_CHANGES)
 
 ```bash
 cd /home/marcello/git/qic/frontend && vercel --prod --scope qictraders-projects --yes 2>&1
 ```
 
-**Both deploys MUST succeed.** If either fails:
+**All triggered deploys MUST succeed.** If any fails:
 - STOP — do not move the Trello ticket
 - Report which deploy failed and the error message
 - The user must fix and re-run `/golive`
@@ -332,9 +344,10 @@ Emojis (only used when no active ticket):
 - **Root commits last** — always after submodules so the refs are up to date
 - Use `git add -A` within each submodule directory — never `git add` from root with submodule paths
 - **Ticket-Id trailer is mandatory** when `.current-ticket` exists — every commit, no exceptions
-- **Deploy frontend and backend in parallel** — always
-- **Never move the ticket unless BOTH deploys succeed**
-- If deploy partially fails, report both outcomes and do NOT move the ticket
+- **Deploy only repos with changes** — skip clean repos entirely (no inspect, no push, no deploy)
+- **Deploy changed repos in parallel** when both have changes
+- **Never move the ticket unless ALL triggered deploys succeed**
+- If a deploy fails, report all outcomes and do NOT move the ticket
 - If the ticket is already in Dev Complete or a later column, skip the move and note it
 - The `Ticket-Id:` git trailer is the primary source of truth — `.current-ticket` is only a fallback
 - Always report which source the card ID came from (trailer / file / argument)
