@@ -39,8 +39,7 @@ for ((i=0; i<BAR_WIDTH; i++)); do
   fi
 done
 
-printf '\033[0;36m%s\033[00m [%b] %d%%\n' "$model" "$bar" "$pct"
-printf '\033[01;34m%s\033[00m' "$cwd"
+printf '\033[0;36m%s\033[00m [%b] %d%% \033[01;34m%s\033[00m' "$model" "$bar" "$pct" "$cwd"
 EOF
 
 chmod +x "$SCRIPT"
