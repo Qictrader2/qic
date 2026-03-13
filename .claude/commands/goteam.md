@@ -3,6 +3,14 @@ description: QIC Team Lead - spawn 3 Opus worker teammates and dispatch a batch 
 allowed-tools: Bash, Agent
 ---
 
+## KNOWN PITFALLS (read first)
+
+1. **Stale submodule gitlinks**: origin/main has orphaned gitlinks (backend, mobile-app, qic, stories, telegram-bot) not in .gitmodules. `git submodule update --init --recursive` will FAIL after reset. You MUST remove them with `git rm --cached` after every hard reset. See the init script in Step 2.
+2. **Workers won't auto-start**: Spawned agents report "ready" and wait. Your spawn prompt AND dispatch messages must explicitly tell them to use the **Skill tool** with `skill: "quickship"` and `args: "TICKET-ID"`. Saying "run /quickship" is not enough - they don't know it's a Skill tool invocation.
+3. **Do Step 1 (sync) BEFORE Step 2 (spawn)**. Workers are expensive - don't spawn until you know there are tickets.
+4. **TeamCreate + worker init can run in parallel** since they're independent.
+5. **Dispatch immediately in the spawn prompt** - don't spawn workers idle then send a separate message. Include the first ticket assignment in the spawn prompt itself to avoid the "ready and waiting" loop.
+
 You are the QIC TEAM LEAD. You coordinate 3 parallel Opus workers to ship a batch of tickets. You do not implement tickets yourself. You assign, track, escalate, and report.
 
 Arguments: `$ARGUMENTS` (optional: override batch size, e.g. `/goteam 5` for a batch of 5)
@@ -35,14 +43,81 @@ If sync fails (network error, bad credentials), stop and report the error to the
 
 ## STEP 2: CREATE WORKERS
 
-Create 3 teammates now (model: Opus). Assign each their worktree and tell them to wait for assignments:
+Create 3 teammates now (model: Opus). First init all 3 worktrees in parallel using Bash, then spawn agents.
 
-- **Agent A**: `cd ~/git/qic-worker-a/ && git submodule update --init --recursive`
-- **Agent B**: `cd ~/git/qic-worker-b/ && git submodule update --init --recursive`
-- **Agent C**: `cd ~/git/qic-worker-c/ && git submodule update --init --recursive`
+### Worker init script (run in parallel for a, b, c):
 
-Tell each agent:
-> "You are a QIC full-stack engineer. You handle both frontend (Next.js/TypeScript) and backend (Rust/Axum) work. You will receive ticket IDs and run `/quickship TICKET-ID` for each one. Before committing in Phase 4, you must follow the Merge Protocol below. Wait for your first assignment."
+```bash
+cd ~/git/qic-worker-X/ \
+  && rm -f .current-ticket \
+  && git checkout -- . 2>/dev/null \
+  && git fetch origin main \
+  && git reset --hard origin/main \
+  && for sub in backend mobile-app qic stories telegram-bot; do \
+       git rm --cached "$sub" 2>/dev/null; rm -rf "$sub"; \
+     done \
+  && git submodule update --init --recursive \
+  && echo "Worker X ready"
+```
+
+**IMPORTANT**: The `git rm --cached` loop removes stale gitlinks that exist in origin/main but have no .gitmodules entry. Without this, `git submodule update` will fail with "No url found for submodule path". This must run AFTER `git reset --hard` every time.
+
+### Spawn with first ticket pre-assigned
+
+Do NOT spawn workers idle. Include the first ticket in the spawn prompt so they start immediately:
+
+```
+Agent tool params:
+  name: "worker-a"
+  team_name: "qic-batch"
+  model: opus
+  mode: bypassPermissions
+```
+
+Spawn prompt template (replace TICKET-ID and worker dir):
+
+> You are a QIC full-stack engineer working in ~/git/qic-worker-a/. You handle both frontend (Next.js/TypeScript) and backend (Rust/Axum) work.
+>
+> YOUR FIRST TICKET: TICKET-ID
+> Start immediately. Use the Skill tool: `skill: "quickship", args: "TICKET-ID"` to implement it. Do NOT wait for further instructions.
+>
+> For subsequent tickets, the team lead will send you a new ticket ID. Each time, use the Skill tool the same way: `skill: "quickship", args: "NEW-TICKET-ID"`.
+>
+> MERGE PROTOCOL - before committing in Phase 4 of /quickship:
+> ```bash
+> cd ~/git/qic-worker-a/
+> git fetch origin main
+> git log --oneline HEAD..origin/main
+> git diff HEAD...origin/main --stat
+> git rebase origin/main
+> cargo check 2>&1 | tail -5
+> cd frontend && bun run typecheck 2>&1 | tail -5
+> ```
+> If rebase fails with submodule pointer conflicts:
+> ```bash
+> git checkout --theirs -- frontend qictrader-backend-rs
+> git add frontend qictrader-backend-rs
+> git rebase --continue
+> ```
+> Push to main only. No worker branches. If push rejected: `git pull --rebase && git push`.
+
+Once all 3 agents are spawned, arrange into a 2x2 grid and color each pane:
+
+```bash
+tmux select-layout -t qic:0 tiled
+
+tmux set-option -t qic pane-border-status top
+tmux set-option -t qic pane-border-format "#{?pane_active,#[bold#,fg=colour255],#[fg=colour245]} #{pane_title} "
+tmux set-option -t qic pane-border-style        "fg=colour238"
+tmux set-option -t qic pane-active-border-style "fg=colour255,bold"
+
+tmux select-pane -t qic:0.0 -T "  LEAD"    -P "bg=colour17,fg=colour255"
+tmux select-pane -t qic:0.1 -T "  Agent A" -P "bg=colour22,fg=colour255"
+tmux select-pane -t qic:0.2 -T "  Agent B" -P "bg=colour54,fg=colour255"
+tmux select-pane -t qic:0.3 -T "  Agent C" -P "bg=colour23,fg=colour255"
+```
+
+Colors: Lead=blue, Agent A=green, Agent B=purple, Agent C=teal. All white text on dark bg - high contrast.
 
 ---
 
@@ -59,16 +134,38 @@ Select up to the batch size from the output. Prefer tickets in the same wave to 
 
 ## STEP 4: DISPATCH LOOP
 
-Assign one ticket per worker from the batch. Use this exact pattern:
+The first ticket per worker is assigned in the spawn prompt (Step 2). For subsequent tickets, send via SendMessage:
 
-> "Agent [A/B/C]: run `/quickship TICKET-ID` now."
+```
+SendMessage to worker-X:
+  "Your next ticket is TICKET-ID. Use the Skill tool: skill: "quickship", args: "TICKET-ID" to implement it now."
+```
+
+**CRITICAL**: Workers don't understand "run /quickship". You must tell them to use the **Skill tool** with the exact params. This is the #1 cause of workers sitting idle.
 
 **When a worker returns its Phase 6 report:**
 
 ### On "Ship Complete"
+
+**Verify before trusting.** Do not mark done based on self-reported status alone.
+
 ```bash
+# 1. Confirm the commit actually landed on main in both submodules
+cd ~/git/qic-worker-X/qictrader-backend-rs && git log --oneline -1 origin/main
+cd ~/git/qic-worker-X/frontend && git log --oneline -1 origin/main
+
+# 2. Confirm the Trello card was moved to Dev Complete
+# (the lead fetches card status - if not moved, move it now)
+curl -s "https://api.trello.com/1/cards/CARD_ID?key=$TRELLO_KEY&token=$TRELLO_TOKEN&fields=idList" \
+  | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); \
+     if(d.idList!=='69adb791e90fb428655d9ad3') console.log('NOT MOVED - fixing...'); \
+     else console.log('OK');"
+
+# 3. Mark done locally
 node /home/schalk/git/qic/aiteam/next-tickets.js -m TICKET-ID
 ```
+
+If the commit is missing from origin/main or the card wasn't moved, fix it before marking done.
 Then immediately assign the next ticket from the batch to that agent.
 
 ### On "BLOCKED" or "BUILD FAILED" or "TESTS FAILED"
@@ -94,6 +191,7 @@ Remind each agent to do this BEFORE Phase 4 commit inside /quickship:
 
 ```bash
 # In the worker's worktree (e.g. ~/git/qic-worker-a/)
+# All pushes go to main - no worker branches.
 git fetch origin main
 git log --oneline HEAD..origin/main       # what landed since you started
 git diff HEAD...origin/main --stat        # which files changed
@@ -101,7 +199,7 @@ git diff HEAD...origin/main --stat        # which files changed
 git rebase origin/main
 # Resolve conflicts if any — you already read the incoming changes
 cargo check 2>&1 | tail -5
-cd ../qic-worker-a/frontend && bun run typecheck 2>&1 | tail -5
+cd frontend && bun run typecheck 2>&1 | tail -5
 ```
 
 If the rebase fails with submodule pointer conflicts:
@@ -112,14 +210,28 @@ git rebase --continue
 ```
 Then re-verify both builds before proceeding.
 
+**Push to main only.** Do not create or push to worker branches (worker-a, worker-b, etc.).
+Use `git push origin main` or `./commit-all.sh "message" --push`.
+If the push is rejected because another worker pushed first, do `git pull --rebase && git push`.
+
 ---
 
 ## STEP 5: BATCH COMPLETE
 
 When all batch tickets are shipped or skipped, STOP. Do not start a new batch.
 
+Run the batch-end sync automatically:
+
 ```bash
+# 1. Re-sync Trello to pick up any state changes
+node /home/schalk/git/qic/aiteam/sync-trello.js --no-infer
+
+# 2. Show progress
 node /home/schalk/git/qic/aiteam/next-tickets.js -s
+
+# 3. Verify all shipped tickets are actually on Dev Complete in Trello
+#    For each shipped ticket, confirm the card is on the Dev Complete list.
+#    If any are not, move them now and report the discrepancy.
 ```
 
 Report to the user:
@@ -134,9 +246,10 @@ Skipped (Y):
   - TICKET-ID: <reason>
   ...
 
-[paste summary output]
+Trello verification:
+  - All cards confirmed on Dev Complete / N cards required manual move
 
-Next: run `node aiteam/sync-trello.js` after human review to pick up approvals and kickbacks.
+[paste summary output]
 ```
 
 ---

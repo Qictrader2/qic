@@ -1,0 +1,2175 @@
+{
+  "tickets": {
+    "KYC-007": {
+      "name": "Be Prompted for KYC on High-Value Actions",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WLT-001": {
+      "name": "Additional Blockchain Support",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-012": {
+      "name": "Ban a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-013": {
+      "name": "Unban a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-009": {
+      "name": "Take Action on a Report",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-010": {
+      "name": "Warn a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-014": {
+      "name": "Review a User's Full History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-011": {
+      "name": "Suspend a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFF-001": {
+      "name": "[FIXED] AFF-001 & AFFILIATE-001",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-002": {
+      "name": "Generate and Share Referral Link",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-004": {
+      "name": "View Earnings History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-005": {
+      "name": "Request Affiliate Payout",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-001": {
+      "name": "Novice Affiliate Tier (Entry Level)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-003": {
+      "name": "Silver Affiliate Tier",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-004": {
+      "name": "Gold Affiliate Tier",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-005": {
+      "name": "Diamond Affiliate Tier",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-016": {
+      "name": "DFD 8 — Eligibility + Visibility Gating (Fundable + Enabled + Allowed)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-006": {
+      "name": "Affiliate Commission Calculation from Escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-007": {
+      "name": "Tier Progression Visualisation",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-008": {
+      "name": "Tier Badges & Emblems on Profile",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-009": {
+      "name": "Private Tier Stats Breakdown",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-010": {
+      "name": "Affiliate Leaderboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-011": {
+      "name": "Affiliate Dashboard Visual Overhaul",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOBILE-001": {
+      "name": "Use QicTrader Mobile App",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOBILE-002": {
+      "name": "Use Quick Actions from Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOBILE-003": {
+      "name": "Swipe Through Wallet Crypto Cards",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOBILE-004": {
+      "name": "Receive Push Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOBILE-005": {
+      "name": "Connect External Wallet",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-016": {
+      "name": "Check and Upload KYC via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-009": {
+      "name": "ES-009",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-010": {
+      "name": "KYC Document Download",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-005": {
+      "name": "Marketplace Search and Filters",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-002": {
+      "name": "Offer Versioning on Edit",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-004": {
+      "name": "Fund Trade Escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-002": {
+      "name": "Wallet Locks Listing",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-003": {
+      "name": "Escrow Refund (Cancel/Expiry)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "EML-001": {
+      "name": "AI-Based Email Address Validation",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-004": {
+      "name": "Reseller Settlement Split",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-005": {
+      "name": "Reseller Commission on Dispute",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-006": {
+      "name": "Reseller Dashboard Stats",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-007": {
+      "name": "Reseller Trade History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-008": {
+      "name": "Cannot Resell Own Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-009": {
+      "name": "Resell Offer Lifecycle",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-010": {
+      "name": "Markup Cap Enforcement",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-005": {
+      "name": "Moderator Resolution Dispatch",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-001": {
+      "name": "Trade Creation with Atomic Escrow Lock",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-002": {
+      "name": "Trade State Machine Validation",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-003": {
+      "name": "Payment Marking with Proof Upload",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-004": {
+      "name": "Seller Confirms and Completes Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-005": {
+      "name": "Cancel Within Unviewed Window",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-006": {
+      "name": "Counterparty View Tracking",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-007": {
+      "name": "Trade Expiry Background Job",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-008": {
+      "name": "Trade Chat with Real-Time Delivery",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-009": {
+      "name": "Rating and Review System",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TF-010": {
+      "name": "Trade Event Audit Trail",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PLATFORM-001": {
+      "name": "View Platform Configuration",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-001": {
+      "name": "View Landing Page",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-004": {
+      "name": "[FIXED] AUTH-004 — Login with email",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-007": {
+      "name": "AUTH-007 — 2FA does not work",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-001": {
+      "name": "Sign Up with Email and Password",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-002": {
+      "name": "Sign Up with Google OAuth",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-003": {
+      "name": "Sign Up with Apple OAuth",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-008": {
+      "name": "Reset Forgotten Password",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-009": {
+      "name": "Log Out",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "USR-001": {
+      "name": "Auto-Generated Username Suggestions",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-002": {
+      "name": "KYC-002 — Submit government ID Phase 2",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-003": {
+      "name": "Submit Selfie with ID",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-004": {
+      "name": "Submit Proof of Address",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-006": {
+      "name": "Resubmit Rejected Documents",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-001": {
+      "name": "[FIXED] WALLET-001 — View Balances",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-003": {
+      "name": "Withdraw Crypto",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-004": {
+      "name": "Transfer Crypto to Another User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-005": {
+      "name": "View Transaction History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-006": {
+      "name": "Estimate Withdrawal Fees",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-008": {
+      "name": "WALLET-008",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-001": {
+      "name": "Wallet Deposit Addresses",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-013": {
+      "name": "Wallet Internal Transfer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-017": {
+      "name": "Unlock Funds Endpoint",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-001": {
+      "name": "Browse Buy Offers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-003": {
+      "name": "View Offer Details",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-004": {
+      "name": "Create a Sell Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-011": {
+      "name": "View Offer Version History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-012": {
+      "name": "Create a Direct Offer to a Specific User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-003": {
+      "name": "Chat with Counterparty During Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-006": {
+      "name": "Confirm Payment Received",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-009": {
+      "name": "Leave a Review After Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-012": {
+      "name": "Upload Proof of Payment",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-014": {
+      "name": "Track When Counterparty Views a Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-015": {
+      "name": "Cancel Trade Within Unviewed Window",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-016": {
+      "name": "Trade Auto-Expiry",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-014": {
+      "name": "DFD 5 — Buyer Marks Paid + Proof of Payment",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-001": {
+      "name": "Use Custodial Escrow for a Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-003": {
+      "name": "Use BTC Wallet Lock Escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-005": {
+      "name": "Ethereum Nonce Race Condition Fix",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-008": {
+      "name": "Affiliate Commission balance_after Accuracy",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-009": {
+      "name": "TradeDebit Ledger Entries for Seller on Trade Completion",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-010": {
+      "name": "Ledger-Wallet Balance Reconciliation",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "BUG-001": {
+      "name": "Dispute Status Not Visible",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "BUG-002": {
+      "name": "Unable to Access Trade as Seller",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-001": {
+      "name": "View Moderator Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-002": {
+      "name": "View and Filter Trade Disputes",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-003": {
+      "name": "Review a Dispute in Detail",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-004": {
+      "name": "Resolve a Trade Dispute",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-005": {
+      "name": "Escalate a Dispute",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-006": {
+      "name": "Communicate with Dispute Parties",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-007": {
+      "name": "Review Dispute Evidence",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-008": {
+      "name": "View and Manage User Reports",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-015": {
+      "name": "View Moderation Audit Logs",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-016": {
+      "name": "Recover Funds from Disputed Escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-007": {
+      "name": "Resolve Escrow Dispute as Admin",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-008": {
+      "name": "Dispute Deadline Monitor Background Job",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-009": {
+      "name": "Reputation and History Persistence (No Resetting)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-001": {
+      "name": "View My Profile",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-002": {
+      "name": "Edit My Profile",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-003": {
+      "name": "View Another Trader's Profile",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-007": {
+      "name": "View 2FA Backup Codes",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-009": {
+      "name": "PROFILE-009",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-011": {
+      "name": "Block a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-012": {
+      "name": "Report a User",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRF-004": {
+      "name": "PRF-004",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRF-005": {
+      "name": "PRF-005",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-014": {
+      "name": "Delete My Account",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PAYMENT-001": {
+      "name": "[FIXED] PAYMENT-001 — No feature to edit created offers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PAYMENT-002": {
+      "name": "Manage My Payment Methods",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRICE-001": {
+      "name": "View Current Crypto Prices",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRICE-002": {
+      "name": "View Historical Price Data",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRICE-003": {
+      "name": "Convert Between Crypto and Fiat",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRICE-004": {
+      "name": "Create a Price Alert",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRICE-005": {
+      "name": "View Network Gas Prices",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-006": {
+      "name": "Atomic Fee Split (Inherited Bug Fix)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-015": {
+      "name": "OAuth Sync",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-001": {
+      "name": "View Admin Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-002": {
+      "name": "Manage All Users",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-003": {
+      "name": "Review and Approve/Reject KYC Submissions",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-004": {
+      "name": "View Treasury Balance and Health",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-005": {
+      "name": "Execute Treasury Transfer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-006": {
+      "name": "View System Diagnostics",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-008": {
+      "name": "Manage Platform Configuration",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-009": {
+      "name": "View Trading Volume and Activity Reports",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ADMIN-010": {
+      "name": "Manage Affiliate Tiers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VER-001": {
+      "name": "Identity Document Verification Software",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VER-002": {
+      "name": "Manual Verification Review Team",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUPPORT-002": {
+      "name": "View My Support Tickets",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUPPORT-003": {
+      "name": "Reply to a Support Ticket",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUPPORT-004": {
+      "name": "Close a Resolved Ticket",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUPPORT-005": {
+      "name": "Submit a Bug Report",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-004": {
+      "name": "AI-Powered Live Chat Bot",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-006": {
+      "name": "Office Locations Display",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "DASHBOARD-001": {
+      "name": "View Trading Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-001": {
+      "name": "Receive Trade Status Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-002": {
+      "name": "Receive New Message Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-003": {
+      "name": "Receive Wallet Balance Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-004": {
+      "name": "Receive Affiliate Earning Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-005": {
+      "name": "View and Manage All Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NOTIFY-006": {
+      "name": "Receive Real-Time Updates via WebSocket",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "NTF-001": {
+      "name": "Simplified Notification Dropdown",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-009": {
+      "name": "WebSocket Offer/Notification/Price Events",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WS-001": {
+      "name": "WebSocket / Socket.IO Backend–Frontend Alignment",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-012": {
+      "name": "Affiliate Payout Mechanism",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-001": {
+      "name": "Register as a Reseller",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-002": {
+      "name": "View Reseller Profile and Stats",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-004": {
+      "name": "Manage Active Resell Positions",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-005": {
+      "name": "Reseller Commission on Dispute Outcome",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-006": {
+      "name": "Initiate a Trade via a Resell Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-003": {
+      "name": "Read About Page",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-004": {
+      "name": "Read FAQs",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-005": {
+      "name": "Read Trading Guide",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-007": {
+      "name": "Read Security Tips",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-008": {
+      "name": "Read Terms and Privacy Policy",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-009": {
+      "name": "Contact Support Before Signing Up",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-010": {
+      "name": "Learn About the Affiliate Program",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-011": {
+      "name": "VISITOR-011",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "REG-001": {
+      "name": "Task Bar Icon Hover Effect",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "REG-002": {
+      "name": "Task Bar Icon Sizing & Alignment",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WLT-004": {
+      "name": "Card Design Variety / Colour Options",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-005": {
+      "name": "Log In with Google OAuth",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-006": {
+      "name": "Log In with Apple OAuth",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-012": {
+      "name": "Log In via Telegram Bot",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-013": {
+      "name": "Sign Up via Telegram Bot",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WHATSAPP-001": {
+      "name": "Create WhatsApp Escrow Link",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WHATSAPP-002": {
+      "name": "View WhatsApp Escrow Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-010": {
+      "name": "Log Out of All Devices",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-016": {
+      "name": "GAP-016",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "DASHBOARD-002": {
+      "name": "View My Trading Statistics",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-013": {
+      "name": "DFD 4 — Trade Creation + Escrow Lock (Atomic per Trade)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "USR-003": {
+      "name": "Username Validation Warnings (Symbols, Profanity, Duplicates)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-015": {
+      "name": "DFD 7 — Dispute Creation + Resolution (Including Admin)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-014": {
+      "name": "Notification Delete",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-006": {
+      "name": "Append-Only Ledger Enforcement",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-004": {
+      "name": "Dispute — Escrow Freeze",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-003": {
+      "name": "Deterministic Quote Engine",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-002": {
+      "name": "ES-002 — Escrow releases funds on trade completion",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-008": {
+      "name": "Deposit Detection (On-Chain Inbound)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-007": {
+      "name": "Use config for BTC RPC URL and DB transaction for custodial release",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-006": {
+      "name": "Payment Detail Access Control",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-002": {
+      "name": "Resell Offer Pricing Display",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-003": {
+      "name": "Trade via Resell Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ARCH-003": {
+      "name": "ARCH-003 Wallets don't debit by escrow amount",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RS-001": {
+      "name": "Create Resell Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-001": {
+      "name": "ES-001 — Cannot create an offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-007": {
+      "name": "Real-Time Trade Notifications",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-001": {
+      "name": "Offer Listing with Visibility Rules",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-008": {
+      "name": "Seller Offer Management",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-007": {
+      "name": "Cancel a Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MP-004": {
+      "name": "FX Rate Display and Persistence",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-001": {
+      "name": "Start the QicTrader Telegram Bot",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-002": {
+      "name": "Browse Marketplace via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-007": {
+      "name": "Check Crypto Prices via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-003": {
+      "name": "Manage Wallet via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-009": {
+      "name": "Manage Payment Methods via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-017": {
+      "name": "Manage Newsletter Subscription via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-004": {
+      "name": "Manage Trades via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-015": {
+      "name": "View My Trading Statistics",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-014": {
+      "name": "View Trader Leaderboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-012": {
+      "name": "View Bot Help",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-005": {
+      "name": "Create an Offer via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-011": {
+      "name": "Contact Support via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-008": {
+      "name": "Manage Security Settings via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-006": {
+      "name": "Receive Real-Time Notifications via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-010": {
+      "name": "View Affiliate Dashboard via Telegram",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TELEGRAM-013": {
+      "name": "Check Bot and System Status",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-001": {
+      "name": "Trade, Escrow, and Ledger Invariants",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-002": {
+      "name": "Offer Model Refactor (Offers vs Offer Versions)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-002": {
+      "name": "Make wallet transfer atomic with DB transaction",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ES-007": {
+      "name": "Platform Fee Collection",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-001": {
+      "name": "Prevent money creation on no-lock custodial release",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-003": {
+      "name": "Log gas sponsorship in the ledger",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-004": {
+      "name": "Fix moderator resolve tx_hash overwrite",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-005": {
+      "name": "Wire fund movement into custodial_release/refund/refund_escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUD-006": {
+      "name": "Fix non-escrow fee deduction and add seller debit ledger",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-007": {
+      "name": "Gas Route Admin Authorization",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-002": {
+      "name": "Use On-Chain Smart Contract Escrow",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-004": {
+      "name": "Treasury Auto-Swap Background Job",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-005": {
+      "name": "Sponsored Withdrawal Service",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-011": {
+      "name": "Moderator Resolve Triggers Fund Movement",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-003": {
+      "name": "Index Price and Premium Model (Explicit and Stored)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-004": {
+      "name": "Fiat Reference Display (USD to ZAR and Effective Crypto Rate)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-005": {
+      "name": "Deterministic Quote Calculation (One Canonical Pricing Function)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-006": {
+      "name": "Offer and Trade State Machines (Explicit Lifecycles)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-007": {
+      "name": "Marketplace Listing Boundaries (What Is Public vs Private)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-001": {
+      "name": "Platform Fee escrow_id FK Fix",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-002": {
+      "name": "Platform System User Migration",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-003": {
+      "name": "Escrow Lock Ledger Entry",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-006": {
+      "name": "Gas Sponsorship Ledger Entries",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-011": {
+      "name": "Deprecate treasury_transactions Table",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-008": {
+      "name": "Dispute Snapshot Integrity (Evidence and Context Locked)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-004": {
+      "name": "Escrow ID Index for Ledger Queries",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-008": {
+      "name": "PROFILE-008",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-009": {
+      "name": "Generate a Custodial Wallet",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "GAP-003": {
+      "name": "Escrow Wallet Lookup",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-014": {
+      "name": "Report a Suspicious Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-006": {
+      "name": "View My Escrow Overview",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-004": {
+      "name": "View Escrow Status and Balance",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PLATFORM-002": {
+      "name": "Check System Health",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MOD-017": {
+      "name": "Assign a Dispute to a Moderator",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-013": {
+      "name": "View Trade Event Timeline",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-005": {
+      "name": "[FIXED] SUP-005 — Call Lines",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-005": {
+      "name": "View My Trading Limits",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-003": {
+      "name": "View My Referrals",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFL-002": {
+      "name": "Bronze Affiliate Tier",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-007": {
+      "name": "View Payout History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-006": {
+      "name": "View Affiliate Tier Structure",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "LDG-007": {
+      "name": "Ledger Duplicate Prevention",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-012": {
+      "name": "DFD 2 — Marketplace Listing & Browsing (Offer List Page)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "HLP-001": {
+      "name": "Step-by-Step Help Articles / Guides",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "EML-003": {
+      "name": "Password Complexity Requirements & Hint Bubble",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "EML-002": {
+      "name": "Strong Password Generator",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUPPORT-001": {
+      "name": "Create a Support Ticket",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-013": {
+      "name": "Resell Another Trader's Offer with Markup",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-011": {
+      "name": "View My Active Trades",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-010": {
+      "name": "Search for Users",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-010": {
+      "name": "View My Offers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-010": {
+      "name": "View My Trade History",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-009": {
+      "name": "Close My Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-007": {
+      "name": "Pause My Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-008": {
+      "name": "Open a Trade Dispute",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-007": {
+      "name": "Generate Deposit Address",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-008": {
+      "name": "Resume a Paused Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "ESCROW-005": {
+      "name": "Dispute an Escrowed Trade",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-006": {
+      "name": "Disable Two-Factor Authentication",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-005": {
+      "name": "Mark Payment as Sent",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-006": {
+      "name": "Edit My Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-005": {
+      "name": "Enable Two-Factor Authentication",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-005": {
+      "name": "Create a Buy Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "RESELLER-003": {
+      "name": "Create a Resell Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AUTH-011": {
+      "name": "Automatic Session Management",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-002": {
+      "name": "Browse Marketplace Without Account",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "AFFILIATE-001": {
+      "name": "View Affiliate Dashboard",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WALLET-002": {
+      "name": "Deposit Crypto",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "OFFER-002": {
+      "name": "Browse Sell Offers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-002": {
+      "name": "View Trade Details and Status",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "KYC-001": {
+      "name": "View My KYC Verification Status",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "VISITOR-006": {
+      "name": "Understand How Escrow Works",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PROFILE-004": {
+      "name": "PROFILE-004",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "TRADE-001": {
+      "name": "Initiate a Trade from an Offer",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-010": {
+      "name": "UX Alignment and Consistency (Frontend Matches Backend)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "MPR-011": {
+      "name": "DFD 1 — Offer Lifecycle (Create / Edit / Enable / Disable)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRF-001": {
+      "name": "Display Username and Email on Profile",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRF-002": {
+      "name": "Trade Name Display Preferences",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "REG-003": {
+      "name": "Registration Page Visual Enhancement (Borders/Boxes)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "REG-004": {
+      "name": "Pre-Registration Support Access",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-001": {
+      "name": "Support Window Available Without Registration",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-003": {
+      "name": "Complaints, Compliments & Suggestions Option",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-002": {
+      "name": "Categorised Support Email Addresses",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "USR-002": {
+      "name": "Username Restrictions Info Bubble",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WLT-002": {
+      "name": "Solana Wallet Icon",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "WLT-003": {
+      "name": "Transaction Timestamps (Date + Time)",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "SUP-007": {
+      "name": "5-Level Support Ticket Priority System",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    },
+    "PRF-003": {
+      "name": "International Region Code for Phone Numbers",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
+    }
+  },
+  "waves": {
+    "0": {
+      "name": "Wave 0",
+      "ticketCount": 309,
+      "tickets": [
+        "ADMIN-001",
+        "ADMIN-002",
+        "ADMIN-003",
+        "ADMIN-004",
+        "ADMIN-005",
+        "ADMIN-006",
+        "ADMIN-007",
+        "ADMIN-008",
+        "ADMIN-009",
+        "ADMIN-010",
+        "AFF-001",
+        "AFFILIATE-001",
+        "AFFILIATE-002",
+        "AFFILIATE-003",
+        "AFFILIATE-004",
+        "AFFILIATE-005",
+        "AFFILIATE-006",
+        "AFFILIATE-007",
+        "AFL-001",
+        "AFL-002",
+        "AFL-003",
+        "AFL-004",
+        "AFL-005",
+        "AFL-006",
+        "AFL-007",
+        "AFL-008",
+        "AFL-009",
+        "AFL-010",
+        "AFL-011",
+        "ARCH-003",
+        "AUD-001",
+        "AUD-002",
+        "AUD-003",
+        "AUD-004",
+        "AUD-005",
+        "AUD-006",
+        "AUD-007",
+        "AUTH-001",
+        "AUTH-002",
+        "AUTH-003",
+        "AUTH-004",
+        "AUTH-005",
+        "AUTH-006",
+        "AUTH-007",
+        "AUTH-008",
+        "AUTH-009",
+        "AUTH-010",
+        "AUTH-011",
+        "AUTH-012",
+        "AUTH-013",
+        "AUTH-014",
+        "BUG-001",
+        "BUG-002",
+        "DASHBOARD-001",
+        "DASHBOARD-002",
+        "EML-001",
+        "EML-002",
+        "EML-003",
+        "ES-001",
+        "ES-002",
+        "ES-003",
+        "ES-004",
+        "ES-005",
+        "ES-006",
+        "ES-007",
+        "ES-008",
+        "ES-009",
+        "ESCROW-001",
+        "ESCROW-002",
+        "ESCROW-003",
+        "ESCROW-004",
+        "ESCROW-005",
+        "ESCROW-006",
+        "GAP-001",
+        "GAP-002",
+        "GAP-003",
+        "GAP-004",
+        "GAP-005",
+        "GAP-006",
+        "GAP-007",
+        "GAP-008",
+        "GAP-009",
+        "GAP-010",
+        "GAP-011",
+        "GAP-012",
+        "GAP-013",
+        "GAP-014",
+        "GAP-015",
+        "GAP-016",
+        "GAP-017",
+        "HLP-001",
+        "KYC-001",
+        "KYC-002",
+        "KYC-003",
+        "KYC-004",
+        "KYC-005",
+        "KYC-006",
+        "KYC-007",
+        "LDG-001",
+        "LDG-002",
+        "LDG-003",
+        "LDG-004",
+        "LDG-005",
+        "LDG-006",
+        "LDG-007",
+        "LDG-008",
+        "LDG-009",
+        "LDG-010",
+        "LDG-011",
+        "MOBILE-001",
+        "MOBILE-002",
+        "MOBILE-003",
+        "MOBILE-004",
+        "MOBILE-005",
+        "MOD-001",
+        "MOD-002",
+        "MOD-003",
+        "MOD-004",
+        "MOD-005",
+        "MOD-006",
+        "MOD-007",
+        "MOD-008",
+        "MOD-009",
+        "MOD-010",
+        "MOD-011",
+        "MOD-012",
+        "MOD-013",
+        "MOD-014",
+        "MOD-015",
+        "MOD-016",
+        "MOD-017",
+        "MP-001",
+        "MP-002",
+        "MP-003",
+        "MP-004",
+        "MP-005",
+        "MP-006",
+        "MP-007",
+        "MP-008",
+        "MPR-001",
+        "MPR-002",
+        "MPR-003",
+        "MPR-004",
+        "MPR-005",
+        "MPR-006",
+        "MPR-007",
+        "MPR-008",
+        "MPR-009",
+        "MPR-010",
+        "MPR-011",
+        "MPR-012",
+        "MPR-013",
+        "MPR-014",
+        "MPR-015",
+        "MPR-016",
+        "NOTIFY-001",
+        "NOTIFY-002",
+        "NOTIFY-003",
+        "NOTIFY-004",
+        "NOTIFY-005",
+        "NOTIFY-006",
+        "NTF-001",
+        "OFFER-001",
+        "OFFER-002",
+        "OFFER-003",
+        "OFFER-004",
+        "OFFER-005",
+        "OFFER-006",
+        "OFFER-007",
+        "OFFER-008",
+        "OFFER-009",
+        "OFFER-010",
+        "OFFER-011",
+        "OFFER-012",
+        "OFFER-013",
+        "OFFER-014",
+        "PAYMENT-001",
+        "PAYMENT-002",
+        "PLATFORM-001",
+        "PLATFORM-002",
+        "PRF-001",
+        "PRF-002",
+        "PRF-003",
+        "PRF-004",
+        "PRF-005",
+        "PRICE-001",
+        "PRICE-002",
+        "PRICE-003",
+        "PRICE-004",
+        "PRICE-005",
+        "PROFILE-001",
+        "PROFILE-002",
+        "PROFILE-003",
+        "PROFILE-004",
+        "PROFILE-005",
+        "PROFILE-006",
+        "PROFILE-007",
+        "PROFILE-008",
+        "PROFILE-009",
+        "PROFILE-010",
+        "PROFILE-011",
+        "PROFILE-012",
+        "REG-001",
+        "REG-002",
+        "REG-003",
+        "REG-004",
+        "RESELLER-001",
+        "RESELLER-002",
+        "RESELLER-003",
+        "RESELLER-004",
+        "RESELLER-005",
+        "RESELLER-006",
+        "RS-001",
+        "RS-002",
+        "RS-003",
+        "RS-004",
+        "RS-005",
+        "RS-006",
+        "RS-007",
+        "RS-008",
+        "RS-009",
+        "RS-010",
+        "SUP-001",
+        "SUP-002",
+        "SUP-003",
+        "SUP-004",
+        "SUP-005",
+        "SUP-006",
+        "SUP-007",
+        "SUPPORT-001",
+        "SUPPORT-002",
+        "SUPPORT-003",
+        "SUPPORT-004",
+        "SUPPORT-005",
+        "TELEGRAM-001",
+        "TELEGRAM-002",
+        "TELEGRAM-003",
+        "TELEGRAM-004",
+        "TELEGRAM-005",
+        "TELEGRAM-006",
+        "TELEGRAM-007",
+        "TELEGRAM-008",
+        "TELEGRAM-009",
+        "TELEGRAM-010",
+        "TELEGRAM-011",
+        "TELEGRAM-012",
+        "TELEGRAM-013",
+        "TELEGRAM-014",
+        "TELEGRAM-015",
+        "TELEGRAM-016",
+        "TELEGRAM-017",
+        "TF-001",
+        "TF-002",
+        "TF-003",
+        "TF-004",
+        "TF-005",
+        "TF-006",
+        "TF-007",
+        "TF-008",
+        "TF-009",
+        "TF-010",
+        "TRADE-001",
+        "TRADE-002",
+        "TRADE-003",
+        "TRADE-004",
+        "TRADE-005",
+        "TRADE-006",
+        "TRADE-007",
+        "TRADE-008",
+        "TRADE-009",
+        "TRADE-010",
+        "TRADE-011",
+        "TRADE-012",
+        "TRADE-013",
+        "TRADE-014",
+        "TRADE-015",
+        "TRADE-016",
+        "USR-001",
+        "USR-002",
+        "USR-003",
+        "VER-001",
+        "VER-002",
+        "VISITOR-001",
+        "VISITOR-002",
+        "VISITOR-003",
+        "VISITOR-004",
+        "VISITOR-005",
+        "VISITOR-006",
+        "VISITOR-007",
+        "VISITOR-008",
+        "VISITOR-009",
+        "VISITOR-010",
+        "VISITOR-011",
+        "WALLET-001",
+        "WALLET-002",
+        "WALLET-003",
+        "WALLET-004",
+        "WALLET-005",
+        "WALLET-006",
+        "WALLET-007",
+        "WALLET-008",
+        "WALLET-009",
+        "WHATSAPP-001",
+        "WHATSAPP-002",
+        "WLT-001",
+        "WLT-002",
+        "WLT-003",
+        "WLT-004",
+        "WS-001"
+      ]
+    }
+  }
+}
