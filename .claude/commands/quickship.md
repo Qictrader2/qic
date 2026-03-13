@@ -149,7 +149,9 @@ Launch an Opus 4.6 subagent (`model: opus`) with the prompt below. All slow I/O 
 > {AS_BUILT_DOC}
 > ```
 >
-> If your ticket touches any state machine, align to intent. Flag AS BUILT divergences in your clarify step.
+> **DESIGN INTENT IS LAW.** If the ticket description contradicts `intended-entity-state-machines.md` in any way — different state names, different transitions, different ownership rules, different invariants — the design document wins. Always. Implement what the intent document says, not what the ticket says. Flag the contradiction clearly in your STEP 2 clarify output so the human knows, but do not wait for permission to follow the intent doc. The ticket may be stale, poorly worded, or written before the design was finalised. The intent document is the authoritative source of truth.
+
+If your ticket touches any state machine, align to intent. Flag AS BUILT divergences in your clarify step.
 >
 > ---
 >
