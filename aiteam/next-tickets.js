@@ -160,11 +160,13 @@ for (let i = 0; i < args.length; i++) {
       const ids = args[++i].split(',').map(s => s.trim()).filter(Boolean);
       markDone(ids);
       process.exit(0);
+      break;
     }
     case '-u': {
       const ids = args[++i].split(',').map(s => s.trim()).filter(Boolean);
       unmark(ids);
       process.exit(0);
+      break;
     }
     default:
       console.error(`Unknown flag: ${arg}`);
@@ -180,8 +182,8 @@ const tickets = deps.tickets || {};
 let available = Object.entries(tickets)
   .filter(([id]) => !done.has(id))
   .filter(([, t]) => {
-    const deps = t.dependsOn || [];
-    return deps.length === 0 || deps.every(dep => done.has(dep));
+    const required = t.dependsOn || [];
+    return required.length === 0 || required.every(dep => done.has(dep));
   })
   .map(([id, t]) => ({
     id,

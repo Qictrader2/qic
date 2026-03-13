@@ -19,11 +19,31 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// --- Load .env from repo root ---
+const REPO_ROOT_ENV = path.join(__dirname, '..', '.env');
+if (fs.existsSync(REPO_ROOT_ENV)) {
+  for (const line of fs.readFileSync(REPO_ROOT_ENV, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const val = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
+
 // --- Config ---
 
-const TRELLO_KEY   = 'd0f2319aeb29e279616c592d79677692';
-const TRELLO_TOKEN = 'ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0';
-const BOARD_ID     = '69a5bb4b56b71b138fb3f2be';
+const TRELLO_KEY   = process.env.TRELLO_API_KEY || process.env.TRELLO_KEY;
+const TRELLO_TOKEN = process.env.TRELLO_TOKEN;
+const BOARD_ID     = process.env.TRELLO_BOARD_ID || '69a5bb4b56b71b138fb3f2be';
+
+if (!TRELLO_KEY || !TRELLO_TOKEN) {
+  console.error('Error: TRELLO_API_KEY and TRELLO_TOKEN environment variables are required.');
+  console.error('Set them in ~/git/qic/.env or export them before running.');
+  process.exit(1);
+}
 
 const REPO_ROOT  = path.join(__dirname, '..');
 const DEPS_FILE  = path.join(REPO_ROOT, 'ticket-dependencies.json');
