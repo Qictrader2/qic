@@ -3,6 +3,13 @@ scripts/.vercel-deploy-hook
 .vercel
 .env
 
+# Dependencies and build caches
+node_modules/
+.DS_Store
+
+# Foreign project files accidentally committed
+twolebot-main/
+
 # Claude Code workflow guide (shared across PCs, not committed)
 CLAUDE-CODE-WORKFLOW.md
 
