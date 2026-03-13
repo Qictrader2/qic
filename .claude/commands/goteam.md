@@ -10,6 +10,8 @@ allowed-tools: Bash, Agent
 3. **Do Step 1 (sync) BEFORE Step 2 (spawn)**. Workers are expensive - don't spawn until you know there are tickets.
 4. **TeamCreate + worker init can run in parallel** since they're independent.
 5. **Dispatch immediately in the spawn prompt** - don't spawn workers idle then send a separate message. Include the first ticket assignment in the spawn prompt itself to avoid the "ready and waiting" loop.
+6. **Workers CANNOT be reused for multiple tickets**: After completing 1-2 tickets, workers' context fills up and they replay old completions instead of reading new SendMessage assignments. DO NOT try to reassign via SendMessage - it does not work. Instead: **spawn a fresh worker per ticket** (or per small batch of 2). Shut down and replace workers, don't try to fix stuck ones. This is the single biggest time-waster in the current flow.
+7. **Orphan gitlinks now fixed**: As of commit 78ba7b9, the orphaned gitlinks (backend, mobile-app, qic, stories, telegram-bot) have been removed from origin/main. The `git rm --cached` cleanup in the init script is no longer needed but is harmless to keep as a safety net.
 
 You are the QIC TEAM LEAD. You coordinate 3 parallel Opus workers to ship a batch of tickets. You do not implement tickets yourself. You assign, track, escalate, and report.
 
@@ -101,21 +103,49 @@ Spawn prompt template (replace TICKET-ID and worker dir):
 > ```
 > Push to main only. No worker branches. If push rejected: `git pull --rebase && git push`.
 
-Once all 3 agents are spawned, arrange into a 2x2 grid and color each pane:
+Once agents are spawned, set up tmux tiling with auto-retile hooks so the layout survives pane creation/destruction:
 
 ```bash
+# Set tiled layout
 tmux select-layout -t qic:0 tiled
 
+# Auto-retile when panes are added or removed (CRITICAL - keeps layout stable)
+tmux set-hook -t qic after-split-window 'select-layout tiled'
+tmux set-hook -t qic pane-exited 'select-layout tiled'
+
+# Pane labels and borders
 tmux set-option -t qic pane-border-status top
 tmux set-option -t qic pane-border-format "#{?pane_active,#[bold#,fg=colour255],#[fg=colour245]} #{pane_title} "
 tmux set-option -t qic pane-border-style        "fg=colour238"
 tmux set-option -t qic pane-active-border-style "fg=colour255,bold"
 
+# Color each pane (adjust indices as workers spawn/die)
 tmux select-pane -t qic:0.0 -T "  LEAD"    -P "bg=colour17,fg=colour255"
 tmux select-pane -t qic:0.1 -T "  Agent A" -P "bg=colour22,fg=colour255"
 tmux select-pane -t qic:0.2 -T "  Agent B" -P "bg=colour54,fg=colour255"
 tmux select-pane -t qic:0.3 -T "  Agent C" -P "bg=colour23,fg=colour255"
 ```
+
+**Re-run `tmux select-layout -t qic:0 tiled` after every worker spawn or shutdown** as a safety net. The hooks should handle it automatically, but belt-and-suspenders.
+
+### Pane naming (MUST DO after every spawn/replacement)
+
+Tmux panes default to "Claude Code" which is useless. After spawning or replacing workers, rename all panes to match agent names:
+
+```bash
+# After initial spawn (pane 0 = lead, 1-3 = workers)
+tmux select-pane -t qic:0.0 -T "LEAD"
+tmux select-pane -t qic:0.1 -T "Worker A"
+tmux select-pane -t qic:0.2 -T "Worker B"
+tmux select-pane -t qic:0.3 -T "Worker C"
+
+# When replacing a worker (e.g. worker-a died, spawned worker-a2):
+# Find which pane the new agent landed in and rename it
+tmux list-panes -t qic:0 -F '#{pane_index} #{pane_title}'
+tmux select-pane -t qic:0.N -T "Worker A2"
+```
+
+**Naming convention**: worker-a, worker-a2, worker-a3 etc. The letter maps to the worktree dir (a = qic-worker-a/). The number increments each time that slot is respawned. This makes it obvious which agent is which and which worktree it uses.
 
 Colors: Lead=blue, Agent A=green, Agent B=purple, Agent C=teal. All white text on dark bg - high contrast.
 
