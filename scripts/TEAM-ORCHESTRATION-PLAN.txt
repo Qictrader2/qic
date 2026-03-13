@@ -1,0 +1,293 @@
+QIC TEAM ORCHESTRATION PLAN
+============================
+Date: 2026-03-13
+
+HEADLINE STEPS
+--------------
+1. SETUP      One-time: settings, worktrees, scripts
+2. SYNC       Pull Trello board state -> rebuild ticket-dependencies.json + .tickets-done
+3. PLAN       Run next-tickets.sh to see what's unblocked
+4. LAUNCH     Start Claude with Agent Teams + tmux, 3 workers
+5. DISPATCH   Lead assigns ONE ticket per worker, waits, reassigns on completion
+6. BATCH END  All ~10 tickets done -> stop workers
+7. REVIEW     Humans review in Trello, add comments, approve or kick back
+8. REPEAT     Go to step 2
+
+
+================================================================================
+DETAIL
+================================================================================
+
+
+--- 1. SETUP (one-time) --------------------------------------------------------
+
+1a. Create .claude/settings.json in ~/git/qic/:
+
+    {
+      "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" },
+      "teammateMode": "tmux"
+    }
+
+1b. Create 3 git worktrees (script: scripts/setup-team-worktrees.sh):
+
+    git worktree add ~/git/qic-worker-a -b worker-a main
+    git worktree add ~/git/qic-worker-b -b worker-b main
+    git worktree add ~/git/qic-worker-c -b worker-c main
+
+    Then in each: git submodule update --init --recursive
+    Supports --clean flag to tear down and recreate.
+
+1c. Add to CLAUDE.md (small section at the bottom):
+
+    "Team Worker Merge Protocol" - before running /golive:
+    - git fetch origin main
+    - git log --oneline HEAD..origin/main (see what landed)
+    - git diff HEAD...origin/main --stat (which files changed)
+    - Read any files that overlap with your ticket's changes
+    - Decide if your work still makes sense; adjust if needed
+    - git rebase origin/main
+    - Resolve conflicts if any (you already read the incoming changes)
+    - Re-run cargo check / bun run build
+    - Then /golive
+
+1d. Existing scripts/tools that stay as-is (no changes needed):
+    - /ticket       (fetch from Trello, implement, verify - no commit)
+    - /temper        (deep code review, fix HIGH/MEDIUM - no commit)
+    - /golive        (commit, push, deploy, move Trello card)
+    - /ship          (all-in-one: implement -> review -> commit -> deploy)
+    - /quickship     (faster /ship with pre-loading)
+    - /git-commit    (autonomous commit across monorepo)
+    - scripts/next-tickets.sh  (query unblocked tickets from JSON)
+    - ticket-dependencies.json (machine-readable dependency graph)
+    - .tickets-done            (tracks completed ticket IDs)
+
+
+--- 2. SYNC (new script: scripts/sync-trello.sh) ------------------------------
+
+Purpose: Pull Trello board state and rebuild the local dependency tracking.
+
+What it does:
+
+  Step 2a: Fetch all cards from the QIC Trello board
+    - Use existing Trello API creds (already in /ticket, /ship, etc.)
+    - GET all cards with: id, name, desc, labels, idList, comments
+
+  Step 2b: Map Trello columns to states
+    - "To Do"          -> available for work
+    - "Dev Complete"   -> done (pending human review)
+    - "Human Review"   -> done (under review)
+    - "Finally Done"   -> done (permanent)
+    - Card kicked back to "To Do" -> UN-done (needs rework)
+
+  Step 2c: Update .tickets-done
+    - Cards in Dev Complete / Human Review / Finally Done -> mark done
+    - Cards in To Do that WERE done -> unmark (kicked back)
+
+  Step 2d: Handle NEW cards in To Do not in ticket-dependencies.json
+    THIS IS THE LLM STEP:
+    - For each new card, call claude -p with:
+      - The card's name, description, and comments
+      - The existing ticket-dependencies.json (or a summary of it)
+      - Prompt: "Given this new ticket and the existing dependency graph,
+        what are its dependencies? Return JSON: { dependsOn: [...], domain: '...', wave: N }"
+    - Append the new ticket to ticket-dependencies.json
+    - Add edges for the new dependencies
+    - Recalculate wave assignments if needed
+
+  Step 2e: Handle REWORK cards (kicked back with new comments)
+    - Card was in Dev Complete, now in To Do again
+    - Unmark from .tickets-done
+    - The new comments from the reviewer will be picked up automatically
+      by /ticket or /quickship when the worker implements it next
+    - No dependency changes needed (same ticket, same deps)
+
+  Output: Updated ticket-dependencies.json and .tickets-done
+
+
+--- 3. PLAN -------------------------------------------------------------------
+
+  ./scripts/next-tickets.sh -w        # all unblocked tickets with wave info
+  ./scripts/next-tickets.sh -s        # progress summary per wave
+  ./scripts/next-tickets.sh -d Escrow # filter by domain for assignment
+
+  The lead uses this to pick ~10 tickets for the next batch, clustered by
+  domain to minimize merge conflicts between workers:
+
+  Worker A (Backend):  Escrow, Ledger, Wallet, Infra domains
+  Worker B (Frontend): Static, UI, Profile, Auth (frontend parts)
+  Worker C (Mixed):    Admin, Marketplace, Affiliate, Notify, KYC, Mod
+
+
+--- 4. LAUNCH -----------------------------------------------------------------
+
+  cd ~/git/qic
+  claude
+
+  Paste the orchestrator launch prompt (scripts/team-launch-prompt.txt):
+
+  "You are the TEAM LEAD. You manage 3 workers processing QIC tickets.
+
+  Tools at your disposal:
+  - ./scripts/next-tickets.sh    Query available tickets
+  - ./scripts/next-tickets.sh -m TICKET-ID    Mark done
+  - ./scripts/sync-trello.sh     Rebuild state from Trello
+
+  Workers:
+  - Worker A: cd ~/git/qic-worker-a/  (Backend focus)
+  - Worker B: cd ~/git/qic-worker-b/  (Frontend focus)
+  - Worker C: cd ~/git/qic-worker-c/  (Mixed)
+
+  Rules:
+  - ONE ticket per worker at a time. Never more.
+  - Assign by domain fit to minimize merge conflicts.
+  - When a worker finishes, mark it done, then assign the next
+    unblocked ticket from the batch.
+  - Workers use /quickship TICKET-ID for each ticket.
+    /quickship uses subagents internally so worker context stays light.
+  - Before /golive step inside /quickship, workers must follow the
+    merge protocol in CLAUDE.md (review incoming changes, rebase, verify).
+  - After the batch of ~10 is done, STOP. Do not start a new batch.
+    Report what was completed and what's available next.
+
+  Create 3 teammates now. Tell each to cd to their worktree."
+
+
+--- 5. DISPATCH ---------------------------------------------------------------
+
+  Lead runs: ./scripts/next-tickets.sh -n 10 -w
+
+  Picks 10 tickets, assigns first 3 (one per worker):
+    "Worker A: /quickship ES-006"
+    "Worker B: /quickship AUTH-001"
+    "Worker C: /quickship AFL-001"
+
+  Worker A finishes first:
+    Lead runs: ./scripts/next-tickets.sh -m ES-006
+    Lead assigns: "Worker A: /quickship LDG-005"
+
+  Worker C finishes:
+    Lead runs: ./scripts/next-tickets.sh -m AFL-001
+    Lead assigns: "Worker C: /quickship RESELLER-001"
+
+  Continues until batch exhausted.
+
+  /quickship handles everything per ticket:
+    Phase 0: Pre-fetch ticket + comments from Trello + design docs
+    Phase 1: Subagent implements (dies after, context freed)
+    Phase 2: Capture diff
+    Phase 3: Subagent reviews + fixes (dies after, context freed)
+    Phase 4: Commit + push (includes merge protocol)
+    Phase 5: Deploy + move Trello card to Dev Complete
+    Phase 6: Report
+
+  Worker context stays light because subagents do the heavy lifting
+  and their context is discarded after each phase.
+
+
+--- 6. BATCH END --------------------------------------------------------------
+
+  After ~10 tickets done:
+  - Lead reports: "Batch complete. X tickets shipped to Dev Complete."
+  - Lead runs: ./scripts/next-tickets.sh -s (shows progress)
+  - All workers stop. No new assignments.
+
+
+--- 7. HUMAN REVIEW -----------------------------------------------------------
+
+  Humans review in Trello:
+  - Approve -> move to "Human Review" or "Finally Done"
+  - Reject  -> move back to "To Do" with comments explaining what's wrong
+
+  The existing /ticket and /quickship commands already fetch ALL Trello
+  comments, so when a kicked-back ticket is re-assigned to a worker,
+  the worker automatically sees the reviewer's feedback. No special
+  handling needed.
+
+
+--- 8. REPEAT -----------------------------------------------------------------
+
+  After human review:
+  1. Run ./scripts/sync-trello.sh  (rebuilds JSON + done file from Trello)
+  2. Run ./scripts/next-tickets.sh -s  (see new state)
+  3. Start a new Claude session (fresh context for lead)
+  4. Paste the orchestrator prompt again
+  5. Pick next batch of ~10, dispatch
+
+
+================================================================================
+SCRIPTS TO BUILD
+================================================================================
+
+1. scripts/setup-team-worktrees.sh
+   - Creates 3 git worktrees as siblings to ~/git/qic/
+   - Initializes submodules in each
+   - Supports --clean flag
+   - ~50 lines of bash
+
+2. scripts/sync-trello.sh
+   - Fetches Trello board via API
+   - Maps columns to done/undone states
+   - Updates .tickets-done
+   - For NEW cards: calls claude -p to infer dependencies (LLM step)
+   - Updates ticket-dependencies.json
+   - ~150 lines of bash + jq + one claude -p call per new card
+
+3. scripts/team-launch-prompt.txt
+   - The orchestrator prompt pasted into the lead session
+   - References next-tickets.sh, merge protocol, worker worktrees
+   - ~30 lines of text
+
+4. .claude/settings.json
+   - 4 lines of JSON enabling Agent Teams + tmux
+
+5. CLAUDE.md addition
+   - ~15 lines: "Team Worker Merge Protocol" section
+   - Review incoming changes before /golive
+
+
+EXISTING (no changes needed):
+- scripts/next-tickets.sh        (queries unblocked tickets)
+- ticket-dependencies.json       (dependency graph)
+- .tickets-done                  (completion state)
+- /ticket, /temper, /golive      (implementation pipeline)
+- /ship, /quickship              (all-in-one pipeline with subagents)
+- /git-commit                    (autonomous commit)
+- commit-all.sh                  (submodule-aware commit)
+
+
+================================================================================
+RISKS AND MITIGATIONS
+================================================================================
+
+1. Agent Teams is experimental
+   - If lead session dies, team is gone
+   - Mitigation: work in batches of ~10, fresh session per batch
+
+2. Token cost
+   - 4 Opus sessions (lead + 3 workers), each worker spawns 2 subagents per ticket
+   - Mitigation: use Sonnet for trivial tickets (VISITOR-*, REG-*, static pages)
+   - Consider: workers on Sonnet, subagents on Opus (or vice versa)
+
+3. Merge conflicts
+   - 3 workers pushing to main
+   - Mitigation: domain clustering, merge protocol (review before rebase)
+   - /golive already handles push rejection with pull --rebase retry
+
+4. Submodule pointer conflicts
+   - Monorepo with frontend/ and qictrader-backend-rs/ submodules
+   - Mitigation: merge protocol ensures workers see latest state before pushing
+
+5. Dependency inference for new cards (LLM step)
+   - Claude might get dependencies wrong
+   - Mitigation: sync-trello.sh outputs proposed deps for human review
+     before committing them to the JSON. Use --dry-run flag.
+
+6. Trello API rate limits
+   - 100 requests per 10 seconds per token
+   - Mitigation: sync-trello.sh batches requests, not an issue for <200 cards
+
+7. Worker context bloat
+   - /quickship uses subagents that die after each phase
+   - Worker only accumulates 5-line structured returns
+   - After 3-4 tickets, worker context is still light
+   - Nuclear option: lead kills and respawns worker between tickets

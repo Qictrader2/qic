@@ -19,7 +19,7 @@ The repo layout:
 Read the Trello card ID and ticket label from `.current-ticket` in the monorepo root:
 
 ```bash
-cat .current-ticket 2>/dev/null
+cat /home/schalk/git/qic/.current-ticket 2>/dev/null
 ```
 
 The file has up to two lines:
@@ -37,12 +37,15 @@ If the file does not exist or is empty — no active ticket. Use normal emoji-pr
 Run these in parallel to get the full picture:
 
 ```bash
-git status
-git diff --staged
-git diff
-git log -5 --oneline
-cd frontend && git status && git diff --staged && git diff && git log -3 --oneline
-cd qictrader-backend-rs && git status && git diff --staged && git diff && git log -3 --oneline
+cd /home/schalk/git/qic && git status && git diff --staged && git diff && git log -5 --oneline
+```
+
+```bash
+cd /home/schalk/git/qic/frontend && git status && git diff --staged && git diff && git log -3 --oneline
+```
+
+```bash
+cd /home/schalk/git/qic/qictrader-backend-rs && git status && git diff --staged && git diff && git log -3 --oneline
 ```
 
 ### Step 3: Categorise each submodule + root independently
@@ -80,7 +83,7 @@ For each repo with changes, stage and commit in this order:
 The trailer goes at the end of the commit message body, separated by a blank line:
 
 ```bash
-cd qictrader-backend-rs && git add -A && git commit -m "$(cat <<'EOF'
+cd /home/schalk/git/qic/qictrader-backend-rs && git add -A && git commit -m "$(cat <<'EOF'
 ES-001: implement atomic escrow lock
 
 - Add single-transaction escrow locking in repo layer
@@ -93,8 +96,8 @@ EOF
 
 If no active ticket, commit without the trailer:
 ```bash
-cd frontend && git add -A && git commit -m "$(cat <<'EOF'
-Add withdrawal confirmation dialog
+cd /home/schalk/git/qic/frontend && git add -A && git commit -m "$(cat <<'EOF'
+✨ Add withdrawal confirmation dialog
 
 - New ConfirmWithdrawal component with amount validation
 - Wired to existing withdrawal API endpoint
@@ -114,9 +117,9 @@ git add src/api/payments.rs src/services/payments.rs && git commit -m "..."
 
 After all commits, push each repo:
 ```bash
-cd qictrader-backend-rs && git push
-cd frontend && git push
-cd .. && git push
+cd /home/schalk/git/qic/qictrader-backend-rs && git push
+cd /home/schalk/git/qic/frontend && git push
+cd /home/schalk/git/qic && git push
 ```
 
 Report the final status of all three pushes.
@@ -157,20 +160,20 @@ Ticket-Id: 69a5bb4b56b71b138fb3f2be
 e.g. `ES-001: implement atomic escrow lock with single DB transaction`
 
 Emojis (only used when no active ticket):
-- New feature
-- Config/tooling
-- Bug fix
-- Documentation
-- Refactoring
-- Style/formatting
-- Performance
-- Tests
-- Security fix
-- Database/migrations
+- ✨ New feature
+- 🔧 Config/tooling
+- 🐛 Bug fix
+- 📝 Documentation
+- ♻️ Refactoring
+- 🎨 Style/formatting
+- ⚡ Performance
+- 🧪 Tests
+- 🔒 Security fix
+- 🗄️ Database/migrations
 
 **Root repo commit** (when only submodule refs changed):
 ```
-Update submodule refs (frontend + backend)
+🔗 Update submodule refs (frontend + backend)
 
 Ticket-Id: 69a5bb4b56b71b138fb3f2be
 ```
