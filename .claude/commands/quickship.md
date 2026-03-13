@@ -7,6 +7,8 @@ You are the QIC quickship orchestrator. Same pipeline as /ship but with upfront 
 
 Arguments: `$ARGUMENTS`
 
+**REPO_ROOT**: Use your current working directory as `REPO_ROOT`. All paths below use `{REPO_ROOT}` - substitute with the actual cwd. Never hardcode `/home/schalk/git/qic` - workers may be in `~/git/qic-worker-a/` etc.
+
 **Trello credentials:**
 - API Key: `d0f2319aeb29e279616c592d79677692`
 - Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
@@ -35,15 +37,15 @@ Do all slow external work NOW, before the subagents start. Both subagents receiv
 ### Step 0.1: Stale ticket check
 
 ```bash
-if [ -f /home/schalk/git/qic/.current-ticket ]; then
-  cat /home/schalk/git/qic/.current-ticket
+if [ -f {REPO_ROOT}/.current-ticket ]; then
+  cat {REPO_ROOT}/.current-ticket
 fi
 ```
 
 If `.current-ticket` exists AND there are uncommitted changes in either submodule:
 ```bash
-git -C /home/schalk/git/qic/qictrader-backend-rs diff --quiet && \
-git -C /home/schalk/git/qic/frontend diff --quiet
+git -C {REPO_ROOT}/qictrader-backend-rs diff --quiet && \
+git -C {REPO_ROOT}/frontend diff --quiet
 ```
 If not quiet — **stop**. Tell the user: "Previous /ship or /quickship left uncommitted changes. Resolve them before starting a new ticket." Do not overwrite.
 
@@ -85,18 +87,19 @@ If any found that are not described in plain text — **stop immediately**:
 
 Do not proceed until the user provides a summary. Incorporate the summary into `CARD_COMMENTS` context.
 
-### Step 0.5: Read design intent docs
+### Step 0.5: Read design intent doc
 
-Read both files now:
-- `/home/schalk/git/qic/qictrader-backend-rs/docs/intended-entity-state-machines.md`
-- `/home/schalk/git/qic/qictrader-backend-rs/docs/as-built-state-machines.md`
+Read the design intent file now (use the repo root you're working in, NOT a hardcoded path):
+- `{REPO_ROOT}/qictrader-backend-rs/docs/intended-entity-state-machines.md`
 
-Store their full content as `INTENDED_DOC` and `AS_BUILT_DOC`.
+Store its full content as `INTENDED_DOC`. This is the single source of truth for state machines, entity relationships, and business rules.
+
+Do NOT read the as-built doc. The as-built doc records what is currently in the code - the worker can discover that by reading the code itself. Loading it risks the worker treating a known divergence as "how things should be".
 
 ### Step 0.6: Stamp ticket
 
 ```bash
-printf '%s\n%s\n' '{CARD_ID}' '{TICKET_LABEL}' > /home/schalk/git/qic/.current-ticket
+printf '%s\n%s\n' '{CARD_ID}' '{TICKET_LABEL}' > {REPO_ROOT}/.current-ticket
 ```
 
 ---
@@ -113,7 +116,7 @@ Launch an Opus 4.6 subagent (`model: opus`) with the prompt below. All slow I/O 
 > - Backend: `qictrader-backend-rs/` — Rust + Axum + SQLx + PostgreSQL
 > - Frontend: `frontend/` — Next.js 16 + React 19 + TypeScript + bun + Tailwind + Shadcn
 >
-> Monorepo root: `/home/schalk/git/qic/`
+> Monorepo root: `{REPO_ROOT}/`
 >
 > **DO NOT COMMIT. DO NOT PUSH.** Your job ends after verification. Return a structured result.
 >
@@ -137,21 +140,16 @@ Launch an Opus 4.6 subagent (`model: opus`) with the prompt below. All slow I/O 
 >
 > ---
 >
-> ### DESIGN INTENT DOCUMENTS (pre-loaded — do not re-read from disk)
+> ### DESIGN INTENT (pre-loaded — do not re-read from disk)
 >
 > **intended-entity-state-machines.md:**
 > ```
 > {INTENDED_DOC}
 > ```
 >
-> **as-built-state-machines.md:**
-> ```
-> {AS_BUILT_DOC}
-> ```
->
 > **DESIGN INTENT IS LAW.** If the ticket description contradicts `intended-entity-state-machines.md` in any way — different state names, different transitions, different ownership rules, different invariants — the design document wins. Always. Implement what the intent document says, not what the ticket says. Flag the contradiction clearly in your STEP 2 clarify output so the human knows, but do not wait for permission to follow the intent doc. The ticket may be stale, poorly worded, or written before the design was finalised. The intent document is the authoritative source of truth.
-
-If your ticket touches any state machine, align to intent. Flag AS BUILT divergences in your clarify step.
+>
+> To understand how the code currently works, read the actual code — do not rely on any "as-built" document.
 >
 > ---
 >
@@ -214,7 +212,7 @@ If your ticket touches any state machine, align to intent. Flag AS BUILT diverge
 > 3. Rules: no CASCADE in DROP; new columns nullable or with defaults; add indexes on FK and frequently-queried columns; write as if real user data exists
 > 4. Verify:
 >    ```bash
->    cd /home/schalk/git/qic/qictrader-backend-rs && cargo sqlx migrate run --dry-run 2>&1
+>    cd {REPO_ROOT}/qictrader-backend-rs && cargo sqlx migrate run --dry-run 2>&1
 >    ```
 >    If dry-run unavailable: `cargo sqlx prepare --check 2>&1`
 >
@@ -245,9 +243,9 @@ If your ticket touches any state machine, align to intent. Flag AS BUILT diverge
 > Run Rust and TypeScript checks in parallel:
 >
 > ```bash
-> (cd /home/schalk/git/qic/qictrader-backend-rs && cargo clippy -- -D warnings 2>&1) &
+> (cd {REPO_ROOT}/qictrader-backend-rs && cargo clippy -- -D warnings 2>&1) &
 > RUST_PID=$!
-> (cd /home/schalk/git/qic/frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1) &
+> (cd {REPO_ROOT}/frontend && bun run typecheck 2>&1 || bun tsc --noEmit 2>&1) &
 > TS_PID=$!
 > wait $RUST_PID
 > wait $TS_PID
@@ -255,7 +253,7 @@ If your ticket touches any state machine, align to intent. Flag AS BUILT diverge
 >
 > Suppression scan on changed files only:
 > ```bash
-> cd /home/schalk/git/qic/qictrader-backend-rs
+> cd {REPO_ROOT}/qictrader-backend-rs
 > CHANGED=$(git diff --name-only HEAD -- src/ 2>/dev/null; git diff --name-only -- src/ 2>/dev/null)
 > if [ -n "$CHANGED" ]; then
 >   echo "$CHANGED" | sort -u | xargs grep -n 'let _ =' 2>/dev/null | grep -v '#\[cfg(test)\]'
@@ -308,10 +306,10 @@ Parse the structured return. Store `CARD_ID`, `TICKET_LABEL`, `CARD_NAME`, `SUMM
 ## PHASE 2 — CAPTURE DIFF
 
 ```bash
-git -C /home/schalk/git/qic/qictrader-backend-rs diff HEAD 2>&1
-git -C /home/schalk/git/qic/qictrader-backend-rs diff --staged 2>&1
-git -C /home/schalk/git/qic/frontend diff HEAD 2>&1
-git -C /home/schalk/git/qic/frontend diff --staged 2>&1
+git -C {REPO_ROOT}/qictrader-backend-rs diff HEAD 2>&1
+git -C {REPO_ROOT}/qictrader-backend-rs diff --staged 2>&1
+git -C {REPO_ROOT}/frontend diff HEAD 2>&1
+git -C {REPO_ROOT}/frontend diff --staged 2>&1
 ```
 
 Store the combined output. If both are empty — stop: "No changes found after implementation."
@@ -345,11 +343,6 @@ Launch an Opus 4.6 subagent (`model: opus`) with the prompt below. This subagent
 > **intended-entity-state-machines.md:**
 > ```
 > {INTENDED_DOC}
-> ```
->
-> **as-built-state-machines.md:**
-> ```
-> {AS_BUILT_DOC}
 > ```
 >
 > ---
@@ -429,14 +422,14 @@ Launch an Opus 4.6 subagent (`model: opus`) with the prompt below. This subagent
 > After fixing, run the full authoritative build:
 >
 > ```bash
-> (cd /home/schalk/git/qic/qictrader-backend-rs && cargo build 2>&1 && cargo clippy -- -D warnings 2>&1) &
+> (cd {REPO_ROOT}/qictrader-backend-rs && cargo build 2>&1 && cargo clippy -- -D warnings 2>&1) &
 > RUST_PID=$!
-> (cd /home/schalk/git/qic/frontend && bun run build 2>&1 | tail -30) &
+> (cd {REPO_ROOT}/frontend && bun run build 2>&1 | tail -30) &
 > TS_PID=$!
 > wait $RUST_PID
 > wait $TS_PID
 >
-> cd /home/schalk/git/qic/qictrader-backend-rs && cargo test 2>&1
+> cd {REPO_ROOT}/qictrader-backend-rs && cargo test 2>&1
 >
 > CHANGED=$(git diff --name-only HEAD -- src/ 2>/dev/null; git diff --name-only -- src/ 2>/dev/null)
 > if [ -n "$CHANGED" ]; then
@@ -481,7 +474,7 @@ Commit in order: backend → frontend → root. Capture SHAs after each commit.
 
 ```bash
 # Backend (skip if BACKEND_CHANGED=NO)
-cd /home/schalk/git/qic/qictrader-backend-rs
+cd {REPO_ROOT}/qictrader-backend-rs
 git add -A
 git commit -m "$(cat <<'EOF'
 {TICKET_LABEL}: {SUMMARY}
@@ -492,7 +485,7 @@ EOF
 BACKEND_SHA=$(git rev-parse --short HEAD)
 
 # Frontend (skip if FRONTEND_CHANGED=NO)
-cd /home/schalk/git/qic/frontend
+cd {REPO_ROOT}/frontend
 git add -A
 git commit -m "$(cat <<'EOF'
 {TICKET_LABEL}: {SUMMARY}
@@ -518,12 +511,12 @@ If `TICKET_LABEL` is NONE, use emoji format without ticket prefix (✨ new featu
 
 Push all repos:
 ```bash
-cd /home/schalk/git/qic/qictrader-backend-rs && git push
+cd {REPO_ROOT}/qictrader-backend-rs && git push
 # If backend changed, also push to Heroku (triggers backend deploy)
 if [ "{BACKEND_CHANGED}" = "YES" ]; then
-  cd /home/schalk/git/qic/qictrader-backend-rs && git push heroku main
+  cd {REPO_ROOT}/qictrader-backend-rs && git push heroku main
 fi
-cd /home/schalk/git/qic/frontend && git push
+cd {REPO_ROOT}/frontend && git push
 cd /home/schalk/git/qic && git push
 ```
 
@@ -537,7 +530,7 @@ If any push fails — stop. Do not deploy.
 
 ```bash
 # Frontend → Vercel deploy hook
-VERCEL_HOOK=$(cat /home/schalk/git/qic/.vercel-deploy-hook 2>/dev/null || echo "${VERCEL_DEPLOY_HOOK_URL}")
+VERCEL_HOOK=$(cat {REPO_ROOT}/.vercel-deploy-hook 2>/dev/null || echo "${VERCEL_DEPLOY_HOOK_URL}")
 if [ -n "$VERCEL_HOOK" ]; then
   curl -s -X POST "$VERCEL_HOOK" | cat
 else
@@ -550,9 +543,9 @@ fi
 ### Verify deploys (with retry — Heroku takes time)
 
 ```bash
-BACKEND_HEALTH_URL=$(cat /home/schalk/git/qic/.backend-health-url 2>/dev/null)
+BACKEND_HEALTH_URL=$(cat {REPO_ROOT}/.backend-health-url 2>/dev/null)
 if [ -z "$BACKEND_HEALTH_URL" ]; then
-  HEROKU_REMOTE=$(git -C /home/schalk/git/qic/qictrader-backend-rs remote get-url heroku 2>/dev/null)
+  HEROKU_REMOTE=$(git -C {REPO_ROOT}/qictrader-backend-rs remote get-url heroku 2>/dev/null)
   APP_NAME=$(echo "$HEROKU_REMOTE" | sed 's|.*heroku.com/||;s|\.git$||')
   BACKEND_HEALTH_URL="https://${APP_NAME}.herokuapp.com/health"
 fi
@@ -596,7 +589,7 @@ Low issues noted (not fixed):
 ### Cleanup
 
 ```bash
-rm -f /home/schalk/git/qic/.current-ticket
+rm -f {REPO_ROOT}/.current-ticket
 ```
 
 ---
