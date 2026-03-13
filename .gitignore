@@ -1,7 +1,13 @@
+# OS junk
+.DS_Store
+
 # Vercel deploy hook URL (contains secret URL - do not commit)
 scripts/.vercel-deploy-hook
 .vercel
 .env
+
+# Node
+node_modules/
 
 # Claude Code workflow guide (shared across PCs, not committed)
 CLAUDE-CODE-WORKFLOW.md
