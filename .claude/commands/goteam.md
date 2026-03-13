@@ -37,11 +37,11 @@ If sync fails (network error, bad credentials), stop and report the error to the
 
 Create 3 teammates now (model: Opus). Assign each their worktree and tell them to wait for assignments:
 
-- **Worker A**: `cd ~/git/qic-worker-a/ && git submodule update --init --recursive`
-- **Worker B**: `cd ~/git/qic-worker-b/ && git submodule update --init --recursive`
-- **Worker C**: `cd ~/git/qic-worker-c/ && git submodule update --init --recursive`
+- **Agent A**: `cd ~/git/qic-worker-a/ && git submodule update --init --recursive`
+- **Agent B**: `cd ~/git/qic-worker-b/ && git submodule update --init --recursive`
+- **Agent C**: `cd ~/git/qic-worker-c/ && git submodule update --init --recursive`
 
-Tell each worker:
+Tell each agent:
 > "You are a QIC full-stack engineer. You handle both frontend (Next.js/TypeScript) and backend (Rust/Axum) work. You will receive ticket IDs and run `/quickship TICKET-ID` for each one. Before committing in Phase 4, you must follow the Merge Protocol below. Wait for your first assignment."
 
 ---
@@ -61,7 +61,7 @@ Select up to the batch size from the output. Prefer tickets in the same wave to 
 
 Assign one ticket per worker from the batch. Use this exact pattern:
 
-> "Worker [A/B/C]: run `/quickship TICKET-ID` now."
+> "Agent [A/B/C]: run `/quickship TICKET-ID` now."
 
 **When a worker returns its Phase 6 report:**
 
@@ -69,20 +69,20 @@ Assign one ticket per worker from the batch. Use this exact pattern:
 ```bash
 node /home/schalk/git/qic/aiteam/next-tickets.js -m TICKET-ID
 ```
-Then immediately assign the next ticket from the batch to that worker.
+Then immediately assign the next ticket from the batch to that agent.
 
 ### On "BLOCKED" or "BUILD FAILED" or "TESTS FAILED"
 - Do NOT mark the ticket done
 - Log: `SKIPPED: TICKET-ID - <one-line reason>`
-- Assign the next ticket from the batch to that worker
+- Assign the next ticket from the batch to that agent
 
 ### On "NEEDS_CLARIFICATION"
-- Relay the contradiction to the user and pause that worker
+- Relay the contradiction to the user and pause that agent
 - Assign other workers their next tickets while waiting for the human answer
 - Once resolved, re-assign the clarified ticket to the freed worker
 
 **Rules:**
-- ONE ticket per worker at a time. Never two.
+- ONE ticket per agent at a time. Never two.
 - Mark done ONLY after a confirmed "Ship Complete" in the Phase 6 report.
 - Skipped tickets must be reported at batch end - never silently dropped.
 
@@ -90,7 +90,7 @@ Then immediately assign the next ticket from the batch to that worker.
 
 ## MERGE PROTOCOL (include in every worker assignment)
 
-Remind each worker to do this BEFORE Phase 4 commit inside /quickship:
+Remind each agent to do this BEFORE Phase 4 commit inside /quickship:
 
 ```bash
 # In the worker's worktree (e.g. ~/git/qic-worker-a/)

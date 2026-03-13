@@ -24,9 +24,9 @@ flowchart TD
     NXT[next-tickets.js]:::local
 
     LEAD[Lead Claude\n/goteam]:::agent
-    WA[Worker A - Opus]:::agent
-    WB[Worker B - Opus]:::agent
-    WC[Worker C - Opus]:::agent
+    WA[Agent A - Opus]:::agent
+    WB[Agent B - Opus]:::agent
+    WC[Agent C - Opus]:::agent
 
     P0[Phase 0 - Pre-fetch]:::phase
     P1[Phase 1 - Implement\nOpus subagent]:::phase
@@ -150,27 +150,27 @@ See `.claude/commands/goteam.md` for the full orchestrator spec.
 ```
 Lead: node aiteam/next-tickets.js -n 10 -w
 
-Lead -> Worker A: /quickship ES-006
-Lead -> Worker B: /quickship AUTH-001
-Lead -> Worker C: /quickship AFL-001
+Lead -> Agent A: /quickship ES-006
+Lead -> Agent B: /quickship AUTH-001
+Lead -> Agent C: /quickship AFL-001
 
-Worker A finishes (Ship Complete):
+Agent A finishes (Ship Complete):
   Lead: node aiteam/next-tickets.js -m ES-006
-  Lead -> Worker A: /quickship LDG-005
+  Lead -> Agent A: /quickship LDG-005
 
-Worker C finishes:
+Agent C finishes:
   Lead: node aiteam/next-tickets.js -m AFL-001
-  Lead -> Worker C: /quickship RESELLER-001
+  Lead -> Agent C: /quickship RESELLER-001
 
-Worker B reports BLOCKED:
+Agent B reports BLOCKED:
   Lead: [log] SKIPPED: AUTH-001 - "migration conflict with ES-007 changes"
-  Lead -> Worker B: /quickship NOTIFY-002
+  Lead -> Agent B: /quickship NOTIFY-002
 
 ...continues until batch exhausted
 ```
 
 **Rules:**
-- ONE ticket per worker at a time. Never more.
+- ONE ticket per agent at a time. Never more.
 - Mark done ONLY after a confirmed "Ship Complete" in the Phase 6 report.
 - Skipped (BLOCKED/FAILED) tickets are never marked done.
 - After batch of ~10: STOP. Do not start a new batch.
@@ -187,7 +187,7 @@ Phase 5   Main:    deploy (Vercel + Heroku) + move Trello card + post comment + 
 Phase 6   Main:    report
 ```
 
-Worker context stays light because subagents die after each phase - only the structured return accumulates.
+Agent context stays light because subagents die after each phase - only the structured return accumulates.
 
 ### Merge Protocol (Phase 4, before commit)
 
@@ -214,13 +214,13 @@ git rebase --continue
 
 ### Failure Escalation
 
-| Worker reports | Lead action |
+| Agent reports | Lead action |
 |---|---|
 | Ship Complete | `next-tickets.js -m TICKET-ID`, assign next |
 | BLOCKED | Log reason, skip ticket, assign next |
 | BUILD FAILED | Log error, skip ticket, assign next |
 | TESTS FAILED | Log which tests, skip ticket, assign next |
-| NEEDS_CLARIFICATION | Relay to human, pause that worker, continue others |
+| NEEDS_CLARIFICATION | Relay to human, pause that agent, continue others |
 
 Skipped tickets are reported at batch end with their reason. They re-enter the pool on the next `sync-trello.js` run (they are still in To Do on Trello).
 
