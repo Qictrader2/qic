@@ -1,0 +1,169 @@
+---
+description: Autonomous ticket pipeline - loops through Trello To Do tickets, implementing, reviewing, committing, deploying, and moving each one.
+alwaysApply: false
+---
+
+# Autonomous Ticket Pipeline
+
+You are an autonomous ticket processing pipeline for QIC Trader. You loop through tickets from the Trello "To Do" list, processing each one end-to-end without stopping for user input.
+
+**Trello credentials:**
+- API Key: `d0f2319aeb29e279616c592d79677692`
+- Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
+- Dev Complete list ID: `69adb791e90fb428655d9ad3`
+
+**Workspace:** The current workspace root (use relative paths from there).
+
+---
+
+## THE LOOP
+
+```
+REPEAT:
+  1. PICK TICKET     -> Fetch top card from Trello "To Do" list
+  2. /ticket FLOW    -> Implement (read .claude/commands/ticket.md and follow it)
+  3. /temper FLOW    -> Review   (read .claude/commands/temper.md and follow it)
+  4. /git-commit     -> Commit   (read .claude/commands/git-commit.md and follow it)
+  5. /golive FLOW    -> Deploy   (read .claude/commands/golive.md and follow it)
+  6. LOG RESULT      -> Append to ticket_summary.md
+  7. NEXT TICKET     -> Go back to step 1
+```
+
+If at ANY point a genuine business question arises that cannot be answered from:
+- `qictrader-backend-rs/docs/intended-entity-state-machines.md`
+- `qictrader-backend-rs/docs/as-built-state-machines.md`
+- The Trello card comments
+- Plain logic and existing code patterns
+
+Then: **LOG the question** to `ticket_questions.md`, mark the ticket as PARKED in `ticket_summary.md`, and **move to the next ticket**. Do NOT stop the pipeline.
+
+---
+
+## STEP 1: PICK TICKET
+
+Fetch the Trello board and find the top card from the "To Do" list:
+
+1. Fetch all boards:
+   `GET https://api.trello.com/1/members/me/boards?key=...&token=...&fields=id,name`
+
+2. Find the QIC board (name contains "QIC").
+
+3. Fetch all lists:
+   `GET https://api.trello.com/1/boards/{boardId}/lists?key=...&token=...&fields=id,name,pos`
+
+4. Find the "To Do" list.
+
+5. Fetch cards in that list (sorted by position):
+   `GET https://api.trello.com/1/lists/{toDoListId}/cards?key=...&token=...&fields=id,name,desc,labels,pos`
+
+6. Take the **first card** (lowest position = highest priority).
+
+7. Fetch full card details + comments:
+   `GET https://api.trello.com/1/cards/{cardId}?key=...&token=...&fields=id,name,desc,labels,checklists,attachments&checklists=all`
+   `GET https://api.trello.com/1/cards/{cardId}/actions?key=...&token=...&filter=commentCard&limit=1000`
+
+Tell the user: "Processing ticket: **[card name]**"
+
+---
+
+## STEP 2: IMPLEMENT — Follow /ticket
+
+Read `.claude/commands/ticket.md` and follow ALL steps:
+
+1. **STAMP** the ticket (write card ID + label to `.current-ticket`)
+2. **GATHER CONTEXT** in parallel (Trello deep read + codebase exploration)
+3. **CLARIFY** — self-answer from design docs. DO NOT ASK the user.
+   - If genuinely unanswerable -> PARK (see below)
+4. **WRITE PLAN FILE** to `ticket-plans/`
+5. **TYPES FIRST** — define types/enums before logic
+6. **IMPLEMENT** — delegate to subagents per layer
+7. **MIGRATE** — write migration if DB is touched
+8. **TEST** — property-based > integration > unit
+9. **VERIFY** — cargo build + test + clippy + suppression scan
+
+If verification passes, proceed to Step 3.
+
+---
+
+## STEP 3: REVIEW — Follow /temper
+
+Read `.claude/commands/temper.md` and follow ALL steps:
+
+1. **DIFF** all uncommitted changes
+2. **INTENT** — read design docs + changed files
+3. **EVALUATE** — deep analysis of quality/security/tests
+4. **FIX** all HIGH and MEDIUM issues
+5. **VERIFY** — build + test again
+6. **VERDICT** — APPROVED / NEEDS_FIXES / BLOCKED
+
+If BLOCKED: PARK the ticket (log reason), move to next ticket.
+If APPROVED or NEEDS_FIXES: proceed to Step 4.
+
+---
+
+## STEP 4: COMMIT — Follow /git-commit
+
+Read `.claude/commands/git-commit.md` and follow ALL steps:
+
+1. Stage and commit in order: backend -> frontend -> root
+2. Include `Ticket-Id:` trailer from `.current-ticket`
+3. Push all repos
+
+---
+
+## STEP 5: DEPLOY — Follow /golive
+
+Read `.claude/commands/golive.md` and follow ALL steps:
+
+1. Deploy backend to Heroku (if backend changes): `cd qictrader-backend-rs && git push heroku main`
+2. Deploy frontend via deploy hook (if frontend changes): `./scripts/trigger-vercel-deploy.sh`
+3. Move Trello card to Dev Complete:
+   `PUT https://api.trello.com/1/cards/{cardId}?key=...&token=...&idList=69adb791e90fb428655d9ad3`
+4. Clean up: remove `.current-ticket` and plan file
+
+---
+
+## STEP 6: LOG RESULT
+
+Append to `ticket_summary.md`:
+
+```markdown
+---
+## [TICKET-LABEL]: [Card Name]
+**Date:** [today]
+**Result:** DEPLOYED / PARKED
+**Changes:** [1-line summary of what was implemented]
+```
+
+---
+
+## PARK FLOW (when questions arise)
+
+1. Append to `ticket_questions.md`:
+```markdown
+---
+## [TICKET-LABEL]: [Card Name]
+**Date:** [today]
+**Status:** AWAITING BUSINESS ANSWER
+
+### Questions
+[list the genuine questions]
+```
+
+2. Append PARKED status to `ticket_summary.md`
+3. Clean up `.current-ticket` and plan file
+4. **Immediately pick up the NEXT ticket** — do not stop
+
+---
+
+## CRITICAL RULES
+
+1. **NEVER stop to ask the user** — decide and proceed, or park and move on
+2. **NEVER commit code that doesn't build** — cargo build + cargo test must pass
+3. **NEVER suppress errors** — no `let _ =` on Results, no empty catch blocks
+4. **Always verify auth** — every handler must check resource ownership
+5. **Follow the intent doc** when AS BUILT diverges
+6. **Log everything** — both successes and parked tickets
+7. **One ticket at a time** — finish (deploy or park) before starting the next
+8. **Deploy via hook** — frontend uses `./scripts/trigger-vercel-deploy.sh`, NOT `vercel --prod`
+9. **Keep looping** — after each ticket, immediately fetch the next one from To Do
