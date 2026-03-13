@@ -1,20 +1,23 @@
-# OS
-.DS_Store
-Thumbs.db
-
-# Secrets / env
-.env
-.env.*
-!.env.example
-
-# Node (shouldn't be in root, but prevent accidents)
-node_modules/
-
-# Vercel
-.vercel
+# Vercel deploy hook URL (contains secret URL - do not commit)
 scripts/.vercel-deploy-hook
+.vercel
+.env
 
-# Claude Code artifacts
+# Claude Code workflow guide (shared across PCs, not committed)
+CLAUDE-CODE-WORKFLOW.md
+
+# Claude Code ticket artifacts (created/deleted by /ticket and /golive)
 .current-ticket
 ticket-plans/
-CLAUDE-CODE-WORKFLOW.md
+
+# Parallel ticket execution (not committed)
+TICKET-TRIAGE.md
+MACHINE-SETUP.md
+MACHINE-*-TICKETS.md
+*-TICKETS.md
+PARALLEL-APPROACH.md
+ticket_questions*.md
+ticket_summary*.md
+logs/
+parallel-runs/
+TEST-BATCHES.md

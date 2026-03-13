@@ -44,8 +44,8 @@ If this appears to be a resumed session (conversation summary present):
 │  1. FIND TICKET       →  Fetch or select the Trello card          │
 │  2. STAMP TICKET      →  Write Trello card ID to .current-ticket  │
 │  3. GATHER CONTEXT    →  Trello + codebase IN PARALLEL            │
-│  4. CLARIFY           →  Ask questions — STOP and wait for answer │
-│     → Write plan file after answers received                      │
+│  4. CLARIFY           →  Self-answer, decide, write plan — NO STOP│
+│     → Proceed immediately to implementation                       │
 │  5. TYPES FIRST       →  Define types/enums before implementation │
 │  6. IMPLEMENT         →  Subagent per layer + inline quality gate │
 │  7. MIGRATE           →  Write migration if DB is touched         │
@@ -229,25 +229,44 @@ Return:
 
 ---
 
-## STEP 4: CLARIFY — THE ONLY STOP
+## STEP 4: CLARIFY — DECIDE AND PROCEED
 
-**STOP HERE — do not write any code yet.**
+**DO NOT STOP. DO NOT ASK THE USER QUESTIONS. Decide and keep going.**
 
-You have now read: the ticket description, all comments, the design intent document, and the relevant code. Based on everything, identify anything ambiguous or missing.
+You have now read: the ticket description, all comments, the design intent document, and the relevant code. Based on everything, identify anything ambiguous or missing — then **resolve it yourself**.
 
-Ask the user all clarifying questions in a single message. Examples:
-- "The ticket says 'add a fee' — is this a flat amount or a percentage? Where is the rate configured?"
-- "Should this endpoint be accessible to unauthenticated users or only logged-in users?"
-- "There are two existing fee calculation functions — which should this extend?"
-- "The AS BUILT diverges from intent here: [description]. Should I align to intent or match AS BUILT?"
+### 4a: Self-answer from design documents
 
-Wait for the user's answers before continuing.
+For EVERY ambiguity, answer it yourself from these authoritative sources:
 
-If everything is crystal clear and there is genuinely nothing ambiguous, state what you understood and proceed.
+1. **`qictrader-backend-rs/docs/intended-entity-state-machines.md`** — the canonical design-intent reference for all entity lifecycles, role guards, fee structures, state transitions, and domain rules.
+2. **`qictrader-backend-rs/docs/as-built-state-machines.md`** — how the system is actually implemented today.
+3. Trello card comments and checklists (already fetched in Step 3).
+4. The existing codebase patterns (already explored in Step 3).
 
-### After answers are received — write the plan file
+For EACH potential question:
+- Search the intent doc for the relevant entity/concept
+- If the intent doc provides a clear answer → **use it, cite the section, proceed**
+- If the intent doc is ambiguous or silent → **pick the simplest, safest approach that aligns with existing patterns**
+- If AS BUILT diverges from intent → **follow the intent doc** (that's the target state)
 
-Once you have clarity (either from user answers or because nothing was ambiguous), write the plan file:
+### 4b: Decision rules for common ambiguities
+
+Apply these rules. Do NOT ask the user:
+
+| Ambiguity | Decision |
+|-----------|----------|
+| State machine transition unclear | Follow `intended-entity-state-machines.md`. If silent, use the simplest valid path. |
+| Feature scope unclear (include X or not?) | Implement only what the ticket explicitly asks for. Note the exclusion. |
+| Admin vs user access | If the ticket mentions admin, add admin. Otherwise user-only. |
+| Fix related bug found nearby? | Fix it if it's in the same function/file AND < 20 lines. Otherwise note it and skip. |
+| Which of two approaches? | Pick the one that requires fewer changes AND matches existing patterns. |
+| Database schema choice | Follow existing conventions in the migrations folder. |
+| Error handling style | Match the surrounding code's style exactly. |
+
+### 4c: Write the plan file — then PROCEED to implementation
+
+Write the plan file immediately. Log any decisions you made under "Decisions made" (not "Questions"). Then proceed to Step 5 without stopping.
 
 ```bash
 mkdir -p /home/marcello/git/qic/ticket-plans
@@ -271,8 +290,8 @@ Create `/home/marcello/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md
 {Does this touch a state machine? What does intended-entity-state-machines.md say?
  Does AS BUILT diverge? If so, which are we following?}
 
-## Clarifying answers
-{User's answers, or "No ambiguities — proceeding"}
+## Decisions made
+{List each ambiguity and the decision taken, e.g. "Followed intent doc for state transitions", or "No ambiguities — proceeding"}
 
 ## Implementation plan
 
@@ -290,7 +309,7 @@ Create `/home/marcello/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md
 - {test description}
 ```
 
-Tell the user the plan file has been written, then proceed to Step 5.
+Proceed immediately to Step 5. Do not wait for user input.
 
 The plan file is deleted by `/golive` when the ticket is completed. Do not delete it yourself.
 
@@ -413,8 +432,20 @@ If the ticket touches the database (new table, new column, index change, constra
 
 1. Find the migrations directory: `qictrader-backend-rs/migrations/`
 2. Check the latest migration file number: `ls migrations/ | sort | tail -1`
-3. Create the next migration: `migrations/{next_number}_{descriptive_name}.sql`
-4. Migration rules:
+3. **Generate a unique migration version** using this procedure:
+   ```bash
+   # Check if a slot offset is set (for parallel execution)
+   SLOT_OFFSET="${QIC_SLOT_OFFSET:-0}"
+   # Base timestamp: YYYYMMDD + 6-digit counter
+   # Add the slot offset to the last 2 digits to guarantee uniqueness across parallel slots
+   # Example: slot 1 → ...01, slot 2 → ...02, slot 3 → ...03
+   ```
+   - The version format is `YYYYMMDDHHMMSS` (14-digit timestamp)
+   - **If `QIC_SLOT_OFFSET` env var is set**, add it to the seconds field to avoid collisions with other parallel slots
+   - Example: base timestamp `20260313120000`, slot offset `3` → `20260313120003`
+   - If multiple migrations are needed in one ticket, increment from the offset (e.g., slot 3: `...03`, `...13`, `...23`)
+4. Create the migration: `migrations/{version}_{descriptive_name}.up.sql`
+5. Migration rules:
    - `UP` only (SQLx style with timestamped files) — or `up.sql`/`down.sql` if project uses that style
    - Check existing migrations to match the project's convention
    - **NEVER use CASCADE in DROP statements**
