@@ -30,17 +30,28 @@ echo ""
 
 SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
-if [ -f "$SETTINGS_FILE" ] && [ "$CLEAN" = false ]; then
-  echo "[1/3] .claude/settings.json already exists - skipping"
+echo "[1/3] Ensuring .claude/settings.json has team keys ..."
+
+if ! command -v jq &>/dev/null; then
+  echo "ERROR: jq is required. Install it first:"
+  echo "  Ubuntu/Debian:  sudo apt install jq"
+  echo "  macOS:          brew install jq"
+  exit 1
+fi
+
+if [ -f "$SETTINGS_FILE" ]; then
+  tmp=$(mktemp)
+  jq '.env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1" | .teammateMode = "tmux"' "$SETTINGS_FILE" > "$tmp"
+  mv "$tmp" "$SETTINGS_FILE"
+  echo "      merged team keys into existing settings.json"
 else
-  echo "[1/3] Writing .claude/settings.json ..."
   cat > "$SETTINGS_FILE" <<'EOF'
 {
   "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" },
   "teammateMode": "tmux"
 }
 EOF
-  echo "      done"
+  echo "      created settings.json"
 fi
 
 # --- Step 2: Worktrees ---
