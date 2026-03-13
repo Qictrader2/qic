@@ -1,17 +1,20 @@
-# OS junk
+# OS
 .DS_Store
+Thumbs.db
 
-# Vercel deploy hook URL (contains secret URL - do not commit)
-scripts/.vercel-deploy-hook
-.vercel
+# Secrets / env
 .env
+.env.*
+!.env.example
 
-# Node
+# Node (shouldn't be in root, but prevent accidents)
 node_modules/
 
-# Claude Code workflow guide (shared across PCs, not committed)
-CLAUDE-CODE-WORKFLOW.md
+# Vercel
+.vercel
+scripts/.vercel-deploy-hook
 
-# Claude Code ticket artifacts (created/deleted by /ticket and /golive)
+# Claude Code artifacts
 .current-ticket
 ticket-plans/
+CLAUDE-CODE-WORKFLOW.md
