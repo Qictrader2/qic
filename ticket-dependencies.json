@@ -1853,12 +1853,18 @@
       "domain": "Unknown",
       "wave": 0,
       "dependsOn": []
+    },
+    "ARCH-004": {
+      "name": "ARCH-004 successful withdrawel",
+      "domain": "Unknown",
+      "wave": 0,
+      "dependsOn": []
     }
   },
   "waves": {
     "0": {
       "name": "Wave 0",
-      "ticketCount": 309,
+      "ticketCount": 310,
       "tickets": [
         "ADMIN-001",
         "ADMIN-002",
@@ -1890,6 +1896,7 @@
         "AFL-010",
         "AFL-011",
         "ARCH-003",
+        "ARCH-004",
         "AUD-001",
         "AUD-002",
         "AUD-003",
