@@ -57,6 +57,7 @@ fi
 # --- Render status line (reads JSON from stdin) ---
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.cwd')
+cwd="${cwd/#$HOME/\~}"
 model=$(echo "$input" | jq -r '.model.display_name // "unknown"')
 pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
 
