@@ -2,34 +2,15 @@
 
 **We test only against production.** For prod credentials, DB, and API URLs see **`docs/PROD_TESTING.md`**. Quick prod env: `source ./scripts/prod-env.sh`.
 
-## Vercel: Deploy Hook only
+## Vercel: CLI Deploy Only
 
-**We always deploy the frontend via the Deploy Hook.** Builds are triggered by the hook—either automatically on every push to `main` (GitHub Action) or manually with the scripts below.
+**We deploy the frontend via `vercel --prod --yes --scope qictraders-projects`** from the `frontend/` directory. Git-push deploys are disabled (Vercel Ignored Build Step = `exit 0`). Any team member with access to the `qictraders-projects` Vercel team can deploy.
 
-### One-time setup
+### Prerequisites
 
-1. **Create a Vercel Deploy Hook**
-   - Open [Vercel Dashboard](https://vercel.com/dashboard) and select your **Frontend** project.
-   - Go to **Settings** → **Git** → **Deploy Hooks**.
-   - Click **Create Hook** (e.g. name: `Deploy from script`, branch: `main`).
-   - Copy the generated URL.
-
-2. **Disable Vercel’s built-in deploy on push** (so only the hook triggers builds):
-   - In the same project: **Settings** → **Git** → **Ignored Build Step**.
-   - Set the command to: `exit 0`
-   - Result: the GitHub Action (or manual script) calls the hook after each push; Vercel does not start a build from the push itself.
-
-3. **Add the hook URL as a GitHub secret** (so the Action can trigger on push):
-   - In the **Frontend** repo on GitHub: **Settings** → **Secrets and variables** → **Actions**.
-   - **New repository secret**: name `VERCEL_DEPLOY_HOOK_URL`, value = the full deploy hook URL from step 1.
-
-4. **Save the hook URL locally** (optional, for manual runs from the workspace root):
-
-   ```bash
-   chmod +x scripts/setup-vercel-hook.sh
-   ./scripts/setup-vercel-hook.sh
-   ```
-   When prompted, paste the Deploy Hook URL. It is saved to `scripts/.vercel-deploy-hook` (gitignored). This is only needed for running `./scripts/trigger-vercel-deploy.sh` or `./scripts/deploy-both.sh` locally; the GitHub Action uses the `VERCEL_DEPLOY_HOOK_URL` secret.
+- Vercel CLI installed: `npm i -g vercel`
+- Logged in: `vercel login` (use any account that is a member of the `qictraders-projects` team)
+- Project linked: `cd Frontend && vercel link --scope qictraders-projects --project qictrader-frontend --yes`
 
 ### Deploy frontend only
 
@@ -37,6 +18,12 @@ From the **workspace root** (Qictrader):
 
 ```bash
 ./scripts/trigger-vercel-deploy.sh
+```
+
+Or directly from the frontend dir:
+
+```bash
+cd Frontend && vercel --prod --yes
 ```
 
 ### Deploy backend + frontend
@@ -50,12 +37,12 @@ From the **workspace root** (Qictrader):
 This will:
 
 1. Deploy the backend: `git push heroku main` from `qictrader-backend-rs`.
-2. Trigger a Vercel production deploy for the frontend using your saved hook.
+2. Deploy the frontend: `vercel --prod --yes` from `Frontend/`.
 
-Override the hook URL for one run if needed:
+### Via commit-all.sh
 
 ```bash
-VERCEL_DEPLOY_HOOK_URL="https://api.vercel.com/..." ./scripts/deploy-both.sh
-# or
-./scripts/deploy-both.sh "https://api.vercel.com/..."
+./commit-all.sh "message" --deploy
 ```
+
+This commits, pushes, and deploys both backend (Heroku) and frontend (Vercel CLI).

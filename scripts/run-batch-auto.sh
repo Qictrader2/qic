@@ -191,6 +191,14 @@ for i in "${!TICKETS[@]}"; do
         fi
     done
 
+    # Copy Vercel project link so CLI deploys target the correct project
+    VERCEL_SRC="$SOURCE_DIR/Frontend/.vercel/project.json"
+    VERCEL_DST="$SLOT_DIR/Frontend/.vercel/project.json"
+    if [ -f "$VERCEL_SRC" ] && [ ! -f "$VERCEL_DST" ]; then
+        mkdir -p "$SLOT_DIR/Frontend/.vercel"
+        cp "$VERCEL_SRC" "$VERCEL_DST"
+    fi
+
     rm -f "$SLOT_DIR/.current-ticket"
     rm -rf "$SLOT_DIR/ticket-plans"
 done

@@ -25,7 +25,7 @@ For monorepo commits and deploys use `./commit-all.sh`:
 ```
 
 Deploy targets:
-- Frontend → Vercel deploy hook (URL from `$ROOT/.vercel-deploy-hook` or `$VERCEL_DEPLOY_HOOK_URL`)
+- Frontend → `vercel --prod --yes --scope qictraders-projects` from `frontend/` dir
 - Backend  → `git push heroku main` (Heroku app: `qictrader-backend-rs`)
 
 ---
@@ -146,6 +146,18 @@ src/
 ```
 
 Handlers are thin: extract → validate → delegate to service → return response.
+
+### Database Migrations (Multi-Agent Safety)
+
+Multiple agents create migrations concurrently. **Before creating any migration:**
+
+1. `git pull` the latest `qictrader-backend-rs` to get all remote migrations
+2. `ls migrations/ | sort | tail -10` to see the highest existing timestamp
+3. Pick a timestamp **strictly greater** than the highest existing one
+4. After creating the file, verify no timestamp collision: `ls migrations/ | sort | awk -F'_' '{print $1}' | sort | uniq -d`
+5. Filename pattern: `{TIMESTAMP}_{TICKET_ID}_{description}.up.sql` / `.down.sql`
+
+**Never reuse a timestamp.** Duplicate timestamps cause one migration to silently skip or override.
 
 ---
 

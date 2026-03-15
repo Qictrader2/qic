@@ -529,13 +529,8 @@ If any push fails — stop. Do not deploy.
 ### Deploy
 
 ```bash
-# Frontend → Vercel deploy hook
-VERCEL_HOOK=$(cat {REPO_ROOT}/.vercel-deploy-hook 2>/dev/null || echo "${VERCEL_DEPLOY_HOOK_URL}")
-if [ -n "$VERCEL_HOOK" ]; then
-  curl -s -X POST "$VERCEL_HOOK" | cat
-else
-  echo "WARNING: No Vercel deploy hook found — frontend deploy skipped"
-fi
+# Frontend → Vercel CLI deploy (as logged-in user)
+cd {REPO_ROOT}/frontend && vercel --prod --yes --scope qictraders-projects 2>&1
 
 # Backend: already triggered by git push heroku main in Phase 4.
 ```

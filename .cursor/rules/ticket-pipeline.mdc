@@ -116,7 +116,7 @@ Read `.claude/commands/git-commit.md` and follow ALL steps:
 Read `.claude/commands/golive.md` and follow ALL steps:
 
 1. Deploy backend to Heroku (if backend changes): `cd qictrader-backend-rs && git push heroku main`
-2. Deploy frontend via deploy hook (if frontend changes): `./scripts/trigger-vercel-deploy.sh`
+2. Deploy frontend via Vercel CLI (if frontend changes): `cd frontend && vercel --prod --yes`
 3. Move Trello card to Dev Complete:
    `PUT https://api.trello.com/1/cards/{cardId}?key=...&token=...&idList=69adb791e90fb428655d9ad3`
 4. Clean up: remove `.current-ticket` and plan file
@@ -165,5 +165,5 @@ Append to `ticket_summary.md`:
 5. **Follow the intent doc** when AS BUILT diverges
 6. **Log everything** — both successes and parked tickets
 7. **One ticket at a time** — finish (deploy or park) before starting the next
-8. **Deploy via hook** — frontend uses `./scripts/trigger-vercel-deploy.sh`, NOT `vercel --prod`
+8. **Deploy via CLI** — frontend uses `cd frontend && vercel --prod --yes --scope qictraders-projects`
 9. **Keep looping** — after each ticket, immediately fetch the next one from To Do

@@ -10,7 +10,7 @@
 #   ./commit-all.sh "your commit message" --dry-run
 #
 # Deploy details:
-#   Frontend: Vercel deploy hook (URL read from $ROOT/.vercel-deploy-hook or $VERCEL_DEPLOY_HOOK_URL)
+#   Frontend: vercel --prod --yes (CLI deploy as logged-in user)
 #   Backend:  git push heroku main (Heroku app: qictrader-backend-rs)
 
 set -euo pipefail
@@ -19,7 +19,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/qictrader-backend-rs"
 HEROKU_APP="qictrader-backend-rs"
-HOOK_FILE="$ROOT/.vercel-deploy-hook"
+HOOK_FILE="$ROOT/.vercel-deploy-hook"  # legacy — kept for reference only
 
 MESSAGE=""
 PUSH=false
@@ -93,21 +93,12 @@ commit_submodule() {
 }
 
 deploy_frontend() {
-  local hook_url="${VERCEL_DEPLOY_HOOK_URL:-}"
-  if [[ -z "$hook_url" && -f "$HOOK_FILE" ]]; then
-    hook_url=$(cat "$HOOK_FILE" | tr -d '[:space:]')
-  fi
-  if [[ -z "$hook_url" ]]; then
-    echo "[frontend] ⚠️  No Vercel deploy hook found. Set VERCEL_DEPLOY_HOOK_URL or create $HOOK_FILE"
-    return 1
-  fi
   if $DRY_RUN; then
-    echo "[dry-run] [frontend] curl -X POST <vercel-deploy-hook>"
+    echo "[dry-run] [frontend] vercel --prod --yes"
   else
-    echo "[frontend] Triggering Vercel deploy..."
-    curl -s -X POST "$hook_url" | grep -o '"job":{[^}]*}' || true
-    echo ""
-    echo "[frontend] ✅ Vercel deploy triggered"
+    echo "[frontend] Deploying to Vercel via CLI..."
+    (cd "$FRONTEND" && vercel --prod --yes --scope qictraders-projects 2>&1) | sed 's/^/[frontend] /'
+    echo "[frontend] ✅ Vercel deploy complete"
   fi
 }
 

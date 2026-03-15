@@ -46,6 +46,18 @@ Write code that is correct by construction. Prefer the compiler/type-checker cat
 - Property tests > integration > unit (Rust); integration > unit (frontend)
 - All tests pass before pushing
 
+## Database Migrations (Multi-Agent Safety)
+
+Multiple agents create migrations concurrently. **Before creating any migration:**
+
+1. `git pull` the latest `qictrader-backend-rs` to get all remote migrations
+2. `ls migrations/ | sort | tail -10` to see the highest existing timestamp
+3. Pick a timestamp **strictly greater** than the highest existing one (use real clock time or increment by 1 from the max)
+4. After creating the file, run `ls migrations/ | sort | awk -F'_' '{print $1}' | sort | uniq -d` to confirm no timestamp collisions
+5. Migration filenames follow: `{TIMESTAMP}_{TICKET_ID}_{description}.up.sql` / `.down.sql`
+
+**Never reuse a timestamp.** If your timestamp collides with another agent's, increment it. SQLx runs migrations in filename order — duplicate timestamps cause one migration to silently skip or override the other.
+
 ## Commit Discipline
 
 - One logical change per commit
