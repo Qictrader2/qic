@@ -200,3 +200,31 @@ Multiple agents create migrations concurrently. **Before creating any migration:
 ### Build
 
 Always use `bun` (not npm/yarn/pnpm). Run `bun run build` to verify before pushing.
+
+### Vercel Deployment Settings (DO NOT CHANGE)
+
+The Vercel dashboard project settings **must** match `frontend/vercel.json`. If they drift, builds silently fail with 0ms build time because Vercel runs nothing.
+
+Required dashboard settings (project: `qictraders-projects/frontend`):
+- **Framework Preset**: Next.js
+- **Install Command**: `bun install`
+- **Build Command**: `bun run build`
+- **Output Directory**: Next.js default (leave blank)
+
+If builds start failing, verify with:
+```bash
+cd frontend && npx vercel project inspect
+```
+
+If settings are wrong, fix via API:
+```bash
+TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.local/share/com.vercel.cli/auth.json'))['token'])")
+curl -X PATCH "https://api.vercel.com/v9/projects/prj_yQHTj7qBt9hKHI95nEcCOSywetlp" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"framework":"nextjs","installCommand":"bun install","buildCommand":"bun run build","outputDirectory":null}'
+```
+
+Then sync locally: `cd frontend && npx vercel pull --yes`
+
+**Never** use `vercel pull` to initialize a new project without verifying that the pulled settings match `vercel.json` — Vercel defaults to "Other" framework with empty commands.
