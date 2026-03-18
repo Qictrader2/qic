@@ -19,7 +19,7 @@ The repo layout:
 Read the Trello card ID and ticket label from `.current-ticket` in the monorepo root:
 
 ```bash
-cat /home/schalk/git/qic/.current-ticket 2>/dev/null
+cat .current-ticket 2>/dev/null
 ```
 
 The file has up to two lines:
@@ -37,15 +37,15 @@ If the file does not exist or is empty — no active ticket. Use normal emoji-pr
 Run these in parallel to get the full picture:
 
 ```bash
-cd /home/schalk/git/qic && git status && git diff --staged && git diff && git log -5 --oneline
+git status && git diff --staged && git diff && git log -5 --oneline
 ```
 
 ```bash
-cd /home/schalk/git/qic/frontend && git status && git diff --staged && git diff && git log -3 --oneline
+cd frontend && git status && git diff --staged && git diff && git log -3 --oneline
 ```
 
 ```bash
-cd /home/schalk/git/qic/qictrader-backend-rs && git status && git diff --staged && git diff && git log -3 --oneline
+cd qictrader-backend-rs && git status && git diff --staged && git diff && git log -3 --oneline
 ```
 
 ### Step 3: Categorise each submodule + root independently
@@ -83,7 +83,7 @@ For each repo with changes, stage and commit in this order:
 The trailer goes at the end of the commit message body, separated by a blank line:
 
 ```bash
-cd /home/schalk/git/qic/qictrader-backend-rs && git add -A && git commit -m "$(cat <<'EOF'
+cd qictrader-backend-rs && git add -A && git commit -m "$(cat <<'EOF'
 ES-001: implement atomic escrow lock
 
 - Add single-transaction escrow locking in repo layer
@@ -96,7 +96,7 @@ EOF
 
 If no active ticket, commit without the trailer:
 ```bash
-cd /home/schalk/git/qic/frontend && git add -A && git commit -m "$(cat <<'EOF'
+cd frontend && git add -A && git commit -m "$(cat <<'EOF'
 ✨ Add withdrawal confirmation dialog
 
 - New ConfirmWithdrawal component with amount validation
@@ -117,9 +117,9 @@ git add src/api/payments.rs src/services/payments.rs && git commit -m "..."
 
 After all commits, push each repo:
 ```bash
-cd /home/schalk/git/qic/qictrader-backend-rs && git push
-cd /home/schalk/git/qic/frontend && git push
-cd /home/schalk/git/qic && git push
+cd qictrader-backend-rs && git push
+cd frontend && git push
+git push
 ```
 
 Report the final status of all three pushes.

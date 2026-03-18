@@ -324,6 +324,11 @@ async function main() {
       }
     }
 
+    // Always update the column for known tickets
+    if (isKnown) {
+      existingTickets[label].list = listMap[card.idList] || '';
+    }
+
     if (!isKnown) {
       changes.newCards.push(card);
     }
@@ -382,6 +387,7 @@ async function main() {
         domain: inferred?.domain || 'Unknown',
         wave: inferred?.wave ?? 0,
         dependsOn: inferred?.dependsOn || [],
+        list: listMap[card.idList] || '',
       };
     }
   }

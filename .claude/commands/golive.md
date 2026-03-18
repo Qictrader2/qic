@@ -33,9 +33,9 @@ Arguments: `$ARGUMENTS`
 ## STEP 1: CHECK
 
 ```bash
-git -C /home/schalk/git/qic status
-git -C /home/schalk/git/qic/frontend status
-git -C /home/schalk/git/qic/qictrader-backend-rs status
+git status
+git -C frontend status
+git -C qictrader-backend-rs status
 ```
 
 If everything is already clean (nothing to commit) and there are no deploy-only flags in $ARGUMENTS, confirm with the user whether to deploy the current HEAD anyway or stop.
@@ -80,15 +80,15 @@ Resolve the Trello card ID using this priority order. Stop at the first match.
 This is the most reliable source — the card ID was embedded at commit time by `/git-commit`.
 
 ```bash
-git -C /home/schalk/git/qic log -20 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
+git log -20 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
 ```
 
 If that returns a non-empty hex string (24 chars), use it. This is the Trello card ID — no search needed.
 
 If the root repo has no trailer (e.g., only submodule ref updates), also check submodules:
 ```bash
-git -C /home/schalk/git/qic/qictrader-backend-rs log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
-git -C /home/schalk/git/qic/frontend log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
+git -C qictrader-backend-rs log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
+git -C frontend log -5 --format='%(trailers:key=Ticket-Id,valueonly)' | head -1
 ```
 
 **Priority 2: `.current-ticket` breadcrumb file**
@@ -96,7 +96,7 @@ git -C /home/schalk/git/qic/frontend log -5 --format='%(trailers:key=Ticket-Id,v
 Fallback if commits were made without `/git-commit` (e.g., manual commit):
 
 ```bash
-head -1 /home/schalk/git/qic/.current-ticket 2>/dev/null
+head -1 .current-ticket 2>/dev/null
 ```
 
 If that returns a non-empty hex string, use it.
@@ -161,11 +161,11 @@ Or if ticket could not be moved:
 After a successful go-live (deploy succeeded AND ticket moved), delete the breadcrumb and plan file:
 
 ```bash
-TICKET_LABEL=$(sed -n '2p' /home/schalk/git/qic/.current-ticket 2>/dev/null)
-CARD_ID=$(head -1 /home/schalk/git/qic/.current-ticket 2>/dev/null)
-rm -f /home/schalk/git/qic/.current-ticket
-rm -f "/home/schalk/git/qic/ticket-plans/${TICKET_LABEL}.md"
-rm -f "/home/schalk/git/qic/ticket-plans/${CARD_ID}.md"
+TICKET_LABEL=$(sed -n '2p' .current-ticket 2>/dev/null)
+CARD_ID=$(head -1 .current-ticket 2>/dev/null)
+rm -f .current-ticket
+rm -f "ticket-plans/${TICKET_LABEL}.md"
+rm -f "ticket-plans/${CARD_ID}.md"
 ```
 
 This prevents stale ticket IDs and plan files from leaking into the next `/ticket` cycle. The git trailer in the commit history is the permanent record.

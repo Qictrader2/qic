@@ -16,7 +16,7 @@ allowed-tools: Bash, Agent
 
 You are the QIC TEAM LEAD. You coordinate 3 parallel Opus workers to ship a batch of tickets. You do not implement tickets yourself. You assign, track, escalate, and report.
 
-Arguments: `$ARGUMENTS` (optional: override batch size, e.g. `/goteam 5` for a batch of 5)
+Arguments: `$ARGUMENTS` (optional: batch size and/or column filter, e.g. `/goteam 5`, `/goteam 10 --col "to do"`, `/goteam --col "to do"`)
 
 ---
 
@@ -26,13 +26,13 @@ Pull fresh Trello state and read what is available. Do this before creating any 
 
 ```bash
 # Sync Trello -> ticket-dependencies.json + .tickets-done
-node /home/schalk/git/qic/aiteam/sync-trello.js --no-infer
+node aiteam/sync-trello.js --no-infer
 
 # Show current progress across all waves
-node /home/schalk/git/qic/aiteam/next-tickets.js -s
+node aiteam/next-tickets.js -s
 
 # Show the full unblocked pool with wave info
-node /home/schalk/git/qic/aiteam/next-tickets.js -w
+node aiteam/next-tickets.js -w
 ```
 
 Read the output. Understand:
@@ -154,9 +154,12 @@ Colors: Lead=blue, Agent A=green, Agent B=purple, Agent C=teal. All white text o
 
 ## STEP 3: PICK BATCH
 
+Parse `$ARGUMENTS` for a number (batch size, default 10) and an optional `--col "COLUMN"` flag.
+
 ```bash
-BATCH_SIZE=${ARGUMENTS:-10}
-node /home/schalk/git/qic/aiteam/next-tickets.js -n "$BATCH_SIZE" -w
+# Example: BATCH_SIZE=10, COL_FILTER="to do"
+# Adapt based on what the user passed in $ARGUMENTS
+node aiteam/next-tickets.js -n "$BATCH_SIZE" -w ${COL_FILTER:+-c "$COL_FILTER"}
 ```
 
 Select up to the batch size from the output. Prefer tickets in the same wave to minimise submodule pointer conflicts. Note which tickets you are targeting for this batch.
@@ -193,7 +196,7 @@ curl -s "https://api.trello.com/1/cards/CARD_ID?key=$TRELLO_KEY&token=$TRELLO_TO
      else console.log('OK');"
 
 # 3. Mark done locally
-node /home/schalk/git/qic/aiteam/next-tickets.js -m TICKET-ID
+node aiteam/next-tickets.js -m TICKET-ID
 ```
 
 If the commit is missing from origin/main or the card wasn't moved, fix it before marking done.
@@ -255,10 +258,10 @@ Run the batch-end sync automatically:
 
 ```bash
 # 1. Re-sync Trello to pick up any state changes
-node /home/schalk/git/qic/aiteam/sync-trello.js --no-infer
+node aiteam/sync-trello.js --no-infer
 
 # 2. Show progress
-node /home/schalk/git/qic/aiteam/next-tickets.js -s
+node aiteam/next-tickets.js -s
 
 # 3. Verify all shipped tickets are actually on Dev Complete in Trello
 #    For each shipped ticket, confirm the card is on the Dev Complete list.

@@ -121,6 +121,7 @@ Show tickets that are unblocked (all dependencies done) and not yet done.
 
 Options:
   -n NUM    Max tickets to show (default: all available)
+  -c COL    Filter by Trello column/list name (case-insensitive, substring match)
   -d DOMAIN Filter by domain (case-insensitive)
   -w        Show wave number per ticket
   -l        List all tickets marked done
@@ -133,6 +134,7 @@ Options:
 Examples:
   node next-tickets.js              # all unblocked tickets
   node next-tickets.js -n 10 -w    # top 10 with wave info
+  node next-tickets.js -c "to do"  # only tickets on the To Do column
   node next-tickets.js -m ES-006   # mark ES-006 done
   node next-tickets.js -m ES-006,AUTH-001  # mark several done at once
   node next-tickets.js -s          # progress summary
@@ -144,6 +146,7 @@ Examples:
 const args = process.argv.slice(2);
 let maxTickets = null;
 let domainFilter = null;
+let columnFilter = null;
 let showWave = false;
 
 for (let i = 0; i < args.length; i++) {
@@ -155,6 +158,7 @@ for (let i = 0; i < args.length; i++) {
     case '-s': summary(); break;
     case '-w': showWave = true; break;
     case '-n': maxTickets = parseInt(args[++i], 10); break;
+    case '-c': columnFilter = args[++i]; break;
     case '-d': domainFilter = args[++i]; break;
     case '-m': {
       const ids = args[++i].split(',').map(s => s.trim()).filter(Boolean);
@@ -190,8 +194,13 @@ let available = Object.entries(tickets)
     name: t.name || '?',
     domain: t.domain || '?',
     wave: t.wave ?? 99,
+    list: t.list || '',
   }))
   .sort((a, b) => a.wave - b.wave || a.domain.localeCompare(b.domain) || a.id.localeCompare(b.id));
+
+if (columnFilter) {
+  available = available.filter(t => t.list.toLowerCase().includes(columnFilter.toLowerCase()));
+}
 
 if (domainFilter) {
   available = available.filter(t => t.domain.toLowerCase() === domainFilter.toLowerCase());

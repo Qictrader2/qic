@@ -496,7 +496,7 @@ EOF
 FRONTEND_SHA=$(git rev-parse --short HEAD)
 
 # Root
-cd /home/schalk/git/qic
+cd {REPO_ROOT}
 git add -A
 git commit -m "$(cat <<'EOF'
 {TICKET_LABEL}: update submodule refs
@@ -517,7 +517,7 @@ if [ "{BACKEND_CHANGED}" = "YES" ]; then
   cd {REPO_ROOT}/qictrader-backend-rs && git push heroku main
 fi
 cd {REPO_ROOT}/frontend && git push
-cd /home/schalk/git/qic && git push
+cd {REPO_ROOT} && git push
 ```
 
 If any push fails — stop. Do not deploy.

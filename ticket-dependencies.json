@@ -4,205 +4,239 @@
       "name": "Be Prompted for KYC on High-Value Actions",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "WLT-001": {
       "name": "Additional Blockchain Support",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MOD-012": {
       "name": "Ban a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "MOD-013": {
       "name": "Unban a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "MOD-009": {
       "name": "Take Action on a Report",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-010": {
       "name": "Warn a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "MOD-014": {
       "name": "Review a User's Full History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "MOD-011": {
       "name": "Suspend a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AFF-001": {
       "name": "[FIXED] AFF-001 & AFFILIATE-001",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFFILIATE-002": {
       "name": "Generate and Share Referral Link",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFFILIATE-004": {
       "name": "View Earnings History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Blocked"
     },
     "AFFILIATE-005": {
       "name": "Request Affiliate Payout",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Blocked"
     },
     "AFL-001": {
       "name": "Novice Affiliate Tier (Entry Level)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFL-003": {
       "name": "Silver Affiliate Tier",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AFL-004": {
       "name": "Gold Affiliate Tier",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AFL-005": {
       "name": "Diamond Affiliate Tier",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "MPR-016": {
       "name": "DFD 8 — Eligibility + Visibility Gating (Fundable + Enabled + Allowed)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "AFL-006": {
       "name": "Affiliate Commission Calculation from Escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Blocked"
     },
     "AFL-007": {
       "name": "Tier Progression Visualisation",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFL-008": {
       "name": "Tier Badges & Emblems on Profile",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFL-009": {
       "name": "Private Tier Stats Breakdown",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFL-010": {
       "name": "Affiliate Leaderboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AFL-011": {
       "name": "Affiliate Dashboard Visual Overhaul",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOBILE-001": {
       "name": "Use QicTrader Mobile App",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MOBILE-002": {
       "name": "Use Quick Actions from Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MOBILE-003": {
       "name": "Swipe Through Wallet Crypto Cards",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MOBILE-004": {
       "name": "Receive Push Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MOBILE-005": {
       "name": "Connect External Wallet",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-016": {
       "name": "Check and Upload KYC via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "ES-009": {
       "name": "ES-009",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-010": {
       "name": "KYC Document Download",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "MP-005": {
       "name": "Marketplace Search and Filters",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-002": {
       "name": "Offer Versioning on Edit",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "TRADE-004": {
       "name": "Fund Trade Escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-002": {
       "name": "Wallet Locks Listing",
@@ -214,1273 +248,1485 @@
       "name": "Escrow Refund (Cancel/Expiry)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "EML-001": {
       "name": "AI-Based Email Address Validation",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-004": {
       "name": "Reseller Settlement Split",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "RS-005": {
       "name": "Reseller Commission on Dispute",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "RS-006": {
       "name": "Reseller Dashboard Stats",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-007": {
       "name": "Reseller Trade History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "RS-008": {
       "name": "Cannot Resell Own Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-009": {
       "name": "Resell Offer Lifecycle",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "RS-010": {
       "name": "Markup Cap Enforcement",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-005": {
       "name": "Moderator Resolution Dispatch",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-001": {
       "name": "Trade Creation with Atomic Escrow Lock",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-002": {
       "name": "Trade State Machine Validation",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-003": {
       "name": "Payment Marking with Proof Upload",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-004": {
       "name": "Seller Confirms and Completes Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-005": {
       "name": "Cancel Within Unviewed Window",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-006": {
       "name": "Counterparty View Tracking",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-007": {
       "name": "Trade Expiry Background Job",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-008": {
       "name": "Trade Chat with Real-Time Delivery",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-009": {
       "name": "Rating and Review System",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TF-010": {
       "name": "Trade Event Audit Trail",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PLATFORM-001": {
       "name": "View Platform Configuration",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-001": {
       "name": "View Landing Page",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-004": {
       "name": "[FIXED] AUTH-004 — Login with email",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-007": {
       "name": "AUTH-007 — 2FA does not work",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-001": {
       "name": "Sign Up with Email and Password",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-002": {
       "name": "Sign Up with Google OAuth",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AUTH-003": {
       "name": "Sign Up with Apple OAuth",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AUTH-008": {
       "name": "Reset Forgotten Password",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AUTH-009": {
       "name": "Log Out",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "USR-001": {
       "name": "Auto-Generated Username Suggestions",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-002": {
       "name": "KYC-002 — Submit government ID Phase 2",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-003": {
       "name": "Submit Selfie with ID",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-004": {
       "name": "Submit Proof of Address",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-006": {
       "name": "Resubmit Rejected Documents",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-001": {
       "name": "[FIXED] WALLET-001 — View Balances",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-003": {
       "name": "Withdraw Crypto",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "WALLET-004": {
       "name": "Transfer Crypto to Another User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-005": {
       "name": "View Transaction History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-006": {
       "name": "Estimate Withdrawal Fees",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-008": {
       "name": "WALLET-008",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-001": {
       "name": "Wallet Deposit Addresses",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-013": {
       "name": "Wallet Internal Transfer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-017": {
       "name": "Unlock Funds Endpoint",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-001": {
       "name": "Browse Buy Offers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-003": {
       "name": "View Offer Details",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-004": {
       "name": "Create a Sell Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-011": {
       "name": "View Offer Version History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-012": {
       "name": "Create a Direct Offer to a Specific User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-003": {
       "name": "Chat with Counterparty During Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-006": {
       "name": "Confirm Payment Received",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-009": {
       "name": "Leave a Review After Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-012": {
       "name": "Upload Proof of Payment",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-014": {
       "name": "Track When Counterparty Views a Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-015": {
       "name": "Cancel Trade Within Unviewed Window",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-016": {
       "name": "Trade Auto-Expiry",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-014": {
       "name": "DFD 5 — Buyer Marks Paid + Proof of Payment",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-001": {
       "name": "Use Custodial Escrow for a Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-003": {
       "name": "Use BTC Wallet Lock Escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "LDG-005": {
       "name": "Ethereum Nonce Race Condition Fix",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-008": {
       "name": "Affiliate Commission balance_after Accuracy",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-009": {
       "name": "TradeDebit Ledger Entries for Seller on Trade Completion",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-010": {
       "name": "Ledger-Wallet Balance Reconciliation",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "BUG-001": {
       "name": "Dispute Status Not Visible",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "BUG-002": {
       "name": "Unable to Access Trade as Seller",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-001": {
       "name": "View Moderator Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-002": {
       "name": "View and Filter Trade Disputes",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-003": {
       "name": "Review a Dispute in Detail",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-004": {
       "name": "Resolve a Trade Dispute",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-005": {
       "name": "Escalate a Dispute",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-006": {
       "name": "Communicate with Dispute Parties",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-007": {
       "name": "Review Dispute Evidence",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-008": {
       "name": "View and Manage User Reports",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-015": {
       "name": "View Moderation Audit Logs",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-016": {
       "name": "Recover Funds from Disputed Escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-007": {
       "name": "Resolve Escrow Dispute as Admin",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-008": {
       "name": "Dispute Deadline Monitor Background Job",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-009": {
       "name": "Reputation and History Persistence (No Resetting)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "PROFILE-001": {
       "name": "View My Profile",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-002": {
       "name": "Edit My Profile",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-003": {
       "name": "View Another Trader's Profile",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-007": {
       "name": "View 2FA Backup Codes",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-009": {
       "name": "PROFILE-009",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-011": {
       "name": "Block a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-012": {
       "name": "Report a User",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRF-004": {
       "name": "PRF-004",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRF-005": {
       "name": "PRF-005",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-014": {
       "name": "Delete My Account",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PAYMENT-001": {
       "name": "[FIXED] PAYMENT-001 — No feature to edit created offers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PAYMENT-002": {
       "name": "Manage My Payment Methods",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRICE-001": {
       "name": "View Current Crypto Prices",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRICE-002": {
       "name": "View Historical Price Data",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "PRICE-003": {
       "name": "Convert Between Crypto and Fiat",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRICE-004": {
       "name": "Create a Price Alert",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRICE-005": {
       "name": "View Network Gas Prices",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-006": {
       "name": "Atomic Fee Split (Inherited Bug Fix)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "GAP-015": {
       "name": "OAuth Sync",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "ADMIN-001": {
       "name": "View Admin Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-002": {
       "name": "Manage All Users",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-003": {
       "name": "Review and Approve/Reject KYC Submissions",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-004": {
       "name": "View Treasury Balance and Health",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-005": {
       "name": "Execute Treasury Transfer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-006": {
       "name": "View System Diagnostics",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-008": {
       "name": "Manage Platform Configuration",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ADMIN-009": {
       "name": "View Trading Volume and Activity Reports",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "ADMIN-010": {
       "name": "Manage Affiliate Tiers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VER-001": {
       "name": "Identity Document Verification Software",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VER-002": {
       "name": "Manual Verification Review Team",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUPPORT-002": {
       "name": "View My Support Tickets",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUPPORT-003": {
       "name": "Reply to a Support Ticket",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUPPORT-004": {
       "name": "Close a Resolved Ticket",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUPPORT-005": {
       "name": "Submit a Bug Report",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-004": {
       "name": "AI-Powered Live Chat Bot",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "SUP-006": {
       "name": "Office Locations Display",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "DASHBOARD-001": {
       "name": "View Trading Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NOTIFY-001": {
       "name": "Receive Trade Status Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NOTIFY-002": {
       "name": "Receive New Message Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NOTIFY-003": {
       "name": "Receive Wallet Balance Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NOTIFY-004": {
       "name": "Receive Affiliate Earning Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Blocked"
     },
     "NOTIFY-005": {
       "name": "View and Manage All Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NOTIFY-006": {
       "name": "Receive Real-Time Updates via WebSocket",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "NTF-001": {
       "name": "Simplified Notification Dropdown",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "GAP-009": {
       "name": "WebSocket Offer/Notification/Price Events",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WS-001": {
       "name": "WebSocket / Socket.IO Backend–Frontend Alignment",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-012": {
       "name": "Affiliate Payout Mechanism",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Blocked"
     },
     "RESELLER-001": {
       "name": "Register as a Reseller",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RESELLER-002": {
       "name": "View Reseller Profile and Stats",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RESELLER-004": {
       "name": "Manage Active Resell Positions",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RESELLER-005": {
       "name": "Reseller Commission on Dispute Outcome",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RESELLER-006": {
       "name": "Initiate a Trade via a Resell Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-003": {
       "name": "Read About Page",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-004": {
       "name": "Read FAQs",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-005": {
       "name": "Read Trading Guide",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-007": {
       "name": "Read Security Tips",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-008": {
       "name": "Read Terms and Privacy Policy",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-009": {
       "name": "Contact Support Before Signing Up",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-010": {
       "name": "Learn About the Affiliate Program",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-011": {
       "name": "VISITOR-011",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "REG-001": {
       "name": "Task Bar Icon Hover Effect",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "REG-002": {
       "name": "Task Bar Icon Sizing & Alignment",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WLT-004": {
       "name": "Card Design Variety / Colour Options",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-005": {
       "name": "Log In with Google OAuth",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AUTH-006": {
       "name": "Log In with Apple OAuth",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AUTH-012": {
       "name": "Log In via Telegram Bot",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "AUTH-013": {
       "name": "Sign Up via Telegram Bot",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "WHATSAPP-001": {
       "name": "Create WhatsApp Escrow Link",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "WHATSAPP-002": {
       "name": "View WhatsApp Escrow Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "AUTH-010": {
       "name": "Log Out of All Devices",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-016": {
       "name": "GAP-016",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "DASHBOARD-002": {
       "name": "View My Trading Statistics",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-013": {
       "name": "DFD 4 — Trade Creation + Escrow Lock (Atomic per Trade)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "USR-003": {
       "name": "Username Validation Warnings (Symbols, Profanity, Duplicates)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-015": {
       "name": "DFD 7 — Dispute Creation + Resolution (Including Admin)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-014": {
       "name": "Notification Delete",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-006": {
       "name": "Append-Only Ledger Enforcement",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-004": {
       "name": "Dispute — Escrow Freeze",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-003": {
       "name": "Deterministic Quote Engine",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-002": {
       "name": "ES-002 — Escrow releases funds on trade completion",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-008": {
       "name": "Deposit Detection (On-Chain Inbound)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-007": {
       "name": "Use config for BTC RPC URL and DB transaction for custodial release",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-006": {
       "name": "Payment Detail Access Control",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-002": {
       "name": "Resell Offer Pricing Display",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-003": {
       "name": "Trade via Resell Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ARCH-003": {
       "name": "ARCH-003 Wallets don't debit by escrow amount",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RS-001": {
       "name": "Create Resell Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-001": {
       "name": "ES-001 — Cannot create an offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-007": {
       "name": "Real-Time Trade Notifications",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-001": {
       "name": "Offer Listing with Visibility Rules",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-008": {
       "name": "Seller Offer Management",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-007": {
       "name": "Cancel a Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MP-004": {
       "name": "FX Rate Display and Persistence",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TELEGRAM-001": {
       "name": "Start the QicTrader Telegram Bot",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-002": {
       "name": "Browse Marketplace via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-007": {
       "name": "Check Crypto Prices via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-003": {
       "name": "Manage Wallet via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-009": {
       "name": "Manage Payment Methods via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-017": {
       "name": "Manage Newsletter Subscription via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-004": {
       "name": "Manage Trades via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-015": {
       "name": "View My Trading Statistics",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-014": {
       "name": "View Trader Leaderboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-012": {
       "name": "View Bot Help",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-005": {
       "name": "Create an Offer via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-011": {
       "name": "Contact Support via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-008": {
       "name": "Manage Security Settings via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-006": {
       "name": "Receive Real-Time Notifications via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-010": {
       "name": "View Affiliate Dashboard via Telegram",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "TELEGRAM-013": {
       "name": "Check Bot and System Status",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Backlog"
     },
     "MPR-001": {
       "name": "Trade, Escrow, and Ledger Invariants",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-002": {
       "name": "Offer Model Refactor (Offers vs Offer Versions)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AUD-002": {
       "name": "Make wallet transfer atomic with DB transaction",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ES-007": {
       "name": "Platform Fee Collection",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-001": {
       "name": "Prevent money creation on no-lock custodial release",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-003": {
       "name": "Log gas sponsorship in the ledger",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-004": {
       "name": "Fix moderator resolve tx_hash overwrite",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-005": {
       "name": "Wire fund movement into custodial_release/refund/refund_escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUD-006": {
       "name": "Fix non-escrow fee deduction and add seller debit ledger",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-007": {
       "name": "Gas Route Admin Authorization",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-002": {
       "name": "Use On-Chain Smart Contract Escrow",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "GAP-004": {
       "name": "Treasury Auto-Swap Background Job",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "GAP-005": {
       "name": "Sponsored Withdrawal Service",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "GAP-011": {
       "name": "Moderator Resolve Triggers Fund Movement",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "MPR-003": {
       "name": "Index Price and Premium Model (Explicit and Stored)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-004": {
       "name": "Fiat Reference Display (USD to ZAR and Effective Crypto Rate)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-005": {
       "name": "Deterministic Quote Calculation (One Canonical Pricing Function)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-006": {
       "name": "Offer and Trade State Machines (Explicit Lifecycles)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-007": {
       "name": "Marketplace Listing Boundaries (What Is Public vs Private)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-001": {
       "name": "Platform Fee escrow_id FK Fix",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-002": {
       "name": "Platform System User Migration",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-003": {
       "name": "Escrow Lock Ledger Entry",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-006": {
       "name": "Gas Sponsorship Ledger Entries",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-011": {
       "name": "Deprecate treasury_transactions Table",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-008": {
       "name": "Dispute Snapshot Integrity (Evidence and Context Locked)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-004": {
       "name": "Escrow ID Index for Ledger Queries",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-008": {
       "name": "PROFILE-008",
@@ -1492,373 +1738,435 @@
       "name": "Generate a Custodial Wallet",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "GAP-003": {
       "name": "Escrow Wallet Lookup",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "OFFER-014": {
       "name": "Report a Suspicious Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-006": {
       "name": "View My Escrow Overview",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-004": {
       "name": "View Escrow Status and Balance",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PLATFORM-002": {
       "name": "Check System Health",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MOD-017": {
       "name": "Assign a Dispute to a Moderator",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-013": {
       "name": "View Trade Event Timeline",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-005": {
       "name": "[FIXED] SUP-005 — Call Lines",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-005": {
       "name": "View My Trading Limits",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFFILIATE-003": {
       "name": "View My Referrals",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AFL-002": {
       "name": "Bronze Affiliate Tier",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     },
     "AFFILIATE-007": {
       "name": "View Payout History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Dev Complete"
     },
     "AFFILIATE-006": {
       "name": "View Affiliate Tier Structure",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "LDG-007": {
       "name": "Ledger Duplicate Prevention",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-012": {
       "name": "DFD 2 — Marketplace Listing & Browsing (Offer List Page)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "HLP-001": {
       "name": "Step-by-Step Help Articles / Guides",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "EML-003": {
       "name": "Password Complexity Requirements & Hint Bubble",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "EML-002": {
       "name": "Strong Password Generator",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUPPORT-001": {
       "name": "Create a Support Ticket",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-013": {
       "name": "Resell Another Trader's Offer with Markup",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-011": {
       "name": "View My Active Trades",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-010": {
       "name": "Search for Users",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-010": {
       "name": "View My Offers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-010": {
       "name": "View My Trade History",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-009": {
       "name": "Close My Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-007": {
       "name": "Pause My Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-008": {
       "name": "Open a Trade Dispute",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-007": {
       "name": "Generate Deposit Address",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-008": {
       "name": "Resume a Paused Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ESCROW-005": {
       "name": "Dispute an Escrowed Trade",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-006": {
       "name": "Disable Two-Factor Authentication",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-005": {
       "name": "Mark Payment as Sent",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-006": {
       "name": "Edit My Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-005": {
       "name": "Enable Two-Factor Authentication",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-005": {
       "name": "Create a Buy Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "RESELLER-003": {
       "name": "Create a Resell Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AUTH-011": {
       "name": "Automatic Session Management",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-002": {
       "name": "Browse Marketplace Without Account",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "AFFILIATE-001": {
       "name": "View Affiliate Dashboard",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WALLET-002": {
       "name": "Deposit Crypto",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "OFFER-002": {
       "name": "Browse Sell Offers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-002": {
       "name": "View Trade Details and Status",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "KYC-001": {
       "name": "View My KYC Verification Status",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "VISITOR-006": {
       "name": "Understand How Escrow Works",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PROFILE-004": {
       "name": "PROFILE-004",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "TRADE-001": {
       "name": "Initiate a Trade from an Offer",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-010": {
       "name": "UX Alignment and Consistency (Frontend Matches Backend)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "MPR-011": {
       "name": "DFD 1 — Offer Lifecycle (Create / Edit / Enable / Disable)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRF-001": {
       "name": "Display Username and Email on Profile",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRF-002": {
       "name": "Trade Name Display Preferences",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "REG-003": {
       "name": "Registration Page Visual Enhancement (Borders/Boxes)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "REG-004": {
       "name": "Pre-Registration Support Access",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-001": {
       "name": "Support Window Available Without Registration",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-003": {
       "name": "Complaints, Compliments & Suggestions Option",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-002": {
       "name": "Categorised Support Email Addresses",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "USR-002": {
       "name": "Username Restrictions Info Bubble",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WLT-002": {
       "name": "Solana Wallet Icon",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "WLT-003": {
       "name": "Transaction Timestamps (Date + Time)",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "SUP-007": {
       "name": "5-Level Support Ticket Priority System",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "PRF-003": {
       "name": "International Region Code for Phone Numbers",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "QIC Reviewed"
     },
     "ARCH-004": {
       "name": "ARCH-004 successful withdrawel",
       "domain": "Unknown",
       "wave": 0,
-      "dependsOn": []
+      "dependsOn": [],
+      "list": "Human Reviewed - Working"
     }
   },
   "waves": {
