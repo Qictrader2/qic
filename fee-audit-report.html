@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QIC Trader — Fee Audit Trail Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #000000;
+    --bg-secondary: #111111;
+    --card: #191F2A;
+    --card-elevated: #1e293b;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --foreground: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --brand-blue: #00a3f6;
+    --brand-blue-light: #38bdf8;
+    --brand-blue-bg: rgba(0, 163, 246, 0.1);
+    --brand-green: #10b981;
+    --brand-green-dark: #059669;
+    --brand-red: #ef4444;
+    --brand-red-dark: #dc2626;
+    --warning: #f59e0b;
+    --chart-1: #60a5fa;
+    --chart-2: #34d399;
+    --chart-3: #fbbf24;
+    --chart-4: #a78bfa;
+    --chart-5: #f472b6;
+    --radius: 0.625rem;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--foreground);
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(0,163,246,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(16,185,129,0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+  .header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 400;
+  }
+  .header .date {
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 3rem;
+  }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .section-title .icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+  .kpi.blue::before { background: var(--brand-blue); }
+  .kpi.green::before { background: var(--brand-green); }
+  .kpi.red::before { background: var(--brand-red); }
+  .kpi.purple::before { background: var(--chart-4); }
+  .kpi.yellow::before { background: var(--warning); }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.2;
+  }
+  .kpi-sub {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+
+  /* ── Flow Diagram ── */
+  .flow {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    overflow-x: auto;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: nowrap;
+    min-width: 900px;
+    margin-bottom: 1rem;
+  }
+  .flow-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.875rem 1.25rem;
+    text-align: center;
+    min-width: 140px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .flow-node.primary {
+    border-color: var(--brand-blue);
+    background: rgba(0, 163, 246, 0.08);
+  }
+  .flow-node.success {
+    border-color: var(--brand-green);
+    background: rgba(16, 185, 129, 0.08);
+  }
+  .flow-node.danger {
+    border-color: var(--brand-red);
+    background: rgba(239, 68, 68, 0.08);
+  }
+  .flow-node.warn {
+    border-color: var(--warning);
+    background: rgba(245, 158, 11, 0.08);
+  }
+  .flow-node.purple {
+    border-color: var(--chart-4);
+    background: rgba(167, 139, 250, 0.08);
+  }
+  .flow-node-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .flow-node-sub {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .flow-arrow {
+    color: var(--text-tertiary);
+    font-size: 1.5rem;
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .flow-arrow.down {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0;
+    font-size: 1.25rem;
+  }
+
+  /* ── Vertical Flow ── */
+  .vflow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 1.5rem 0;
+  }
+  .vflow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+  }
+  .vflow-step.highlight {
+    border-color: var(--brand-blue);
+    background: rgba(0, 163, 246, 0.06);
+  }
+  .vflow-connector {
+    width: 2px;
+    height: 24px;
+    background: var(--border);
+    position: relative;
+  }
+  .vflow-connector::after {
+    content: '▼';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: var(--text-tertiary);
+  }
+  .vflow-step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  .vflow-step-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  /* ── Waterfall Chart (CSS) ── */
+  .waterfall {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 280px;
+    padding: 1rem 0;
+    position: relative;
+  }
+  .waterfall::before {
+    content: '';
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .waterfall-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .waterfall-bar .bar {
+    width: 100%;
+    max-width: 80px;
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    transition: opacity 0.2s;
+    min-height: 4px;
+  }
+  .waterfall-bar .bar:hover { opacity: 0.85; }
+  .waterfall-bar .bar.positive { background: var(--brand-blue); }
+  .waterfall-bar .bar.negative { background: var(--brand-red); }
+  .waterfall-bar .bar.total { background: var(--brand-green); }
+  .waterfall-bar .bar.affiliate { background: var(--chart-4); }
+  .waterfall-bar .bar.reseller { background: var(--warning); }
+
+  .waterfall-bar .value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .waterfall-bar .label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 8px;
+    white-space: nowrap;
+  }
+  .waterfall-bar .spacer {
+    flex-shrink: 0;
+  }
+
+  /* ── Tables ── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  thead {
+    background: var(--surface);
+  }
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+  .text-green { color: var(--brand-green); }
+  .text-red { color: var(--brand-red); }
+  .text-blue { color: var(--brand-blue); }
+  .text-yellow { color: var(--warning); }
+  .text-purple { color: var(--chart-4); }
+  .text-muted { color: var(--text-secondary); }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    gap: 0.3rem;
+  }
+  .badge.green { background: rgba(16,185,129,0.15); color: #34d399; }
+  .badge.red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .badge.blue { background: rgba(0,163,246,0.15); color: #38bdf8; }
+  .badge.yellow { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge.purple { background: rgba(167,139,250,0.15); color: #c4b5fd; }
+  .badge.gray { background: rgba(148,163,184,0.15); color: #94a3b8; }
+
+  /* ── Tier Visual ── */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 768px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .tier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .tier-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .tier-card .tier-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  .tier-card .tier-name {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .tier-card .tier-req {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+  }
+  .tier-rates {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .tier-rate {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 0.2rem 0;
+  }
+  .tier-rate .level { color: var(--text-secondary); }
+  .tier-rate .pct { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* ── Split Diagram ── */
+  .split-diagram {
+    display: flex;
+    gap: 2px;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+  .split-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #fff;
+    position: relative;
+    transition: flex 0.3s;
+  }
+  .split-segment span {
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  /* ── Ledger Timeline ── */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+  }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    position: absolute;
+    left: -2rem;
+    top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    border: 2px solid var(--bg);
+  }
+  .timeline-dot.blue { background: var(--brand-blue); }
+  .timeline-dot.green { background: var(--brand-green); }
+  .timeline-dot.red { background: var(--brand-red); }
+  .timeline-dot.purple { background: var(--chart-4); }
+  .timeline-dot.yellow { background: var(--warning); }
+  .timeline-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+  }
+  .timeline-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .timeline-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+  .timeline-meta {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 0.35rem;
+  }
+
+  /* ── Gap/Issue Cards ── */
+  .issue-card {
+    background: var(--surface);
+    border-left: 3px solid;
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .issue-card.high { border-color: var(--brand-red); }
+  .issue-card.medium { border-color: var(--warning); }
+  .issue-card.low { border-color: var(--brand-blue); }
+  .issue-card.ok { border-color: var(--brand-green); }
+  .issue-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .issue-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ── Code blocks ── */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.06);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: var(--chart-2);
+  }
+  pre {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* ── File Reference ── */
+  .file-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--brand-blue);
+    background: var(--brand-blue-bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin: 0.15rem 0;
+  }
+
+  /* ── Two Column ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+    font-size: 0.78rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .toc h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 1rem;
+  }
+  .toc-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.5rem;
+  }
+  .toc-list a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 0.35rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.15s;
+  }
+  .toc-list a:hover { color: var(--brand-blue); }
+  .toc-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    min-width: 1.5rem;
+  }
+
+  /* ── Recommendation Cards ── */
+  .rec-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .rec-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+  .rec-card.r1::before { background: linear-gradient(90deg, var(--brand-blue), var(--brand-green)); }
+  .rec-card.r2::before { background: linear-gradient(90deg, var(--chart-4), var(--brand-blue)); }
+  .rec-card.r3::before { background: linear-gradient(90deg, var(--warning), var(--chart-5)); }
+  .rec-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+  }
+  .rec-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .rec-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .rec-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<div class="header">
+  <h1>QIC Trader — Fee Audit Trail</h1>
+  <div class="subtitle">Complete system analysis: fee calculations, affiliate commissions, ledger audit trail, and gaps</div>
+  <div class="date">Generated 2026-03-19 · Backend: Rust/Axum · Frontend: Next.js/React</div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════ TOC ═══════════════════════ -->
+<nav class="toc">
+  <h3>Contents</h3>
+  <ul class="toc-list">
+    <li><a href="#overview"><span class="toc-num">01</span> System Overview</a></li>
+    <li><a href="#flow"><span class="toc-num">02</span> Money Flow Diagram</a></li>
+    <li><a href="#fees"><span class="toc-num">03</span> Fee Calculation Engine</a></li>
+    <li><a href="#waterfall"><span class="toc-num">04</span> Trade Fee Waterfall</a></li>
+    <li><a href="#affiliates"><span class="toc-num">05</span> Affiliate Commission System</a></li>
+    <li><a href="#tiers"><span class="toc-num">06</span> Affiliate Tier Matrix</a></li>
+    <li><a href="#ledger"><span class="toc-num">07</span> Ledger Audit Trail</a></li>
+    <li><a href="#timeline"><span class="toc-num">08</span> Trade Lifecycle Timeline</a></li>
+    <li><a href="#gaps"><span class="toc-num">09</span> Audit Gaps & Risks</a></li>
+    <li><a href="#files"><span class="toc-num">10</span> File Reference Map</a></li>
+    <li><a href="#recs"><span class="toc-num">11</span> Display Recommendations</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════ 01. OVERVIEW ═══════════════════════ -->
+<div class="section" id="overview">
+  <h2 class="section-title">
+    <span class="icon" style="background: var(--brand-blue-bg); color: var(--brand-blue);">§</span>
+    System Overview
+  </h2>
+
+  <div class="kpi-grid">
+    <div class="kpi blue">
+      <div class="kpi-label">Fee Types Tracked</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-sub">Vendor · Reseller · Affiliate · Orphaned</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Affiliate Tiers</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">Novice → Bronze → Silver → Gold → Diamond</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">Referral Depth</div>
+      <div class="kpi-value">3 levels</div>
+      <div class="kpi-sub">A1 (direct) · A2 · A3 chain</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Ledger Entry Types</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-sub">trade · escrow · fee · refund · deposit · withdrawal · affiliate · orphan</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Data Models</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-blue" style="font-weight: 600;">trades</span>
+          <span class="mono text-muted">fee_amount: f64 (fiat ZAR)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-blue" style="font-weight: 600;">escrows</span>
+          <span class="mono text-muted">fee_amount: i64 (crypto minor)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-green" style="font-weight: 600;">ledger_entries</span>
+          <span class="mono text-muted">immutable audit log</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-purple" style="font-weight: 600;">affiliate_earnings</span>
+          <span class="mono text-muted">per-trade commission records</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-purple" style="font-weight: 600;">affiliate_payouts</span>
+          <span class="mono text-muted">payout requests + status</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0;">
+          <span class="text-red" style="font-weight: 600;">orphaned_fee_transactions</span>
+          <span class="mono text-muted">GAP-006 recovery tracking</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Key Invariants</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">Conservation Law (Custodial)</div>
+          <code>buyer_amount + reseller_net + platform_total == escrow_amount</code>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">Commission Conservation</div>
+          <code>reseller_net + reseller_platform_fee == gross_commission</code>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">Ceiling Division (Platform Never Under-Collects)</div>
+          <code>(amount × bps + 9999) / 10000</code>
+        </div>
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">Floor Division (Reseller Never Over-Receives)</div>
+          <code>floor(amount × markup% / 100)</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 02. MONEY FLOW ═══════════════════════ -->
+<div class="section" id="flow">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(16,185,129,0.15); color: var(--brand-green);">⟶</span>
+    Money Flow — Trade to Settlement
+  </h2>
+
+  <div class="flow">
+    <!-- Row 1: Main flow -->
+    <div class="flow-row">
+      <div class="flow-node primary">
+        <div class="flow-node-title">Buyer Pays</div>
+        <div class="flow-node-sub">fiat_amount (ZAR)</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-title">Quote Engine</div>
+        <div class="flow-node-sub">MPR-005 rate calc</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node warn">
+        <div class="flow-node-title">Platform Fee</div>
+        <div class="flow-node-sub">1% normal · 0.5% resell</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node primary">
+        <div class="flow-node-title">Escrow Lock</div>
+        <div class="flow-node-sub">crypto_amount + fee</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node success">
+        <div class="flow-node-title">Settlement</div>
+        <div class="flow-node-sub">atomic distribution</div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend" style="justify-content: center; margin-top: 1rem;">
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-blue);"></div> Trade flow</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--warning);"></div> Fee deduction</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green);"></div> Distribution</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--chart-4);"></div> Affiliate</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-red);"></div> Error recovery</div>
+    </div>
+  </div>
+
+  <!-- Settlement Distribution -->
+  <h4 style="margin: 1.5rem 0 1rem; font-size: 0.95rem;">Settlement Distribution — Normal Trade (100 USDT, 1% fee)</h4>
+  <div class="split-diagram">
+    <div class="split-segment" style="flex: 99; background: var(--brand-green);"><span>Buyer: 99.00 USDT</span></div>
+    <div class="split-segment" style="flex: 1; background: var(--brand-blue); min-width: 120px;"><span>Platform: 1.00 USDT</span></div>
+  </div>
+
+  <h4 style="margin: 1.5rem 0 1rem; font-size: 0.95rem;">Settlement Distribution — Resell Trade (100 USDT, 0.5% fee, 5% markup)</h4>
+  <div class="split-diagram">
+    <div class="split-segment" style="flex: 94.34; background: var(--brand-green);"><span>Buyer: 94.34 USDT</span></div>
+    <div class="split-segment" style="flex: 4.94; background: var(--warning); min-width: 120px;"><span>Reseller: 4.94</span></div>
+    <div class="split-segment" style="flex: 0.72; background: var(--brand-blue); min-width: 120px;"><span>Platform: 0.72</span></div>
+  </div>
+
+  <h4 style="margin: 1.5rem 0 1rem; font-size: 0.95rem;">Affiliate Commission Source (from Platform Fee, not trade amount)</h4>
+  <div class="split-diagram">
+    <div class="split-segment" style="flex: 96.5; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary);"><span>Trade Amount (untouched)</span></div>
+    <div class="split-segment" style="flex: 2.5; background: var(--brand-blue); min-width: 80px;"><span>Platform</span></div>
+    <div class="split-segment" style="flex: 1; background: var(--chart-4); min-width: 80px;"><span>A1 · A2 · A3</span></div>
+  </div>
+  <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.5rem;">
+    Affiliate commissions are calculated as a percentage of the <strong>platform fee</strong>, not the trade amount.
+    The platform fee funds the affiliate payouts — the buyer and seller amounts are unaffected.
+  </p>
+</div>
+
+<!-- ═══════════════════════ 03. FEE CALC ═══════════════════════ -->
+<div class="section" id="fees">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(245,158,11,0.15); color: var(--warning);">%</span>
+    Fee Calculation Engine
+  </h2>
+
+  <div class="two-col">
+    <div class="card">
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Vendor Fee (Seller's Escrow Fee)</h4>
+      <pre>// Ceiling division — platform never under-collects
+fn vendor_fee(amount_minor: i64, bps: u32) -> i64 {
+    let product = amount_minor as i128 * bps as i128;
+    ((product + 9_999) / 10_000) as i64
+}
+
+// Constants:
+SELLER_FEE_BPS_ORIGINAL = 100  // 1.00% — normal trades
+SELLER_FEE_BPS_RESELL   =  50  // 0.50% — resell trades</pre>
+      <div class="file-ref">📄 services/platform_fee.rs</div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Quote Service Fee (Fiat Side)</h4>
+      <pre>// Fiat fee deducted at trade creation
+fee_amount = round_to(
+    fiat_amount * platform_fee_bps / 10_000.0,
+    2  // FIAT_DECIMALS
+);
+net_fiat    = fiat_amount - fee_amount;
+crypto_amt  = net_fiat / effective_rate;</pre>
+      <div class="file-ref">📄 services/quote.rs:134-137</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Reseller Commission Split</h4>
+    <div class="two-col" style="gap: 1rem;">
+      <div>
+        <pre>// Reseller's gross (floor — never over-receives)
+fn reseller_gross_commission(
+    amount_minor: i64, markup_pct: f64
+) -> i64 {
+    (amount_minor as f64 * markup_pct / 100.0)
+        .floor() as i64
+}
+
+// Platform's cut of reseller commission (ceiling)
+fn reseller_fee(
+    gross_commission: i64, reseller_fee_bps: u32
+) -> i64 {
+    let product = gross_commission as i128
+                * reseller_fee_bps as i128;
+    ((product + 9_999) / 10_000) as i64
+}</pre>
+      </div>
+      <div>
+        <h5 style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">Example: 100 USDT, 5% markup</h5>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Escrow amount</span>
+            <span class="mono">100.000000 USDT</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Vendor fee <span class="badge blue">70 bps</span></span>
+            <span class="mono text-red">-0.700000</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Net amount</span>
+            <span class="mono">99.300000</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Gross commission <span class="badge yellow">5%</span></span>
+            <span class="mono text-yellow">4.965000</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Platform cut <span class="badge blue">50 bps</span></span>
+            <span class="mono text-red">-0.024825</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--border-subtle);">
+            <span>Reseller net</span>
+            <span class="mono text-yellow">4.940175</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; font-weight: 600;">
+            <span>Buyer receives</span>
+            <span class="mono text-green">94.335000</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; font-weight: 600; border-top: 2px solid var(--border);">
+            <span>Platform total</span>
+            <span class="mono text-blue">0.724825</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 04. WATERFALL ═══════════════════════ -->
+<div class="section" id="waterfall">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(96,165,250,0.15); color: var(--chart-1);">▐</span>
+    Trade Fee Waterfall — 1,000 USDT Normal Trade
+  </h2>
+
+  <div class="card">
+    <div class="waterfall">
+      <!-- Trade Amount: 1000 → 100% height = 220px -->
+      <div class="waterfall-bar">
+        <div class="value text-blue">1,000.00</div>
+        <div class="bar positive" style="height: 220px;"></div>
+        <div class="label">Trade<br>Amount</div>
+      </div>
+
+      <!-- Platform Fee: -10 → ~2.2px but min visible -->
+      <div class="waterfall-bar">
+        <div class="value text-red">-10.00</div>
+        <div class="spacer" style="height: 198px;"></div>
+        <div class="bar negative" style="height: 22px;"></div>
+        <div class="label">Platform<br>Fee (1%)</div>
+      </div>
+
+      <!-- A1 Commission: -0.50 (5% of 10 fee, Novice tier) -->
+      <div class="waterfall-bar">
+        <div class="value text-purple">-0.50</div>
+        <div class="spacer" style="height: 197px;"></div>
+        <div class="bar affiliate" style="height: 12px; min-height: 12px;"></div>
+        <div class="label">A1 Comm<br>(5% of fee)</div>
+      </div>
+
+      <!-- A2 Commission: 0 at Novice -->
+      <div class="waterfall-bar">
+        <div class="value text-muted">0.00</div>
+        <div class="spacer" style="height: 206px;"></div>
+        <div class="bar" style="height: 4px; background: var(--surface); border: 1px dashed var(--border);"></div>
+        <div class="label">A2 Comm<br>(Novice: 0%)</div>
+      </div>
+
+      <!-- A3 Commission: 0 at Novice -->
+      <div class="waterfall-bar">
+        <div class="value text-muted">0.00</div>
+        <div class="spacer" style="height: 206px;"></div>
+        <div class="bar" style="height: 4px; background: var(--surface); border: 1px dashed var(--border);"></div>
+        <div class="label">A3 Comm<br>(Novice: 0%)</div>
+      </div>
+
+      <!-- Platform Net: 9.50 -->
+      <div class="waterfall-bar">
+        <div class="value text-blue">9.50</div>
+        <div class="spacer" style="height: 190px;"></div>
+        <div class="bar positive" style="height: 20px;"></div>
+        <div class="label">Platform<br>Net</div>
+      </div>
+
+      <!-- Buyer Receives: 990 -->
+      <div class="waterfall-bar">
+        <div class="value text-green">990.00</div>
+        <div class="bar total" style="height: 218px;"></div>
+        <div class="label">Buyer<br>Receives</div>
+      </div>
+    </div>
+
+    <div class="legend" style="justify-content: center; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-blue);"></div> Trade / Platform</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-red);"></div> Fee Deduction</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--chart-4);"></div> Affiliate Commission</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--brand-green);"></div> Final Amount</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 05. AFFILIATE SYSTEM ═══════════════════════ -->
+<div class="section" id="affiliates">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(167,139,250,0.15); color: var(--chart-4);">⧖</span>
+    Affiliate Commission System
+  </h2>
+
+  <div class="card">
+    <h4 style="margin-bottom: 1rem; font-size: 0.9rem;">Referral Chain Resolution (up to 3 levels)</h4>
+
+    <!-- Visual chain -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; padding: 1rem 0;">
+      <div style="text-align: center; padding: 0.75rem 1.25rem; background: var(--brand-blue-bg); border: 1px solid var(--brand-blue); border-radius: 10px;">
+        <div style="font-weight: 600; font-size: 0.85rem;">Buyer</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">trades on QIC</div>
+      </div>
+      <div style="padding: 0 0.75rem; color: var(--text-tertiary);">→ referred by →</div>
+      <div style="text-align: center; padding: 0.75rem 1.25rem; background: rgba(167,139,250,0.1); border: 1px solid var(--chart-4); border-radius: 10px;">
+        <div style="font-weight: 600; font-size: 0.85rem;">L1 Referrer</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">direct · highest %</div>
+      </div>
+      <div style="padding: 0 0.75rem; color: var(--text-tertiary);">→ referred by →</div>
+      <div style="text-align: center; padding: 0.75rem 1.25rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.3); border-radius: 10px;">
+        <div style="font-weight: 600; font-size: 0.85rem;">L2 Referrer</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">indirect · lower %</div>
+      </div>
+      <div style="padding: 0 0.75rem; color: var(--text-tertiary);">→ referred by →</div>
+      <div style="text-align: center; padding: 0.75rem 1.25rem; background: rgba(167,139,250,0.03); border: 1px solid rgba(167,139,250,0.15); border-radius: 10px;">
+        <div style="font-weight: 600; font-size: 0.85rem;">L3 Referrer</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">deep indirect · lowest %</div>
+      </div>
+    </div>
+
+    <pre style="margin-top: 1rem;">// Commission calculation per level
+pub async fn record_commissions(
+    pool: &PgPool,
+    trade_id: Option&lt;Uuid&gt;,
+    escrow_id: Uuid,
+    buyer_id: Uuid,
+    fee_amount: i64,       // ← escrow fee, NOT trade value
+    cryptocurrency: Cryptocurrency,
+) -> Result&lt;Vec&lt;CommissionRecord&gt;&gt;
+
+// For each level in referral chain:
+//   commission = fee_amount × tier.bps[level] / 10,000
+//   → INSERT affiliate_earnings (with level)
+//   → UPDATE affiliate_profiles.pending_earnings += commission
+//   → INSERT ledger_entry (type: affiliate_commission)</pre>
+    <div class="file-ref">📄 services/affiliate_commission.rs</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 06. TIER MATRIX ═══════════════════════ -->
+<div class="section" id="tiers">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(251,191,36,0.15); color: var(--chart-3);">★</span>
+    Affiliate Tier Matrix
+  </h2>
+
+  <div class="tier-grid">
+    <!-- Novice -->
+    <div class="tier-card" style="border-top: 3px solid #94a3b8;">
+      <div class="tier-icon">🌱</div>
+      <div class="tier-name">Novice</div>
+      <div class="tier-req">≥ 1,000¢ volume<br>0 affiliates</div>
+      <div class="tier-rates">
+        <div class="tier-rate"><span class="level">A1</span><span class="pct text-green">5.00%</span></div>
+        <div class="tier-rate"><span class="level">A2</span><span class="pct text-muted">—</span></div>
+        <div class="tier-rate"><span class="level">A3</span><span class="pct text-muted">—</span></div>
+      </div>
+    </div>
+
+    <!-- Bronze -->
+    <div class="tier-card" style="border-top: 3px solid #cd7f32;">
+      <div class="tier-icon">🥉</div>
+      <div class="tier-name">Bronze</div>
+      <div class="tier-req">≥ 5,000¢ volume<br>≥ 5 affiliates</div>
+      <div class="tier-rates">
+        <div class="tier-rate"><span class="level">A1</span><span class="pct text-green">10.00%</span></div>
+        <div class="tier-rate"><span class="level">A2</span><span class="pct text-blue">4.00%</span></div>
+        <div class="tier-rate"><span class="level">A3</span><span class="pct text-muted">—</span></div>
+      </div>
+    </div>
+
+    <!-- Silver -->
+    <div class="tier-card" style="border-top: 3px solid #c0c0c0;">
+      <div class="tier-icon">🥈</div>
+      <div class="tier-name">Silver</div>
+      <div class="tier-req">≥ 800K¢ volume<br>≥ 10 affiliates</div>
+      <div class="tier-rates">
+        <div class="tier-rate"><span class="level">A1</span><span class="pct text-green">15.00%</span></div>
+        <div class="tier-rate"><span class="level">A2</span><span class="pct text-blue">8.00%</span></div>
+        <div class="tier-rate"><span class="level">A3</span><span class="pct text-purple">3.00%</span></div>
+      </div>
+    </div>
+
+    <!-- Gold -->
+    <div class="tier-card" style="border-top: 3px solid #ffd700;">
+      <div class="tier-icon">🥇</div>
+      <div class="tier-name">Gold</div>
+      <div class="tier-req">≥ 5M¢ volume<br>≥ 50 affiliates</div>
+      <div class="tier-rates">
+        <div class="tier-rate"><span class="level">A1</span><span class="pct text-green">20.00%</span></div>
+        <div class="tier-rate"><span class="level">A2</span><span class="pct text-blue">10.00%</span></div>
+        <div class="tier-rate"><span class="level">A3</span><span class="pct text-purple">5.00%</span></div>
+      </div>
+    </div>
+
+    <!-- Diamond -->
+    <div class="tier-card" style="border-top: 3px solid #b9f2ff;">
+      <div class="tier-icon">💎</div>
+      <div class="tier-name">Diamond</div>
+      <div class="tier-req">≥ 30M¢ volume<br>≥ 100 affiliates</div>
+      <div class="tier-rates">
+        <div class="tier-rate"><span class="level">A1</span><span class="pct text-green">25.00%</span></div>
+        <div class="tier-rate"><span class="level">A2</span><span class="pct text-blue">12.00%</span></div>
+        <div class="tier-rate"><span class="level">A3</span><span class="pct text-purple">7.00%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.75rem;">
+    Commission rates are in basis points applied to the <strong>escrow fee amount</strong>, not the trade volume.
+    Promotion requires <strong>both</strong> conditions met (volume AND affiliate count). Tiers only progress upward — no demotion.
+  </p>
+  <div class="file-ref" style="margin-top: 0.5rem;">📄 types/enums.rs:1214-1220 · services/affiliate_tier.rs</div>
+</div>
+
+<!-- ═══════════════════════ 07. LEDGER ═══════════════════════ -->
+<div class="section" id="ledger">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(52,211,153,0.15); color: var(--chart-2);">☰</span>
+    Ledger Audit Trail — Entry Types
+  </h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Entry Type</th>
+          <th>Direction</th>
+          <th>User</th>
+          <th>Trigger</th>
+          <th>Records</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge blue">escrow_lock</span></td>
+          <td class="text-red">Debit</td>
+          <td>Seller / Vendor</td>
+          <td>Trade creation (escrow funded)</td>
+          <td class="mono text-muted">full escrow amount (includes fee)</td>
+        </tr>
+        <tr>
+          <td><span class="badge green">escrow_release</span></td>
+          <td class="text-green">Credit</td>
+          <td>Buyer</td>
+          <td>Trade completion</td>
+          <td class="mono text-muted">net amount (escrow - fee)</td>
+        </tr>
+        <tr>
+          <td><span class="badge yellow">fee</span></td>
+          <td class="text-green">Credit</td>
+          <td><code>Uuid::nil()</code> (platform)</td>
+          <td>Escrow release</td>
+          <td class="mono text-muted">vendor_fee + reseller_fee</td>
+        </tr>
+        <tr>
+          <td><span class="badge blue">trade_credit</span></td>
+          <td class="text-green">Credit</td>
+          <td>Buyer / Reseller</td>
+          <td>Settlement</td>
+          <td class="mono text-muted">credited amounts</td>
+        </tr>
+        <tr>
+          <td><span class="badge blue">trade_debit</span></td>
+          <td class="text-red">Debit</td>
+          <td>Vendor / Seller</td>
+          <td>Settlement</td>
+          <td class="mono text-muted">full trade amount</td>
+        </tr>
+        <tr>
+          <td><span class="badge purple">affiliate_commission</span></td>
+          <td class="text-green">Credit</td>
+          <td>Referrer (L1/L2/L3)</td>
+          <td>Post-trade completion</td>
+          <td class="mono text-muted">commission amount per level</td>
+        </tr>
+        <tr>
+          <td><span class="badge gray">deposit</span></td>
+          <td class="text-green">Credit</td>
+          <td>User</td>
+          <td>Wallet deposit</td>
+          <td class="mono text-muted">deposit amount</td>
+        </tr>
+        <tr>
+          <td><span class="badge gray">withdrawal</span></td>
+          <td class="text-red">Debit</td>
+          <td>User</td>
+          <td>Wallet withdrawal</td>
+          <td class="mono text-muted">withdrawal amount</td>
+        </tr>
+        <tr>
+          <td><span class="badge red">refund</span></td>
+          <td class="text-green">Credit</td>
+          <td>Buyer / Seller</td>
+          <td>Dispute resolution</td>
+          <td class="mono text-muted">refunded amount</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.5rem; font-size: 0.85rem;">Ledger Entry Schema</h4>
+    <pre>ledger_entries {
+    id:            UUID (PK)
+    user_id:       UUID (FK users · Uuid::nil() = platform)
+    entry_type:    ENUM (trade_credit | trade_debit | escrow_lock | escrow_release | fee | refund | deposit | withdrawal | affiliate_commission)
+    direction:     ENUM (credit | debit)
+    amount:        i64 (minor units)
+    currency:      TEXT
+    balance_after:  i64 (snapshot — reconciliation, not runtime)
+    reference:     TEXT (tx_hash, order_id, etc.)
+    metadata:      JSONB
+    created_at:    TIMESTAMP (immutable)
+}</pre>
+    <div class="file-ref">📄 models/ledger.rs:8-22 · repo/ledger.rs · services/ledger.rs</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 08. TIMELINE ═══════════════════════ -->
+<div class="section" id="timeline">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(244,114,182,0.15); color: var(--chart-5);">⏱</span>
+    Trade Lifecycle Timeline — Complete Audit Trail
+  </h2>
+
+  <div class="card">
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot blue"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Trade Created</div>
+          <div class="timeline-desc">Quote calculated via MPR-005. Fiat fee deducted from buyer input. Crypto amount and escrow fee computed.</div>
+          <div class="timeline-meta">trades.fee_amount = fiat_fee (f64) · escrows.fee_amount = crypto_fee (i64)</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot blue"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Escrow Funded</div>
+          <div class="timeline-desc">Seller's balance locked. Escrow created with fee_amount embedded. Atomic transaction (TF-001).</div>
+          <div class="timeline-meta">LEDGER → escrow_lock (debit, seller, full amount including fee)</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot yellow"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Buyer Confirms Payment</div>
+          <div class="timeline-desc">Trade transitions to Paid status. Waiting for seller confirmation.</div>
+          <div class="timeline-meta">trade.status = Paid</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot green"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Trade Completed — Settlement</div>
+          <div class="timeline-desc">
+            <strong>Custodial:</strong> Atomic 3-way split — buyer credited, reseller credited (if resell), platform credited.
+            <br><strong>On-chain:</strong> Blockchain tx to buyer address + fee address. If tx fails → GAP-006 orphaned fee recorded.
+          </div>
+          <div class="timeline-meta">
+            LEDGER → trade_debit (vendor) · escrow_release (buyer) · fee (platform) · fee (reseller, if applicable)
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot purple"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Affiliate Commissions Recorded</div>
+          <div class="timeline-desc">
+            Referral chain resolved (buyer → L1 → L2 → L3). Commission calculated per level from escrow fee.
+            Earnings inserted, profiles updated, tier promotion checked.
+          </div>
+          <div class="timeline-meta">
+            LEDGER → affiliate_commission (credit, per referrer per level) · affiliate_earnings INSERT · affiliate_profiles UPDATE
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot green"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Tier Promotion Check</div>
+          <div class="timeline-desc">
+            If referrer meets both volume AND affiliate count thresholds, tier is upgraded.
+            One-way progression — no demotion.
+          </div>
+          <div class="timeline-meta">affiliate_profiles.tier = new_tier (if conditions met)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 09. GAPS ═══════════════════════ -->
+<div class="section" id="gaps">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(239,68,68,0.15); color: var(--brand-red);">!</span>
+    Audit Gaps & Risks
+  </h2>
+
+  <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+    <div class="kpi green">
+      <div class="kpi-label">Fully Covered</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">Vendor · Reseller · Affiliate · Ledger · Orphaned</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Potential Issues</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">See detailed breakdown below</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">High Risk</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">Quote vs. escrow fee mismatch</div>
+    </div>
+  </div>
+
+  <div class="issue-card high">
+    <div class="issue-title">
+      <span class="badge red">HIGH</span>
+      Quote Fee vs. Escrow Fee Mismatch
+    </div>
+    <div class="issue-desc">
+      Quote uses fiat fee: <code>fee = fiat_amount × bps / 10,000</code> (ZAR, f64).<br>
+      Escrow uses crypto fee: <code>fee = crypto_amount × bps / 10,000</code> (minor units, i64).<br>
+      These may differ due to exchange rate rounding. The <code>trade.fee_amount</code> (f64) may not match what was actually locked in escrow (i64).
+      This means the fiat fee snapshot shown to the user at quote time can diverge from the actual crypto fee deducted.
+    </div>
+  </div>
+
+  <div class="issue-card medium">
+    <div class="issue-title">
+      <span class="badge yellow">MEDIUM</span>
+      Affiliate Earnings Not Fully Atomic
+    </div>
+    <div class="issue-desc">
+      <code>affiliate_earnings</code> INSERT and <code>affiliate_profiles</code> UPDATE are separate queries.
+      If the UPDATE fails (e.g., no matching affiliate_profiles row), the earning is recorded but aggregate stats
+      (<code>pending_earnings</code>, <code>total_earnings</code>) are not updated.
+      Mitigated by checking for <code>affiliate_profiles.id</code> before inserting, but not transactionally guaranteed.
+    </div>
+  </div>
+
+  <div class="issue-card medium">
+    <div class="issue-title">
+      <span class="badge yellow">MEDIUM</span>
+      No Fee Address Audit
+    </div>
+    <div class="issue-desc">
+      The platform fee address comes from <code>config.fee_address_for_network(&network)</code>.
+      No immutable record is stored of <strong>which address</strong> actually received the fee at settlement time.
+      Only the <code>tx_hash</code> in the ledger entry links the fee to the blockchain — if the config changes, historical reconciliation
+      requires cross-referencing on-chain data.
+    </div>
+  </div>
+
+  <div class="issue-card medium">
+    <div class="issue-title">
+      <span class="badge yellow">MEDIUM</span>
+      Orphaned Fee Recovery is Manual
+    </div>
+    <div class="issue-desc">
+      GAP-006 <code>orphaned_fee_transactions</code> with status <code>'pending'</code> can sit indefinitely.
+      <code>resolved_by</code> and <code>resolution_note</code> are optional — no enforced escalation workflow.
+      Risk: unclaimed on-chain fees could remain unrecovered without alerting anyone.
+    </div>
+  </div>
+
+  <div class="issue-card low">
+    <div class="issue-title">
+      <span class="badge blue">LOW</span>
+      Affiliate Tier Promotion Async
+    </div>
+    <div class="issue-desc">
+      <code>check_and_promote</code> is called after <code>record_commissions</code> but if commission recording fails,
+      the tier check may not execute. Since tiers only progress upward and the check runs on every subsequent trade,
+      a missed promotion is self-correcting on the next successful trade.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 10. FILE MAP ═══════════════════════ -->
+<div class="section" id="files">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(148,163,184,0.15); color: var(--text-secondary);">📁</span>
+    File Reference Map
+  </h2>
+
+  <div class="two-col">
+    <div>
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Core Fee Logic</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div class="file-ref">📄 services/platform_fee.rs — vendor_fee, reseller_fee, seller_fee_bps</div>
+        <div class="file-ref">📄 services/quote.rs — canonical quote with fiat fee (MPR-005)</div>
+        <div class="file-ref">📄 services/escrow_release.rs:49-95 — settlement computation</div>
+        <div class="file-ref">📄 services/escrow_release.rs:259-445 — custodial release</div>
+      </div>
+
+      <h4 style="margin: 1.25rem 0 0.75rem; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Affiliate System</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div class="file-ref">📄 services/affiliate_commission.rs — record_commissions</div>
+        <div class="file-ref">📄 services/affiliate_tier.rs — promotion logic</div>
+        <div class="file-ref">📄 types/enums.rs:1177-1265 — AffiliateTier, TIER_CONFIGS</div>
+        <div class="file-ref">📄 models/affiliate.rs — data models</div>
+      </div>
+    </div>
+
+    <div>
+      <h4 style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Ledger & Audit</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div class="file-ref">📄 services/ledger.rs — record_* functions</div>
+        <div class="file-ref">📄 repo/ledger.rs — create_entry, raw SQL</div>
+        <div class="file-ref">📄 models/ledger.rs:8-22 — LedgerEntry struct</div>
+        <div class="file-ref">📄 repo/orphaned_fee.rs — GAP-006 tracking</div>
+      </div>
+
+      <h4 style="margin: 1.25rem 0 0.75rem; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">API Handlers</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div class="file-ref">📄 api/trades.rs:581-983 — create_trade with fee snapshot</div>
+        <div class="file-ref">📄 api/trades.rs:1456-1600+ — complete_trade → release</div>
+      </div>
+
+      <h4 style="margin: 1.25rem 0 0.75rem; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Migrations</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div class="file-ref">📄 011_create_affiliate.up.sql</div>
+        <div class="file-ref">📄 afl006_affiliate_commission_fixes.up.sql</div>
+        <div class="file-ref">📄 gap006_orphaned_fee_transactions.up.sql</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 11. RECOMMENDATIONS ═══════════════════════ -->
+<div class="section" id="recs">
+  <h2 class="section-title">
+    <span class="icon" style="background: rgba(96,165,250,0.15); color: var(--chart-1);">✦</span>
+    Display Recommendations
+  </h2>
+
+  <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+    Three-layer architecture. Zero new dependencies — uses existing Recharts (v2.15.4), Radix accordion, and Shadcn components.
+  </p>
+
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    <div class="rec-card r1">
+      <div class="rec-rank">Priority 1 — Build First</div>
+      <div class="rec-title">Expandable Audit Table</div>
+      <div class="rec-desc">
+        Extend the existing <code>EarningsHistory</code> pattern. Columns: Date, Trade ID, Trade Amount, Platform Fee, Affiliate Commission (Level), Net Amount, Status.
+        <br><br>
+        Click to expand → Radix accordion reveals full breakdown: platform fee bps, each affiliate level's cut with user IDs and amounts, timestamps, tx hashes.
+        <br><br>
+        Mobile: desktop table → card stack (already established QIC pattern). Export to CSV. Filter by date range presets (7d / 30d / 90d).
+      </div>
+      <div class="rec-tags">
+        <span class="badge green">Zero new deps</span>
+        <span class="badge blue">Extends existing pattern</span>
+        <span class="badge purple">WCAG AAA achievable</span>
+      </div>
+    </div>
+
+    <div class="rec-card r2">
+      <div class="rec-rank">Priority 2 — Visual Clarity</div>
+      <div class="rec-title">Waterfall Chart (Per-Trade Fee Breakdown)</div>
+      <div class="rec-desc">
+        Inside expanded table rows, render a Recharts waterfall showing trade amount decomposition: gross → platform fee → A1/A2/A3 commissions → net to seller.
+        <br><br>
+        Built with <code>ComposedChart</code> + <code>Bar</code> (already installed). Accessible: every bar has visible text label + directional arrow icon (not color alone). Fallback to a <code>&lt;dl&gt;</code> list on screens &lt; 360px.
+      </div>
+      <div class="rec-tags">
+        <span class="badge green">Recharts already installed</span>
+        <span class="badge blue">Per-trade context</span>
+        <span class="badge yellow">Mobile: &lt;dl&gt; fallback</span>
+      </div>
+    </div>
+
+    <div class="rec-card r3">
+      <div class="rec-rank">Priority 3 — Commission Overview</div>
+      <div class="rec-title">Stacked Bar Chart + KPI Cards</div>
+      <div class="rec-desc">
+        Extend <code>EarningsChart</code> — add multiple <code>Bar</code> components stacked by affiliate level (A1: green, A2: blue, A3: purple) to show commission breakdown per time period.
+        <br><br>
+        Extend <code>AffiliateStats</code> KPI cards with: Total Platform Fees, Total Commissions Distributed, Pending Payouts, Orphaned Fees (admin view).
+      </div>
+      <div class="rec-tags">
+        <span class="badge green">Extends existing components</span>
+        <span class="badge purple">Admin + affiliate views</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h4 style="margin-bottom: 1rem; font-size: 0.95rem;">Anti-Patterns to Avoid</h4>
+  <div class="two-col">
+    <div>
+      <div class="issue-card high" style="border-color: var(--brand-red);">
+        <div class="issue-title">Sankey Diagram</div>
+        <div class="issue-desc">Accessibility grade C, breaks on mobile, needs <code>d3-sankey</code> (not installed), and you'd build the fallback table anyway.</div>
+      </div>
+      <div class="issue-card high" style="border-color: var(--brand-red);">
+        <div class="issue-title">Pie / Donut Charts</div>
+        <div class="issue-desc">Grade C for colorblind users. QIC has up to 5 fee parties — exceeds recommended slice count.</div>
+      </div>
+    </div>
+    <div>
+      <div class="issue-card medium" style="border-color: var(--warning);">
+        <div class="issue-title">Color-Only Differentiation</div>
+        <div class="issue-desc">Always pair color with text labels or icons. Current <code>getLevelColor()</code> is correct — don't regress.</div>
+      </div>
+      <div class="issue-card medium" style="border-color: var(--warning);">
+        <div class="issue-title">Hardcoded Hex in JSX</div>
+        <div class="issue-desc">Use <code>var(--brand-blue)</code> etc. Existing <code>EarningsChart</code> hardcodes <code>#009CFF</code> — new components should use CSS variables.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<hr class="divider">
+<div style="text-align: center; padding: 2rem 0 3rem; color: var(--text-tertiary); font-size: 0.78rem;">
+  <div style="margin-bottom: 0.5rem;">QIC Trader — Fee Audit Trail Report</div>
+  <div>Generated 2026-03-19 · Rust/Axum Backend Analysis · All paths relative to <code>qictrader-backend-rs/src/</code></div>
+</div>
+
+</div>
+</body>
+</html>
