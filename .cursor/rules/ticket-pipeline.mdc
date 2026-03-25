@@ -115,8 +115,11 @@ Read `.claude/commands/git-commit.md` and follow ALL steps:
 
 Read `.claude/commands/golive.md` and follow ALL steps:
 
-1. Deploy backend to Heroku (if backend changes): `cd qictrader-backend-rs && git push heroku main`
-2. Deploy frontend via Vercel CLI (if frontend changes): `cd frontend && vercel --prod --yes`
+1. Deploy backend to Heroku (if backend changes): `cd qictrader-backend-rs && git pull --rebase origin main && git push heroku main`
+2. Deploy frontend via Vercel CLI (if frontend changes — **MUST pull first**):
+   ```bash
+   cd frontend && git pull --rebase origin main && bun run build && vercel --prod --yes --scope qictraders-projects
+   ```
 3. Move Trello card to Dev Complete:
    `PUT https://api.trello.com/1/cards/{cardId}?key=...&token=...&idList=69adb791e90fb428655d9ad3`
 4. Clean up: remove `.current-ticket` and plan file

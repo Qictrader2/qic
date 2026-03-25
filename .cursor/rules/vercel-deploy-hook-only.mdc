@@ -7,6 +7,16 @@ alwaysApply: true
 
 Deploy the frontend to Vercel **only via `vercel --prod --yes --scope qictraders-projects`** from the `frontend/` directory. Git-push deploys are disabled (Ignored Build Step = `exit 0`). Any team member logged into the Vercel CLI with access to the `qictraders-projects` team can deploy.
 
+## MANDATORY: Pull Before Deploy
+
+**Before every deploy, you MUST pull the latest code from origin.** Multiple developers and AI agents push to this repo. Deploying without pulling overwrites other people's work in production.
+
+```bash
+cd frontend && git pull --rebase origin main && bun run build
+```
+
+If the pull introduces conflicts, resolve them before deploying. **Never deploy stale code.**
+
 ## When deploying the frontend
 
 1. **Via commit-all.sh:** `./commit-all.sh "message" --deploy` runs `vercel --prod --yes --scope qictraders-projects` from the frontend dir.
@@ -17,7 +27,7 @@ Deploy the frontend to Vercel **only via `vercel --prod --yes --scope qictraders
 3. **Backend + frontend:** Run `./scripts/deploy-both.sh` from the workspace root.
 4. **Direct:** From the `frontend/` directory:
    ```bash
-   vercel --prod --yes --scope qictraders-projects
+   git pull --rebase origin main && bun run build && vercel --prod --yes --scope qictraders-projects
    ```
 
 ## Setup (per machine)
