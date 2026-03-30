@@ -4,14 +4,16 @@
 # Usage:
 #   ./commit-all.sh "your commit message"
 #   ./commit-all.sh "your commit message" --push
-#   ./commit-all.sh "your commit message" --deploy        # push + deploy both
+#   ./commit-all.sh "your commit message" --deploy        # push + deploy both (fast: cross-compile + Slug API)
+#   ./commit-all.sh "your commit message" --buildpack     # push + deploy both (slow: git push heroku main)
 #   ./commit-all.sh "your commit message" --frontend-only
 #   ./commit-all.sh "your commit message" --backend-only
 #   ./commit-all.sh "your commit message" --dry-run
 #
 # Deploy details:
 #   Frontend: vercel --prod --yes (CLI deploy as logged-in user)
-#   Backend:  git push heroku main (Heroku app: qictrader-backend-rs)
+#   Backend (default): cross-compile + Heroku Slug API via scripts/fast-deploy-backend.sh
+#   Backend (--buildpack): git push heroku main (Heroku app: qictrader-backend-rs)
 
 set -euo pipefail
 
@@ -19,11 +21,11 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/qictrader-backend-rs"
 HEROKU_APP="qictrader-backend-rs"
-HOOK_FILE="$ROOT/.vercel-deploy-hook"  # legacy — kept for reference only
 
 MESSAGE=""
 PUSH=false
 DEPLOY=false
+USE_BUILDPACK=false
 DRY_RUN=false
 FRONTEND_ONLY=false
 BACKEND_ONLY=false
@@ -32,6 +34,8 @@ for arg in "$@"; do
   case "$arg" in
     --push)          PUSH=true ;;
     --deploy)        DEPLOY=true; PUSH=true ;;
+    --fast-deploy)   DEPLOY=true; PUSH=true ;;  # alias, same as --deploy now
+    --buildpack)     DEPLOY=true; PUSH=true; USE_BUILDPACK=true ;;
     --dry-run)       DRY_RUN=true ;;
     --frontend-only) FRONTEND_ONLY=true ;;
     --backend-only)  BACKEND_ONLY=true ;;
@@ -40,19 +44,9 @@ for arg in "$@"; do
 done
 
 if [[ -z "$MESSAGE" ]]; then
-  echo "Usage: ./commit-all.sh \"commit message\" [--push] [--deploy] [--frontend-only] [--backend-only] [--dry-run]"
+  echo "Usage: ./commit-all.sh \"commit message\" [--push] [--deploy] [--buildpack] [--frontend-only] [--backend-only] [--dry-run]"
   exit 1
 fi
-
-run() {
-  local label="$1"; shift
-  if $DRY_RUN; then
-    echo "[dry-run] [$label] $*"
-  else
-    echo "[$label] running: $*"
-    git -C "$1" "${@:2}" 2>&1 | sed "s/^/[$label] /"
-  fi
-}
 
 commit_submodule() {
   local dir="$1"
@@ -103,12 +97,22 @@ deploy_frontend() {
 }
 
 deploy_backend() {
-  if $DRY_RUN; then
-    echo "[dry-run] [backend] git push heroku main (app: $HEROKU_APP)"
+  if $USE_BUILDPACK; then
+    if $DRY_RUN; then
+      echo "[dry-run] [backend] git push heroku main (app: $HEROKU_APP)"
+    else
+      echo "[backend] Deploying to Heroku via buildpack ($HEROKU_APP)..."
+      git -C "$BACKEND" push heroku main
+      echo "[backend] ✅ Heroku buildpack deploy pushed"
+    fi
   else
-    echo "[backend] Deploying to Heroku ($HEROKU_APP)..."
-    git -C "$BACKEND" push heroku main
-    echo "[backend] ✅ Heroku deploy pushed"
+    if $DRY_RUN; then
+      echo "[dry-run] [backend] fast deploy: cross-compile + Slug API (app: $HEROKU_APP)"
+    else
+      echo "[backend] Fast deploying to Heroku ($HEROKU_APP) via cross-compile + Slug API..."
+      "$ROOT/scripts/fast-deploy-backend.sh"
+      echo "[backend] ✅ Fast deploy complete"
+    fi
   fi
 }
 

@@ -18,7 +18,8 @@ For monorepo commits and deploys use `./commit-all.sh`:
 ```
 ./commit-all.sh "message"                  # commit all submodules + update root
 ./commit-all.sh "message" --push           # commit + push all
-./commit-all.sh "message" --deploy         # commit + push + deploy both (Vercel + Heroku)
+./commit-all.sh "message" --deploy         # commit + push + deploy both (fast: cross-compile + Slug API)
+./commit-all.sh "message" --buildpack      # commit + push + deploy both (slow: git push heroku main)
 ./commit-all.sh "message" --frontend-only  # frontend submodule only
 ./commit-all.sh "message" --backend-only   # backend submodule only
 ./commit-all.sh "message" --dry-run        # preview without making changes
@@ -26,7 +27,8 @@ For monorepo commits and deploys use `./commit-all.sh`:
 
 Deploy targets:
 - Frontend → `vercel --prod --yes --scope qictraders-projects` from `frontend/` dir
-- Backend  → `git push heroku main` (Heroku app: `qictrader-backend-rs`)
+- Backend (default) → cross-compile + Heroku Slug API via `scripts/fast-deploy-backend.sh` (~30s deploy)
+- Backend (--buildpack) → `git push heroku main` (Heroku buildpack, ~4min deploy)
 
 ---
 

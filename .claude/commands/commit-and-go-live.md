@@ -178,8 +178,11 @@ If both repos need deploying, run them **in parallel**. If only one needs deploy
 
 ### Backend → Heroku (only if HAS_BACKEND_CHANGES)
 
+Fast deploy via cross-compile + Slug API (default):
+
 ```bash
-cd /home/marcello/git/qic/qictrader-backend-rs && git push heroku main 2>&1
+REPO_ROOT="$(git -C /home/marcello/git/qic rev-parse --show-toplevel 2>/dev/null || echo /home/marcello/git/qic)"
+"$REPO_ROOT/scripts/fast-deploy-backend.sh" 2>&1
 ```
 
 ### Frontend → Vercel (only if HAS_FRONTEND_CHANGES)

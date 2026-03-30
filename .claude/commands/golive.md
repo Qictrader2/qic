@@ -60,14 +60,14 @@ If there is nothing to commit (working tree already clean), skip this step — j
 ## STEP 3: DEPLOY
 
 ```bash
-./commit-all.sh "" --deploy
+./commit-all.sh "" --fast-deploy
 ```
 
 Wait for the deploy to complete. If the deploy script fails, STOP and report the error to the user. Do not move the ticket.
 
-Note: `commit-all.sh --deploy` triggers:
+Note: `commit-all.sh --fast-deploy` triggers:
 - Frontend → `vercel --prod --yes` (CLI deploy as logged-in user)
-- Backend → `git push heroku main`
+- Backend → cross-compile + Heroku Slug API (~30s vs ~4min buildpack)
 
 ---
 

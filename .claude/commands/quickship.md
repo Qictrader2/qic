@@ -512,10 +512,7 @@ If `TICKET_LABEL` is NONE, use emoji format without ticket prefix (✨ new featu
 Push all repos:
 ```bash
 cd {REPO_ROOT}/qictrader-backend-rs && git push
-# If backend changed, also push to Heroku (triggers backend deploy)
-if [ "{BACKEND_CHANGED}" = "YES" ]; then
-  cd {REPO_ROOT}/qictrader-backend-rs && git push heroku main
-fi
+# Backend deploy is handled in Phase 5 via fast-deploy script
 cd {REPO_ROOT}/frontend && git push
 cd {REPO_ROOT} && git push
 ```
@@ -532,7 +529,10 @@ If any push fails — stop. Do not deploy.
 # Frontend → Vercel CLI deploy (as logged-in user)
 cd {REPO_ROOT}/frontend && vercel --prod --yes --scope qictraders-projects 2>&1
 
-# Backend: already triggered by git push heroku main in Phase 4.
+# Backend → Fast deploy (cross-compile + Slug API)
+if [ "{BACKEND_CHANGED}" = "YES" ]; then
+  "{REPO_ROOT}/scripts/fast-deploy-backend.sh" 2>&1
+fi
 ```
 
 ### Verify deploys (with retry — Heroku takes time)
