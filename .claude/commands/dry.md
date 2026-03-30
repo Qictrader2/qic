@@ -1,13 +1,13 @@
 ---
-description: QIC dry - DRY refactoring across frontend and backend. Finds real duplication, consolidates it safely, and verifies tests still pass.
+description: QIC dry - DRY refactoring across frontend and backend. Parallel subagent scanning, then safe consolidation with test verification.
 allowed-tools: Agent, Bash, Read, Write, Edit, Grep, Glob, LSP
 ---
 
-You are performing a DRY (Don't Repeat Yourself) refactoring pass across the QIC Trader codebase. Your job is to find genuine knowledge duplication, consolidate it into clean abstractions, and verify nothing breaks.
+You are performing a DRY (Don't Repeat Yourself) refactoring pass across the QIC Trader codebase. You orchestrate parallel Opus subagents to deeply scan for duplication, then classify and refactor the findings yourself.
 
 Arguments: `$ARGUMENTS`
 
-If $ARGUMENTS specifies a scope (e.g. "backend", "frontend", "services/escrow", "hooks"), limit the refactoring to that scope. Otherwise, refactor both frontend and backend.
+If $ARGUMENTS specifies a scope (e.g. "backend", "frontend", "services/escrow", "hooks"), limit the scanning and refactoring to that scope. Otherwise, refactor both frontend and backend.
 
 ---
 
@@ -15,13 +15,14 @@ If $ARGUMENTS specifies a scope (e.g. "backend", "frontend", "services/escrow", 
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  1. BASELINE       →  Run all tests, record the green state          │
-│  2. SCAN           →  Find duplication candidates                    │
-│  3. CLASSIFY       →  Real knowledge duplication vs. incidental      │
-│  4. PLAN           →  Rank candidates, propose extractions           │
-│  5. REFACTOR       →  Extract one at a time, verify after each       │
-│  6. FINAL VERIFY   →  Full test suite + build + clippy/lint          │
-│  7. REPORT         →  Summary of what changed and why                │
+│  1. BASELINE        →  Run all tests, record the green state         │
+│  2. PARALLEL SCAN   →  Spawn Opus subagents to find duplication      │
+│  3. CONSOLIDATE     →  Merge subagent findings, deduplicate          │
+│  4. CLASSIFY        →  Real knowledge duplication vs. incidental      │
+│  5. PLAN            →  Rank candidates, propose extractions           │
+│  6. REFACTOR        →  Extract one at a time, verify after each       │
+│  7. FINAL VERIFY    →  Full test suite + build + clippy/lint          │
+│  8. REPORT          →  Summary of what changed and why                │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -83,53 +84,84 @@ Record the test count and pass/fail status. You will compare against this at the
 
 ---
 
-# STEP 2: SCAN
+# STEP 2: PARALLEL SCAN
 
-Search for duplication candidates. Use these strategies:
+This is the core innovation. Instead of scanning the codebase yourself (which leads to shallow, narrow results), spawn parallel Opus subagents that each deeply scan a slice of the codebase.
 
-## Backend (Rust)
+## Determine scan slices
 
-1. **Near-identical functions** - functions with the same structure, differing only in type names or field names:
-```bash
-# Find functions with similar bodies
-grep -rn 'pub fn\|pub async fn' qictrader-backend-rs/src/ --include='*.rs'
+Based on the scope ($ARGUMENTS or full codebase), create scan slices. Each slice should be a coherent domain area, not an arbitrary file split.
+
+**Full codebase scan (default) - spawn 5 subagents:**
+
+| Subagent | Scope | What to look for |
+|----------|-------|------------------|
+| `dry-scan-repo` | `qictrader-backend-rs/src/repo/` | Repeated SQL query shapes, identical WHERE clauses, repeated pagination patterns, similar CRUD operations, repeated join patterns |
+| `dry-scan-services` | `qictrader-backend-rs/src/services/` | Duplicated business logic, repeated validation, identical state transition checks, repeated fee/amount calculations, similar error handling patterns |
+| `dry-scan-api` | `qictrader-backend-rs/src/api/` + `src/extractors/` + `src/middleware/` | Repeated handler patterns, identical auth checks, repeated response construction, similar request validation, repeated error response formatting |
+| `dry-scan-fe-components` | `frontend/src/components/` + `frontend/src/app/` | Near-identical components, repeated UI patterns, duplicated form logic, repeated modal/dialog patterns, similar data display components |
+| `dry-scan-fe-logic` | `frontend/src/hooks/` + `frontend/src/lib/` + `frontend/src/store/` + `frontend/src/types/` | Repeated hooks, duplicated API call patterns, identical type definitions, repeated state management patterns, similar utility functions |
+
+**Backend-only scan - spawn 3 subagents:** `dry-scan-repo`, `dry-scan-services`, `dry-scan-api`
+
+**Frontend-only scan - spawn 2 subagents:** `dry-scan-fe-components`, `dry-scan-fe-logic`
+
+**Narrow scope** (e.g. "services/escrow") - spawn 1 subagent focused on that directory.
+
+## Subagent prompt template
+
+Spawn ALL scan subagents in a SINGLE message (parallel launch). Use `model: "opus"` for each. Give each subagent this prompt structure:
+
+```
+You are a DRY duplication scanner for a [Rust Axum backend / Next.js React frontend].
+Your job is to deeply read all code in your assigned scope and find duplication candidates.
+
+SCOPE: [directory paths]
+Read EVERY file in scope. Do not skim. Do not sample. Read them all.
+
+WHAT TO LOOK FOR:
+- [scope-specific items from the table above]
+- Functions/methods with near-identical structure (differing only in names/types)
+- Copy-pasted blocks with minor variations
+- Identical business rules encoded in multiple places
+- Same validation logic repeated across files
+- Same data transformation pattern in 3+ places
+
+FOR EACH CANDIDATE, report:
+1. PATTERN NAME: A short descriptive name for what is duplicated
+2. OCCURRENCES: List each occurrence with file path and line range
+3. SIMILARITY: How similar are they? (exact / near-identical / structural)
+4. CHANGE REASON: Would these all change for the same reason? (yes/no/unsure + why)
+5. CROSS-CUTTING: Does this pattern likely also appear outside your scope? If so, where?
+6. EXTRACTION IDEA: Brief suggestion for how to consolidate (function, trait, hook, component, etc.)
+
+Be thorough. Read every file. The goal is to find ALL duplication worth considering,
+not just the most obvious cases. Report even borderline candidates - the orchestrator
+will classify them.
+
+Return your findings as a structured list. No preamble, no summary - just the candidates.
+If you find nothing worth reporting, say "NO CANDIDATES FOUND" and explain what you checked.
 ```
 
-2. **Repeated query patterns** - SQL queries in `repo/` that share the same shape:
-```bash
-grep -rn 'sqlx::query' qictrader-backend-rs/src/repo/ --include='*.rs'
-```
+## Wait for all subagents
 
-3. **Repeated error handling patterns** - identical match arms or error conversions
-
-4. **Repeated validation logic** - same checks appearing in multiple handlers
-
-5. **Repeated struct transformations** - identical From/Into patterns
-
-Use LSP `workspaceSymbol` to understand type hierarchies. Use Grep to find patterns.
-
-## Frontend (TypeScript/React)
-
-1. **Near-identical components** - components that render the same structure with minor prop differences
-
-2. **Repeated hooks patterns** - identical useState + useEffect combinations across components
-
-3. **Repeated API call patterns** - identical fetch/mutation patterns with different endpoints
-
-4. **Repeated type definitions** - identical or near-identical interfaces/types in different files
-
-5. **Repeated utility logic** - identical transformations, formatters, validators
-
-```bash
-# Find components with similar structure
-grep -rn 'export function\|export const.*=' frontend/src/ --include='*.tsx' --include='*.ts'
-```
+All subagents must complete before proceeding. Do NOT start classifying partial results.
 
 ---
 
-# STEP 3: CLASSIFY
+# STEP 3: CONSOLIDATE
 
-For each candidate found in Step 2, answer ALL of these questions:
+Merge findings from all subagents into a single candidate list.
+
+1. **Deduplicate** - if two subagents flagged the same pattern (e.g. a service function and the handler that wraps it), merge them into one candidate with all occurrences listed.
+2. **Connect cross-cutting hints** - if subagent A noted "this might also appear in services/" and subagent B found it in services/, link them.
+3. **Drop noise** - if a subagent reported something with only 1 occurrence and no cross-cutting hint, drop it.
+
+---
+
+# STEP 4: CLASSIFY
+
+For each consolidated candidate, answer ALL of these questions:
 
 ```
 [ ] Do the duplicated pieces change for the SAME reason?
@@ -161,7 +193,7 @@ If any answer is "no" or "unsure", mark it as INCIDENTAL and skip it.
 
 ---
 
-# STEP 4: PLAN
+# STEP 5: PLAN
 
 For each candidate classified as REAL duplication, plan the extraction:
 
@@ -191,15 +223,15 @@ For each candidate classified as REAL duplication, plan the extraction:
 Present the plan to the user before proceeding:
 > "Found N candidates for DRY refactoring. Here's what I'd extract: [list]. Proceed?"
 
-Wait for confirmation before Step 5.
+Wait for confirmation before Step 6.
 
 ---
 
-# STEP 5: REFACTOR
+# STEP 6: REFACTOR
 
 Apply each extraction one at a time. After EACH extraction:
 
-### 5a. Make the change
+### 6a. Make the change
 
 Follow Kent Beck: "Make the change easy, then make the easy change."
 
@@ -213,7 +245,7 @@ Each extraction is a sequence of mechanical steps:
 7. Delete the old duplicated code
 8. Run tests one final time
 
-### 5b. Verify after each extraction
+### 6b. Verify after each extraction
 
 **Backend:**
 ```bash
@@ -226,7 +258,7 @@ cargo test 2>&1 | tail -5
 cd frontend && bun run build 2>&1 | tail -10
 ```
 
-### 5c. Revert if broken
+### 6c. Revert if broken
 
 If tests fail after an extraction and you cannot fix it within one small adjustment:
 ```bash
@@ -235,7 +267,7 @@ git checkout -- .  # revert the current extraction
 
 Then move on to the next candidate. Do NOT force an extraction that breaks tests.
 
-### 5d. Anti-patterns to watch for
+### 6d. Anti-patterns to watch for
 
 After each extraction, check:
 
@@ -246,7 +278,7 @@ After each extraction, check:
 
 ---
 
-# STEP 6: FINAL VERIFY
+# STEP 7: FINAL VERIFY
 
 Run the complete verification suite:
 
@@ -274,7 +306,7 @@ If anything fails, identify which extraction caused it and revert that specific 
 
 ---
 
-# STEP 7: REPORT
+# STEP 8: REPORT
 
 Print a clean summary:
 
@@ -282,8 +314,11 @@ Print a clean summary:
 ## DRY Refactoring Complete
 
 **Scope:** [backend / frontend / both / specific path]
-**Extractions applied:** N
-**Candidates skipped:** M (incidental duplication)
+**Subagents dispatched:** N
+**Candidates found (raw):** X
+**Candidates after classification:** Y (Z skipped as incidental)
+**Extractions applied:** A
+**Extractions reverted:** B
 
 ### Changes
 1. [Extraction name] - [what was consolidated, how many call sites, mechanism used]
@@ -310,9 +345,11 @@ Print a clean summary:
 - NEVER share code between frontend and backend to reduce duplication - they are separate deployment units.
 - NEVER use Rust proc macros for DRY refactoring unless the pattern is genuinely syntactic and appears 5+ times.
 - NEVER force an extraction that increases total complexity (lines + cognitive load).
+- ALWAYS spawn scan subagents in a SINGLE message for parallel execution.
+- ALWAYS use `model: "opus"` for scan subagents - thorough scanning requires deep reasoning.
 - ALWAYS present the plan and wait for user confirmation before making changes.
 - ALWAYS revert extractions that break tests rather than fixing tests.
 - ALWAYS run verification after each individual extraction, not just at the end.
-- If you find zero candidates worth extracting, that is a valid outcome. Report it honestly.
+- If subagents collectively find zero candidates worth extracting, that is a valid outcome. Report it honestly.
 
 $ARGUMENTS
