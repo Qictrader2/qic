@@ -185,7 +185,7 @@ if $DRY_RUN; then
 fi
 
 # Create slug
-SLUG_RESPONSE=$(curl -sf -X POST \
+SLUG_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Content-Type: application/json" \
   -H "Accept: application/vnd.heroku+json; version=3" \
   -H "Authorization: Bearer $TOKEN" \
@@ -196,8 +196,12 @@ SLUG_RESPONSE=$(curl -sf -X POST \
   }" \
   "https://api.heroku.com/apps/$HEROKU_APP/slugs")
 
-if [[ -z "$SLUG_RESPONSE" ]]; then
-  echo "ERROR: Failed to create slug."
+SLUG_HTTP=$(echo "$SLUG_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+SLUG_RESPONSE=$(echo "$SLUG_RESPONSE" | grep -v "HTTP_STATUS:")
+
+if [[ "$SLUG_HTTP" -lt 200 || "$SLUG_HTTP" -ge 300 || -z "$SLUG_RESPONSE" ]]; then
+  echo "ERROR: Failed to create slug (HTTP $SLUG_HTTP)."
+  echo "$SLUG_RESPONSE"
   exit 1
 fi
 
@@ -225,12 +229,21 @@ if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
 fi
 
 # Release slug
-RELEASE_RESPONSE=$(curl -sf -X POST \
+RELEASE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Accept: application/vnd.heroku+json; version=3" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d "{\"slug\": \"$SLUG_ID\"}" \
   "https://api.heroku.com/apps/$HEROKU_APP/releases")
+
+RELEASE_HTTP=$(echo "$RELEASE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+RELEASE_RESPONSE=$(echo "$RELEASE_RESPONSE" | grep -v "HTTP_STATUS:")
+
+if [[ "$RELEASE_HTTP" -lt 200 || "$RELEASE_HTTP" -ge 300 || -z "$RELEASE_RESPONSE" ]]; then
+  echo "ERROR: Failed to release slug (HTTP $RELEASE_HTTP)."
+  echo "$RELEASE_RESPONSE"
+  exit 1
+fi
 
 RELEASE_VERSION=$(echo "$RELEASE_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null)
 
