@@ -5,7 +5,9 @@
 # On Linux (x86_64): builds natively with cargo build
 #
 # Usage:
-#   ./scripts/fast-deploy-backend.sh              # build + deploy
+#   ./scripts/fast-deploy-backend.sh              # build + deploy to STAGING (default)
+#   ./scripts/fast-deploy-backend.sh --staging    # explicit staging (same as default)
+#   ./scripts/fast-deploy-backend.sh --prod       # build + deploy to PRODUCTION
 #   ./scripts/fast-deploy-backend.sh --build-only # just cross-compile, don't deploy
 #   ./scripts/fast-deploy-backend.sh --dry-run    # show what would happen
 #
@@ -26,25 +28,35 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/qictrader-backend-rs"
-HEROKU_APP="qictrader-backend-rs"
+HEROKU_APP_STAGING="qictrader-backend-staging"
+HEROKU_APP_PROD="qictrader-backend-rs"
 TARGET="x86_64-unknown-linux-gnu"
 GLIBC_VERSION="2.39"  # heroku-24 = Ubuntu 24.04
 
 BUILD_ONLY=false
 DRY_RUN=false
+DEPLOY_ENV="staging"  # default to staging
 
 for arg in "$@"; do
   case "$arg" in
+    --staging)    DEPLOY_ENV="staging" ;;
+    --prod)       DEPLOY_ENV="production" ;;
     --build-only) BUILD_ONLY=true ;;
     --dry-run)    DRY_RUN=true ;;
     *)            echo "Unknown arg: $arg"; exit 1 ;;
   esac
 done
 
+if [[ "$DEPLOY_ENV" == "production" ]]; then
+  HEROKU_APP="$HEROKU_APP_PROD"
+else
+  HEROKU_APP="$HEROKU_APP_STAGING"
+fi
+
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-echo "==> Fast deploy: $OS/$ARCH -> Heroku ($HEROKU_APP)"
+echo "==> Fast deploy: $OS/$ARCH -> Heroku ($HEROKU_APP) [${DEPLOY_ENV}]"
 echo ""
 
 # --- Step 1: Build ---
@@ -226,5 +238,6 @@ deploy_end=$(date +%s)
 deploy_secs=$((deploy_end - deploy_start))
 
 echo ""
-echo "==> Deployed! Release v${RELEASE_VERSION} (commit $COMMIT)"
+echo "==> Deployed to ${DEPLOY_ENV}! Release v${RELEASE_VERSION} (commit $COMMIT)"
+echo "    App: $HEROKU_APP"
 echo "    Build: ${build_secs}s | Deploy: ${deploy_secs}s | Total: $(( build_secs + deploy_secs ))s"

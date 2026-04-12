@@ -4,23 +4,27 @@
 # Usage:
 #   ./commit-all.sh "your commit message"
 #   ./commit-all.sh "your commit message" --push
-#   ./commit-all.sh "your commit message" --deploy        # push + deploy both (fast: cross-compile + Slug API)
-#   ./commit-all.sh "your commit message" --buildpack     # push + deploy both (slow: git push heroku main)
+#   ./commit-all.sh "your commit message" --deploy        # push + deploy to STAGING (default)
+#   ./commit-all.sh "your commit message" --prod          # push + deploy to PRODUCTION (restricted)
+#   ./commit-all.sh "your commit message" --buildpack     # push + deploy via git push (slow, staging only)
 #   ./commit-all.sh "your commit message" --frontend-only
 #   ./commit-all.sh "your commit message" --backend-only
 #   ./commit-all.sh "your commit message" --dry-run
 #
 # Deploy details:
-#   Frontend: vercel --prod --yes (CLI deploy as logged-in user)
-#   Backend (default): cross-compile + Heroku Slug API via scripts/fast-deploy-backend.sh
-#   Backend (--buildpack): git push heroku main (Heroku app: qictrader-backend-rs)
+#   Staging frontend:    vercel --yes (preview deploy — no --prod)
+#   Production frontend: vercel --prod --yes (only with --prod flag)
+#   Staging backend:     cross-compile + Heroku Slug API → qictrader-backend-staging
+#   Production backend:  cross-compile + Heroku Slug API → qictrader-backend-rs
+#   Buildpack backend:   git push heroku-staging main (staging) or heroku main (prod)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/qictrader-backend-rs"
-HEROKU_APP="qictrader-backend-rs"
+HEROKU_APP_STAGING="qictrader-backend-staging"
+HEROKU_APP_PROD="qictrader-backend-rs"
 
 MESSAGE=""
 PUSH=false
@@ -29,12 +33,14 @@ USE_BUILDPACK=false
 DRY_RUN=false
 FRONTEND_ONLY=false
 BACKEND_ONLY=false
+DEPLOY_ENV="staging"  # default to staging
 
 for arg in "$@"; do
   case "$arg" in
     --push)          PUSH=true ;;
     --deploy)        DEPLOY=true; PUSH=true ;;
     --fast-deploy)   DEPLOY=true; PUSH=true ;;  # alias, same as --deploy now
+    --prod)          DEPLOY=true; PUSH=true; DEPLOY_ENV="production" ;;
     --buildpack)     DEPLOY=true; PUSH=true; USE_BUILDPACK=true ;;
     --dry-run)       DRY_RUN=true ;;
     --frontend-only) FRONTEND_ONLY=true ;;
@@ -43,8 +49,14 @@ for arg in "$@"; do
   esac
 done
 
+if [[ "$DEPLOY_ENV" == "production" ]]; then
+  HEROKU_APP="$HEROKU_APP_PROD"
+else
+  HEROKU_APP="$HEROKU_APP_STAGING"
+fi
+
 if [[ -z "$MESSAGE" ]]; then
-  echo "Usage: ./commit-all.sh \"commit message\" [--push] [--deploy] [--buildpack] [--frontend-only] [--backend-only] [--dry-run]"
+  echo "Usage: ./commit-all.sh \"commit message\" [--push] [--deploy] [--prod] [--buildpack] [--frontend-only] [--backend-only] [--dry-run]"
   exit 1
 fi
 
@@ -87,31 +99,53 @@ commit_submodule() {
 }
 
 deploy_frontend() {
-  if $DRY_RUN; then
-    echo "[dry-run] [frontend] vercel --prod --yes"
+  if [[ "$DEPLOY_ENV" == "production" ]]; then
+    local VERCEL_FLAGS="--prod --yes --scope qictraders-projects"
+    local LABEL="production"
   else
-    echo "[frontend] Deploying to Vercel via CLI..."
-    (cd "$FRONTEND" && vercel --prod --yes --scope qictraders-projects 2>&1) | sed 's/^/[frontend] /'
-    echo "[frontend] ✅ Vercel deploy complete"
+    local VERCEL_FLAGS="--yes --scope qictraders-projects"
+    local LABEL="staging (preview)"
+  fi
+
+  if $DRY_RUN; then
+    echo "[dry-run] [frontend] vercel $VERCEL_FLAGS"
+  else
+    echo "[frontend] Deploying to Vercel [$LABEL]..."
+    (cd "$FRONTEND" && vercel $VERCEL_FLAGS 2>&1) | sed 's/^/[frontend] /'
+    echo "[frontend] ✅ Vercel deploy complete [$LABEL]"
   fi
 }
 
 deploy_backend() {
+  local HEROKU_REMOTE
+  if [[ "$DEPLOY_ENV" == "production" ]]; then
+    HEROKU_REMOTE="heroku"
+  else
+    HEROKU_REMOTE="heroku-staging"
+  fi
+
   if $USE_BUILDPACK; then
     if $DRY_RUN; then
-      echo "[dry-run] [backend] git push heroku main (app: $HEROKU_APP)"
+      echo "[dry-run] [backend] git push $HEROKU_REMOTE main (app: $HEROKU_APP) [$DEPLOY_ENV]"
     else
-      echo "[backend] Deploying to Heroku via buildpack ($HEROKU_APP)..."
-      git -C "$BACKEND" push heroku main
-      echo "[backend] ✅ Heroku buildpack deploy pushed"
+      echo "[backend] Deploying to Heroku via buildpack ($HEROKU_APP) [$DEPLOY_ENV]..."
+      git -C "$BACKEND" push "$HEROKU_REMOTE" main
+      echo "[backend] ✅ Heroku buildpack deploy pushed [$DEPLOY_ENV]"
     fi
   else
-    if $DRY_RUN; then
-      echo "[dry-run] [backend] fast deploy: cross-compile + Slug API (app: $HEROKU_APP)"
+    local FAST_DEPLOY_FLAG
+    if [[ "$DEPLOY_ENV" == "production" ]]; then
+      FAST_DEPLOY_FLAG="--prod"
     else
-      echo "[backend] Fast deploying to Heroku ($HEROKU_APP) via cross-compile + Slug API..."
-      "$ROOT/scripts/fast-deploy-backend.sh"
-      echo "[backend] ✅ Fast deploy complete"
+      FAST_DEPLOY_FLAG="--staging"
+    fi
+
+    if $DRY_RUN; then
+      echo "[dry-run] [backend] fast deploy: cross-compile + Slug API (app: $HEROKU_APP) [$DEPLOY_ENV]"
+    else
+      echo "[backend] Fast deploying to Heroku ($HEROKU_APP) [$DEPLOY_ENV]..."
+      "$ROOT/scripts/fast-deploy-backend.sh" "$FAST_DEPLOY_FLAG"
+      echo "[backend] ✅ Fast deploy complete [$DEPLOY_ENV]"
     fi
   fi
 }
@@ -119,7 +153,7 @@ deploy_backend() {
 echo ""
 echo "Commit message: \"$MESSAGE\""
 $PUSH    && echo "Mode: commit + push"
-$DEPLOY  && echo "Mode: commit + push + deploy"
+$DEPLOY  && echo "Mode: commit + push + deploy [$DEPLOY_ENV]"
 $DRY_RUN && echo "Mode: DRY RUN — no changes will be made"
 echo ""
 
