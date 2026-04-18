@@ -58,6 +58,15 @@ Multiple agents create migrations concurrently. **Before creating any migration:
 
 **Never reuse a timestamp.** If your timestamp collides with another agent's, increment it. SQLx runs migrations in filename order — duplicate timestamps cause one migration to silently skip or override the other.
 
+## Design System (Frontend)
+
+All frontend UI work must follow `DESIGN.md` in the project root. This is the single source of truth for visual identity:
+
+- Poppins font only (weights 400–700). No other font families.
+- Brand blue `#00A3F6` via CSS variable `--brand-blue`. Use tokens, not hardcoded values.
+- Follow the defined spacing scale, radius scale, shadow levels, and component patterns.
+- Check the anti-patterns section before writing any markup — forbidden patterns break brand consistency.
+
 ## Commit Discipline
 
 - One logical change per commit

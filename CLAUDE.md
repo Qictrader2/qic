@@ -13,6 +13,15 @@ QIC Trader is a crypto P2P trading platform. Two submodules:
 
 Any implementation that contradicts the intent document is wrong. If the AS BOLT diverges from intent, flag it — don't silently perpetuate the divergence.
 
+## Design System
+
+**Read `DESIGN.md` before any frontend/UI work.** It is the single source of truth for QICTRADER's visual identity — colors, typography, spacing, components, motion, and anti-patterns.
+
+- All UI changes must conform to the tokens and patterns defined in `DESIGN.md`
+- Do not introduce fonts, colors, shadows, or radius values outside the design system
+- Use CSS variables and Tailwind tokens — no hardcoded hex/rgb in components
+- When in doubt, check the anti-patterns section (Section 11) before writing markup
+
 For monorepo commits and deploys use `./commit-all.sh`:
 
 ```
