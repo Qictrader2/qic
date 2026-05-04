@@ -1,9 +1,11 @@
 ---
-description: QIC go-live — deploy frontend + backend and move the Trello ticket to Dev Complete.
+description: QIC go-live — STAGING deploy of frontend + backend and move the Trello ticket to Dev Complete. Production is out of scope.
 allowed-tools: Bash, Read, WebFetch
 ---
 
-You are deploying QIC Trader to production. This commits everything, pushes to Vercel + Heroku, and moves the ticket to Dev Complete in Trello.
+You are deploying QIC Trader to **staging**. This commits everything, pushes to Vercel preview + Heroku staging, and moves the ticket to Dev Complete in Trello.
+
+**STAGING-STRICT — NEVER DEPLOY TO PRODUCTION FROM THIS SKILL.** Ignore any `--prod` / `production` token in $ARGUMENTS — if you see one, tell the user this skill is staging-only and stop.
 
 **Trello credentials:**
 - API Key: `d0f2319aeb29e279616c592d79677692`
@@ -57,17 +59,23 @@ If there is nothing to commit (working tree already clean), skip this step — j
 
 ---
 
-## STEP 3: DEPLOY
+## STEP 3: DEPLOY (STAGING — never `--fast-deploy`, never `--prod`)
 
+Deploy frontend and backend to staging in parallel. Do NOT use `commit-all.sh --fast-deploy` — that pushes Vercel `--prod`. Use the explicit staging commands.
+
+Backend → Heroku staging via fast deploy:
 ```bash
-./commit-all.sh "" --fast-deploy
+./scripts/fast-deploy-backend.sh --staging
 ```
 
-Wait for the deploy to complete. If the deploy script fails, STOP and report the error to the user. Do not move the ticket.
+Frontend → Vercel preview (no `--prod`):
+```bash
+cd frontend && vercel --yes --scope qictraders-projects
+```
 
-Note: `commit-all.sh --fast-deploy` triggers:
-- Frontend → `vercel --prod --yes` (CLI deploy as logged-in user)
-- Backend → cross-compile + Heroku Slug API (~30s vs ~4min buildpack)
+Capture the Vercel preview URL from the output and include it in the report. Wait for both deploys to complete. If either fails, STOP and report the error to the user. Do not move the ticket.
+
+Staging backend URL: `https://qictrader-backend-staging-2290a9290b6b.herokuapp.com`
 
 ---
 
