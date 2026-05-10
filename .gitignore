@@ -3,12 +3,22 @@ scripts/.vercel-deploy-hook
 .vercel
 .env
 
+# JWT-AUDIT-2026-05 / item 9: defense-in-depth — even though
+# `ops/trello.md` is not currently tracked, lock the door against
+# anyone re-adding `key=…&token=…` blobs back into committed paths.
+**/trello.env
+**/.trello-creds*
+**/*-secrets/
+
 # Dependencies and build caches
 node_modules/
 .DS_Store
 
 # Foreign project files accidentally committed
 twolebot-main/
+
+# Archived/retired working trees
+qic-archived-*/
 
 # Claude Code workflow guide (shared across PCs, not committed)
 CLAUDE-CODE-WORKFLOW.md

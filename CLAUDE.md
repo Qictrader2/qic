@@ -22,6 +22,16 @@ Any implementation that contradicts the intent document is wrong. If the AS BOLT
 - Use CSS variables and Tailwind tokens — no hardcoded hex/rgb in components
 - When in doubt, check the anti-patterns section (Section 11) before writing markup
 
+## Deployment
+
+**Full deployment guide: [`DEPLOYMENT.md`](DEPLOYMENT.md)**
+
+Key points:
+- `main` is the source of truth — all developers commit to `main`
+- Production deploys only from **tagged releases** verified on staging
+- Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes)
+- `git pull --rebase origin main` is **mandatory** before every deploy
+
 For monorepo commits and deploys use `./commit-all.sh`:
 
 ```
