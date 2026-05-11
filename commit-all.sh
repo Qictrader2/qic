@@ -98,8 +98,50 @@ commit_submodule() {
   return 0
 }
 
+# --- Production deploy guards (added 2026-05-11) -----------------------------
+# See scripts/fast-deploy-backend.sh for the parallel backend guard. The
+# frontend guard is lighter because Vercel keeps every preview and `vercel
+# rollback` is one click — but it still requires the explicit confirmation
+# env var so autonomous tooling cannot ship to www.qictrader.com by mistake.
+assert_frontend_prod_allowed() {
+  if [[ "${CONFIRM_PROD_DEPLOY:-}" != "yes" ]]; then
+    cat >&2 <<'EOF'
+ERROR: frontend production deploy refused — CONFIRM_PROD_DEPLOY env var not set.
+
+Why: this guard exists so autonomous tools (Cursor agents, cron jobs,
+     misclicked shell history) cannot ship to www.qictrader.com without a
+     second deliberate signal.
+
+Fix: re-run the same command with the env var inline, e.g.
+
+  CONFIRM_PROD_DEPLOY=yes ./commit-all.sh "..." --prod
+
+If you didn't mean to deploy to production, drop the --prod flag — the
+default --deploy targets staging only.
+EOF
+    return 1
+  fi
+
+  if [[ -t 0 ]]; then
+    cat <<EOF
+================================================================
+  FRONTEND PRODUCTION DEPLOY — www.qictrader.com
+================================================================
+EOF
+    read -p "Type 'PRODUCTION' to confirm (anything else aborts): " confirm
+    if [[ "$confirm" != "PRODUCTION" ]]; then
+      echo "Aborted." >&2
+      return 1
+    fi
+  fi
+  return 0
+}
+
 deploy_frontend() {
   if [[ "$DEPLOY_ENV" == "production" ]]; then
+    if ! $DRY_RUN; then
+      assert_frontend_prod_allowed || exit 2
+    fi
     local VERCEL_FLAGS="--prod --yes --scope qictraders-projects"
     local LABEL="production"
   else

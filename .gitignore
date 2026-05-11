@@ -10,6 +10,11 @@ scripts/.vercel-deploy-hook
 **/.trello-creds*
 **/*-secrets/
 
+# B8 (2026-05-11): local audit log of every --prod deploy attempt
+# (allowed / blocked + reason). Useful per-operator forensics, but
+# noisy and machine-specific — don't push it to origin.
+ops/prod-deploys.log
+
 # Dependencies and build caches
 node_modules/
 .DS_Store
