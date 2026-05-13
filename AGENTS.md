@@ -40,6 +40,18 @@ Deploy targets:
 
 ---
 
+## Ops Runbooks
+
+Long-lived operational docs live in `ops/`. Read the relevant runbook before touching anything in its domain.
+
+- `ops/heroku-apps.md` — Heroku app inventory, ownership, decommission procedure.
+- `ops/kyc-l3-evidence-backfill.md` — KYC L3 evidence backfill procedure.
+- `ops/google-entity-accounts.md` — Google Workspace + downstream product setup (Ads, Search Console, Business Profile, YouTube). Read before claiming or creating any Google product under QIC Trade Systems Limited.
+- `ops/credentials-google.md` — Identifiers and ownership matrix for every Google product. IDs only, never secrets.
+- `ops/google-access-offboarding.md` — Checklist for revoking Google access when someone leaves or rotates roles.
+
+---
+
 ## Rust Backend Rules (`qictrader-backend-rs/`)
 
 ### Types-First Development
