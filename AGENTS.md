@@ -49,6 +49,7 @@ Long-lived operational docs live in `ops/`. Read the relevant runbook before tou
 - `ops/google-entity-accounts.md` — Google Workspace + downstream product setup (Ads, Search Console, Business Profile, YouTube). Read before claiming or creating any Google product under QIC Trade Systems Limited.
 - `ops/credentials-google.md` — Identifiers and ownership matrix for every Google product. IDs only, never secrets.
 - `ops/google-access-offboarding.md` — Checklist for revoking Google access when someone leaves or rotates roles.
+- `ops/ga4-gtm-setup.md` — GA4 property + GTM container setup runbook, Consent Mode v2 configuration, conversion event wiring.
 
 ---
 

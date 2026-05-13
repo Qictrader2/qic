@@ -326,6 +326,32 @@ Row Hover: hover:bg-primary-foreground
 Cell: text-sm
 ```
 
+### 7.7 Switches (Hairline)
+
+The canonical toggle. Used in `NotificationSettings`, `SecuritySettings`, and any
+ToggleItem row. Source: `frontend/src/components/ui/switch.tsx`.
+
+| Property | Off | On |
+|----------|-----|----|
+| Track size | 44 × 24 px | 44 × 24 px |
+| Track radius | `rounded-full` | `rounded-full` |
+| Track background | `transparent` | `brand-green` (`#10b981`) |
+| Track border | `1px white/10` | `1px brand-green` |
+| Thumb size | 16 × 16 px | 16 × 16 px |
+| Thumb color | `slate-400` (`#94a3b8`) | `white` |
+| Thumb position | `translate-x-[3px]` | `translate-x-[23px]` |
+| Transition | 250ms ease-out (track), 250ms cubic-bezier(0.4,0,0.2,1) (thumb) | same |
+| Focus ring | `focus-visible:ring-[3px] ring-brand-green/15` | same |
+
+**Required class**: `no-min-touch`. The global `button:not(.no-min-touch)` rule
+in `globals.css` forces `min-height: 44px` on all buttons for tap-target
+accessibility. Without `no-min-touch` the 24px-tall track expands to a 44×44
+square — a regression we shipped once. Keep the class on the Switch primitive.
+
+Touch-target compensation: the 44px width still meets WCAG 2.5.5 on the
+dominant axis, and the row container (`py-3`) gives an effective vertical hit
+area of ~48px around the toggle.
+
 ---
 
 ## 8. Animation & Motion
