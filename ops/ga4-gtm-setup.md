@@ -159,6 +159,18 @@ For all three: **Tags → New → Tag Configuration → Google Analytics: GA4 Ev
 
 `sign_up` is GA4-reserved and shows up in default reports — don't rename it. `first_deposit` and `onboarding_complete` are custom but use snake_case to match GA4 conventions.
 
+### 3.4.1 Frontend emission status
+
+The frontend event schema already defines all three conversion events in `frontend/src/lib/analytics/events.ts`, and `frontend/src/lib/analytics/gtm.ts` only pushes them when `NEXT_PUBLIC_GTM_ID` is configured.
+
+Current wiring:
+
+| Event | Frontend status | Notes |
+|-------|-----------------|-------|
+| `sign_up` | Live in code | Fired after successful email signup and Google OAuth signup. It is not fired for login. |
+| `onboarding_complete` | Not emitted yet | Needs a settled product definition for "onboarding complete" plus a pseudonymous `user_id_hash` source. Do not send raw email, wallet address, or raw user ID. |
+| `first_deposit` | Not emitted yet | Needs a backend/API contract that says this accepted deposit is the user's first deposit. Do not infer this from the generic deposit mutation, or repeat deposits will be counted as first deposits. |
+
 ### 3.5 Mark as Conversions in GA4
 
 GTM only fires the events. To make them count as conversions in GA4 reports:
