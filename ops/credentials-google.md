@@ -72,31 +72,38 @@ Template doc for capturing the **public identifiers** of every Google product ow
 
 ---
 
-## GA4 (set during QIC-231 — placeholder)
+## GA4 (QIC-231 — partially provisioned)
 
 | Field | Value |
 |---|---|
-| Account name | `<TBD: QIC-231>` |
-| Property name | `<TBD: QIC-231>` |
+| Account name | `<TBD: verify in GA4 UI; expected "QIC Trade Systems Limited">` |
+| Property name | `<TBD: verify/create; expected "QicTrader — Web">` |
 | Property ID | `<TBD: 9-digit numeric, e.g. 387654321 — set during QIC-231>` |
-| Measurement ID | `<TBD: G-XXXXXXXXXX — set during QIC-231>` |
-| Data streams | `<TBD: web stream for qictrader.com; app streams TBD>` |
+| Production web stream name | `Qictrader` |
+| Production web stream URL | `https://www.qictrader.com` |
+| Production web stream ID | `14911868847` |
+| Production Measurement ID | `G-8J1XWX5ZKQ` |
+| Staging web stream | `<TBD: create/verify for Vercel preview domain>` |
+| Staging Measurement ID | `<TBD: G-XXXXXXXXXX — set during QIC-231>` |
+| Browser verification status | `Not yet proven live: page_view and sign_up still need GTM/GA4 DebugView verification` |
 | BigQuery export linked | `<TBD: Yes/No — set during QIC-231>` |
 
 See `ops/ga4-gtm-setup.md` once QIC-231 ships.
 
 ---
 
-## GTM (set during QIC-231 — placeholder)
+## GTM (QIC-231 — pending browser verification)
 
 | Field | Value |
 |---|---|
-| Account name | `<TBD: QIC-231>` |
-| Container name | `<TBD: QIC-231>` |
-| Container public ID | `<TBD: GTM-XXXXXXX — embedded in frontend>` |
+| Account name | `<TBD: verify/create; expected "QIC Trade Systems Limited">` |
+| Container name | `<TBD: verify/create; expected "qictrader.com">` |
+| Container public ID | `GTM-5X3M5QCS` |
 | Container internal ID | `<TBD: numeric, used in GTM REST API calls>` |
 | Workspace name | `<TBD: e.g. "Default Workspace">` |
-| Environments configured | `<TBD: Live, Staging — set during QIC-231>` |
+| Environments configured | `<TBD: Live, Preview/Staging — set during QIC-231>` |
+| Vercel env var | `NEXT_PUBLIC_GTM_ID=GTM-5X3M5QCS` set for Preview and Production |
+| Publish status | `Published v1 — GA4 page views and sign_up` |
 
 See `ops/ga4-gtm-setup.md` once QIC-231 ships.
 
