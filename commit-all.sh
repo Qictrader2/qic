@@ -151,10 +151,42 @@ deploy_frontend() {
 
   if $DRY_RUN; then
     echo "[dry-run] [frontend] vercel $VERCEL_FLAGS"
+    if [[ "$DEPLOY_ENV" != "production" ]]; then
+      echo "[dry-run] [frontend] alias deployment to staging.qictrader.com"
+    fi
   else
     echo "[frontend] Deploying to Vercel [$LABEL]..."
-    (cd "$FRONTEND" && vercel $VERCEL_FLAGS 2>&1) | sed 's/^/[frontend] /'
+    local VERCEL_OUT
+    VERCEL_OUT=$(cd "$FRONTEND" && vercel $VERCEL_FLAGS 2>&1)
+    echo "$VERCEL_OUT" | sed 's/^/[frontend] /'
     echo "[frontend] ✅ Vercel deploy complete [$LABEL]"
+
+    if [[ "$DEPLOY_ENV" != "production" ]]; then
+      local DEPLOY_URL
+      DEPLOY_URL=$(echo "$VERCEL_OUT" | grep -Eo 'https://frontend-[a-z0-9-]+\.vercel\.app' | tail -1)
+      if [[ -z "$DEPLOY_URL" ]]; then
+        echo "[frontend] ⚠️  Could not parse deployment URL — skipping staging.qictrader.com alias" >&2
+        return 0
+      fi
+      local VERCEL_TOKEN
+      VERCEL_TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.local/share/com.vercel.cli/auth.json'))['token'])" 2>/dev/null)
+      if [[ -z "$VERCEL_TOKEN" ]]; then
+        echo "[frontend] ⚠️  No Vercel auth token found — skipping staging.qictrader.com alias" >&2
+        return 0
+      fi
+      echo "[frontend] Aliasing $DEPLOY_URL → staging.qictrader.com..."
+      local ALIAS_RESP
+      ALIAS_RESP=$(curl -s -X POST \
+        "https://api.vercel.com/v2/deployments/${DEPLOY_URL#https://}/aliases?teamId=team_oT8YESScxj17i1VS7OXQlLz7" \
+        -H "Authorization: Bearer $VERCEL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"alias":"staging.qictrader.com"}')
+      if echo "$ALIAS_RESP" | grep -q '"alias":"staging.qictrader.com"'; then
+        echo "[frontend] ✅ staging.qictrader.com now serves this deployment"
+      else
+        echo "[frontend] ⚠️  Alias API call failed: $ALIAS_RESP" >&2
+      fi
+    fi
   fi
 }
 
