@@ -118,6 +118,9 @@ For each variable below: **Variables → User-Defined Variables → New → Data
 | `dlv.amount` | `amount` | `0` | Numeric, in `currency` units |
 | `dlv.method` | `method` | `(empty)` | Sign-up method: `email` / `google` / `wallet` |
 | `dlv.user_id_hash` | `user_id_hash` | `(empty)` | Pseudonymous user identifier; **never** push raw email or wallet address into the data layer |
+| `dlv.offer_type` | `offer_type` | `(empty)` | `buy` / `sell` — set on `first_offer_created` |
+| `dlv.cryptocurrency` | `cryptocurrency` | `(empty)` | ZAR / BTC / USDT / ETH / SOL — set on `first_offer_created` |
+| `dlv.fiat_currency` | `fiat_currency` | `(empty)` | Three-letter fiat code (e.g. `ZAR`) — set on `first_offer_created` |
 
 Version 2: leave Data Layer Variable type as **Version 2** (default). Version 1 only reads the most recent push — we want the merged state.
 
@@ -156,8 +159,10 @@ For all three: **Tags → New → Tag Configuration → Google Analytics: GA4 Ev
 | `sign_up` | `ce.sign_up` | `method = {{dlv.method}}` | Yes |
 | `onboarding_complete` | `ce.onboarding_complete` | `user_id_hash = {{dlv.user_id_hash}}` | Yes |
 | `first_deposit` | `ce.first_deposit` | `currency = {{dlv.currency}}`, `amount = {{dlv.amount}}` | Yes |
+| `kyc_verification_completed` | `ce.kyc_verification_completed` | (none) | Yes |
+| `first_offer_created` | `ce.first_offer_created` | `offer_type = {{dlv.offer_type}}`, `cryptocurrency = {{dlv.cryptocurrency}}`, `fiat_currency = {{dlv.fiat_currency}}` | Yes |
 
-`sign_up` is GA4-reserved and shows up in default reports — don't rename it. `first_deposit` and `onboarding_complete` are custom but use snake_case to match GA4 conventions.
+`sign_up` is GA4-reserved and shows up in default reports — don't rename it. The custom events use snake_case to match GA4 conventions.
 
 ### 3.4.1 Frontend emission status
 
@@ -170,6 +175,8 @@ Current wiring:
 | `sign_up` | Live in code | Fired after successful email signup and Google OAuth signup. It is not fired for login. |
 | `onboarding_complete` | Not emitted yet | Needs a settled product definition for "onboarding complete" plus a pseudonymous `user_id_hash` source. Do not send raw email, wallet address, or raw user ID. |
 | `first_deposit` | Not emitted yet | Needs a backend/API contract that says this accepted deposit is the user's first deposit. Do not infer this from the generic deposit mutation, or repeat deposits will be counted as first deposits. |
+| `kyc_verification_completed` | Live in code | Fired by `IdentityVerification.tsx` on the transition into the verified terminal state. Stateless — repeated verifications (re-KYC) will re-fire; consider this when interpreting funnel reports. |
+| `first_offer_created` | Live in code | Backend snapshots offer count before insert and returns `isFirstOffer: true` on the create response only when the user has zero prior offers. Frontend forwards that to GA4. No client-side state. |
 
 ### 3.5 Mark as Conversions in GA4
 
@@ -177,7 +184,7 @@ GTM only fires the events. To make them count as conversions in GA4 reports:
 
 1. In GA4 → **Admin → Property → Events**.
 2. After at least one of each event has fired (publish GTM first, see §4, then trigger from staging), each event will appear in the list.
-3. Toggle **Mark as conversion** for `sign_up`, `onboarding_complete`, `first_deposit`.
+3. Toggle **Mark as conversion** for `sign_up`, `onboarding_complete`, `first_deposit`, `kyc_verification_completed`, `first_offer_created`.
 
 Note: GA4 renamed "Conversions" to "Key events" in 2024 — same toggle, different label depending on when you read this.
 
