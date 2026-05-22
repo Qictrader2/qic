@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuthStore } from "@/src/store/auth-store"
 import { apiClient, ApiError } from "@/src/lib/api/client"
+import { AppleSignInButton, GoogleSignInButton } from "@/src/components/features/auth/OAuthButtons"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -214,6 +215,18 @@ export default function LoginScreen() {
                 <Text className="text-sm font-medium text-brand">Sign up</Text>
               </TouchableOpacity>
             </Link>
+          </View>
+
+          {/* OAuth divider */}
+          <View className="mt-8 flex-row items-center gap-4">
+            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
+            <Text className="text-xs text-muted dark:text-muted-dark">or continue with</Text>
+            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
+          </View>
+
+          <View className="mt-4 gap-3">
+            <AppleSignInButton />
+            <GoogleSignInButton />
           </View>
         </View>
       </ScrollView>

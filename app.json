@@ -46,6 +46,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-local-authentication",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {
