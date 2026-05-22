@@ -1,90 +1,41 @@
-# Dependencies
-node_modules/
-.pnp.*
-.yarn/
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Bun
-.bun/
+# dependencies
+node_modules/
 
 # Expo
 .expo/
-.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native build outputs
-ios/Pods/
-ios/build/
-ios/DerivedData/
-ios/.xcode.env.local
-*.xcuserdata/
-*.xcworkspace/xcuserdata/
-android/.gradle/
-android/build/
-android/app/build/
-android/captures/
-android/local.properties
-*.iml
-*.hprof
-*.keystore
-!debug.keystore
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# EAS
-.eas/
+# Metro
+.metro-health-check*
 
-# Maestro
-.maestro-screenshots/
-*.maestro.log
-
-# TypeScript
-*.tsbuildinfo
-
-# Coverage
-coverage/
-.nyc_output/
-
-# Logs
+# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
-*.log
 
-# Env files
-.env
-.env.local
-.env.development
-.env.staging
-.env.production
-.env.*.local
-
-# Secrets (paranoid)
-*.pem
-*.key
-*.p12
-*.p8
-*.mobileprovision
-GoogleService-Info.plist
-google-services.json
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Cursor agent artifacts
-.cursorrules-backup
-agent-transcripts/
-
-# macOS / Windows / Linux
+# macOS
 .DS_Store
-Thumbs.db
-desktop.ini
+*.pem
 
-# Test outputs
-test-results/
-playwright-report/
+# local env files
+.env*.local
 
-# Sentry
-.sentryclirc
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
