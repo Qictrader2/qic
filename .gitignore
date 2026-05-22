@@ -1,0 +1,90 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/
+
+# Bun
+.bun/
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build outputs
+ios/Pods/
+ios/build/
+ios/DerivedData/
+ios/.xcode.env.local
+*.xcuserdata/
+*.xcworkspace/xcuserdata/
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/local.properties
+*.iml
+*.hprof
+*.keystore
+!debug.keystore
+
+# EAS
+.eas/
+
+# Maestro
+.maestro-screenshots/
+*.maestro.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Env files
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.*.local
+
+# Secrets (paranoid)
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+GoogleService-Info.plist
+google-services.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cursor agent artifacts
+.cursorrules-backup
+agent-transcripts/
+
+# macOS / Windows / Linux
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test outputs
+test-results/
+playwright-report/
+
+# Sentry
+.sentryclirc

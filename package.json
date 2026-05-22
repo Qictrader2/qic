@@ -1,0 +1,20 @@
+{
+  "name": "qictrader-mobile",
+  "version": "0.0.0",
+  "private": true,
+  "description": "QicTrader React Native mobile app (iOS + Android). Consumes qictrader-backend-rs HTTP API. Feature parity with frontend/ is required.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20",
+    "bun": ">=1.1"
+  },
+  "scripts": {
+    "sync": "./scripts/sync-from-web.sh",
+    "sync:check": "./scripts/sync-from-web.sh --check",
+    "preinstall": "echo 'Run MOBILE-INIT-001 to scaffold Expo, then this placeholder package.json will be replaced.'"
+  },
+  "notes": {
+    "init": "This package.json is a placeholder. Run MOBILE-INIT-001 to initialize Expo (npx create-expo-app@latest .), which will overwrite this file with the proper one.",
+    "trello": "First ticket card lives at: https://trello.com/c/xAWvNaBO (MOBILE-INIT-001)"
+  }
+}

@@ -1,0 +1,178 @@
+---
+description: React Native + Expo conventions for QicTrader mobile
+alwaysApply: true
+---
+
+# React Native Stack Conventions
+
+## SDK + tooling
+
+- **Expo SDK 52+** (managed workflow — escape to bare only if a native module forces it)
+- **React Native 0.76+** with New Architecture enabled
+- **TypeScript** strict mode: `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`
+- **bun** package manager (not npm, not yarn, not pnpm)
+- **Node** version pinned via `.nvmrc` (same as web's `frontend/.nvmrc`)
+
+## Directory layout
+
+```
+src/
+  app/                 (Expo Router screens — file-based routing)
+  components/          (reusable UI components)
+    ui/                (primitives: Button, Input, Card, Text, Heading, Badge)
+    features/          (feature-specific composites)
+  hooks/               (custom hooks; one per file)
+    api/               (React Query hooks per backend resource)
+    native/            (hooks wrapping Expo modules: biometric, push, camera)
+  lib/                 (pure utility functions — synced from web)
+    format.ts          (synced)
+    fees.ts            (synced)
+    state-machines/    (synced)
+    storage/           (mobile-only: SecureStore + AsyncStorage wrappers)
+    api-client.ts      (mobile-specific axios setup)
+  schemas/             (zod validators — synced from web)
+  constants/           (currency codes, networks, etc. — synced from web)
+  types/               (API types — synced from web; mobile-specific in subfolders)
+  services/            (HTTP service files per backend resource)
+  store/               (Redux slices + Zustand stores)
+  navigation/          (React Navigation config — types live here)
+  native/              (low-level native module wrappers if needed)
+  __tests__/           (top-level test helpers; per-file tests live next to source)
+```
+
+## Routing
+
+- **Use Expo Router** (file-based) — same mental model as Next.js App Router; web developers transitioning to mobile will feel at home
+- Layout files (`_layout.tsx`) for shared chrome
+- Auth gate at root via `<AuthGuard />`
+- Type-safe params via Expo Router's generated types
+
+## State management
+
+| Use case | Tool |
+|---|---|
+| Server state (anything from backend) | React Query (TanStack v5) |
+| Global app state (auth, currency pref, theme) | Redux Toolkit (mirror web's pattern) |
+| Ephemeral UI state (sheets, modals, toasts) | Zustand or `useState` |
+| Form state | `react-hook-form` (same as web) |
+| Validation | `zod` (same as web; schemas synced) |
+
+## Styling
+
+- **NativeWind v4** — Tailwind for RN. Use the same tokens as web.
+- All colors via tokens (`bg-brand`, `text-foreground`, etc.) — no hardcoded hex
+- Poppins font only (loaded via `expo-google-fonts/poppins`); splash holds until loaded
+- Spacing scale matches web's `tailwind.config.ts` exactly
+- Dark mode via `useColorScheme()` + Tailwind's `dark:` modifier — system + manual override
+
+## Native modules
+
+Prefer Expo SDK modules first (community-supported, managed builds work):
+
+| Need | Module |
+|---|---|
+| Secure storage | `expo-secure-store` |
+| Biometric | `expo-local-authentication` |
+| Push notifications | `expo-notifications` (FCM + APNs) |
+| Camera | `expo-camera` |
+| Image picker | `expo-image-picker` |
+| Image (caching) | `expo-image` (replaces RN `Image`) |
+| QR scanning | `expo-barcode-scanner` |
+| Linking | `expo-linking` |
+| App state | `expo-application`, `expo-device` |
+| Filesystem | `expo-file-system` |
+| Sharing | `expo-sharing` |
+| Splash | `expo-splash-screen` |
+| Status bar | `expo-status-bar` |
+| Crypto | `expo-crypto` |
+| Haptics | `expo-haptics` |
+
+Fall back to `react-native-*` community packages only when Expo doesn't cover the need (e.g. `@react-native-community/netinfo`, `@shopify/flash-list`, `@react-native-google-signin/google-signin`).
+
+## API client pattern
+
+```ts
+// src/lib/api-client.ts
+import axios from 'axios';
+import { secureStorage } from './storage/secure';
+
+const apiClient = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  timeout: 30_000,
+});
+
+apiClient.interceptors.request.use(async (config) => {
+  const token = await secureStorage.get('qic_access');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (r) => r,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // refresh logic mirrors web's frontend/src/lib/api-client.ts
+      // ...
+    }
+    return Promise.reject(toApiError(error));
+  },
+);
+```
+
+Mirror the structure of `Qictrader/frontend/src/lib/api-client.ts` — same interceptor sequence, same retry semantics, same error mapping.
+
+## Hooks pattern (one per file)
+
+```ts
+// src/hooks/api/use-wallet.ts
+export function useWallet() {
+  return useQuery({
+    queryKey: ['wallet'],
+    queryFn: () => walletService.getAll(),
+    staleTime: 30_000,
+  });
+}
+
+export function useWithdraw() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: WithdrawInput) => walletService.withdraw(input),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['wallet'] }); },
+  });
+}
+```
+
+## Forbidden patterns
+
+- `View` with hardcoded color hex / pixel values — use NativeWind / tokens
+- `console.log` left in committed code (Sentry breadcrumbs are fine; raw console isn't)
+- `as any` to silence TypeScript
+- `// @ts-ignore` ever
+- `// @ts-expect-error` without a tracking ticket comment
+- Empty `catch {}`
+- `let _ = somePromise()`
+- `AsyncStorage` for tokens (see `no-asyncstorage-for-secrets.mdc`)
+- Direct `localStorage` references (web-only)
+- Wagmi / Viem (web-only)
+
+## Linting
+
+ESLint config mirrors web's `eslint.config.mjs` with RN-specific rules added:
+- `react-native/no-inline-styles`
+- `react-native/no-color-literals`
+- `react-native/no-unused-styles`
+- `@typescript-eslint/no-explicit-any`
+- `@typescript-eslint/no-non-null-assertion`
+
+## Build
+
+- `bun run start` — dev server with Metro
+- `bun run ios` — launch iOS simulator
+- `bun run android` — launch Android emulator
+- `bun run typecheck` — TS check
+- `bun run lint` — ESLint
+- `bun test` — Jest
+- `bun run maestro` — E2E suite
+- `eas build` — cloud builds (see `eas-deploy-only.mdc`)
