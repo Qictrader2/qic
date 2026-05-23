@@ -31,7 +31,9 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +41,12 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Store credentials (NEVER commit these)
+google-play-service-account.json
+GoogleService-Info.plist
+google-services.json
+AuthKey_*.p8
+
+# Store screenshots (too large for git — store in shared drive)
+store-assets/screenshots/

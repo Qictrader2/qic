@@ -10,13 +10,35 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.qictrader.mobile",
+      "bundleIdentifier": "com.qictrader.app",
       "buildNumber": "1",
+      "requireFullScreen": true,
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:qictrader.com",
+        "applinks:app.qictrader.com"
+      ],
+      "entitlements": {
+        "com.apple.developer.associated-domains": [
+          "applinks:qictrader.com",
+          "applinks:app.qictrader.com"
+        ]
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      },
       "infoPlist": {
-        "NSCameraUsageDescription": "QicTrader uses your camera to capture proof of payment and KYC documents.",
-        "NSPhotoLibraryUsageDescription": "QicTrader needs access to photos to upload proof of payment.",
-        "NSFaceIDUsageDescription": "QicTrader uses Face ID to secure your account.",
-        "NSLocalNetworkUsageDescription": "Used for development only."
+        "NSCameraUsageDescription": "QicTrader uses your camera to capture proof of payment and KYC identity documents.",
+        "NSPhotoLibraryUsageDescription": "QicTrader needs access to your photo library to upload proof of payment and identity documents.",
+        "NSFaceIDUsageDescription": "QicTrader uses Face ID to protect your account and authorize sensitive actions like withdrawals.",
+        "NSLocalNetworkUsageDescription": "Used for development builds only.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["qictrader"]
       }
     },
     "android": {
@@ -26,15 +48,29 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "package": "com.qictrader.mobile",
+      "package": "com.qictrader.app",
       "versionCode": 1,
       "predictiveBackGestureEnabled": false,
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "qictrader.com", "pathPrefix": "/app" },
+            { "scheme": "https", "host": "app.qictrader.com" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -47,6 +83,8 @@
       "expo-secure-store",
       "expo-local-authentication",
       "expo-apple-authentication",
+      "expo-image-picker",
+      "react-native-webview",
       [
         "expo-notifications",
         {
@@ -65,6 +103,20 @@
             "backgroundColor": "#0A0A0A"
           }
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0",
+            "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
       ]
     ],
     "experiments": {
@@ -74,6 +126,7 @@
       "eas": {
         "projectId": "PLACEHOLDER_EAS_PROJECT_ID"
       }
-    }
+    },
+    "owner": "qictrader"
   }
 }

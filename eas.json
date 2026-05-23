@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 16.0.0",
+    "version": ">= 15.0.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -8,35 +8,57 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": false
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://localhost:8080",
-        "EXPO_PUBLIC_ENV": "development"
+        "EXPO_PUBLIC_API_URL": "https://api.qictrader.com",
+        "EXPO_PUBLIC_ENVIRONMENT": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://qictrader-backend-rs-13eab0516d9a.herokuapp.com",
-        "EXPO_PUBLIC_ENV": "staging"
+        "EXPO_PUBLIC_API_URL": "https://api.qictrader.com",
+        "EXPO_PUBLIC_ENVIRONMENT": "preview"
       }
     },
     "staging": {
       "distribution": "internal",
       "channel": "staging",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://qictrader-backend-rs-13eab0516d9a.herokuapp.com",
-        "EXPO_PUBLIC_ENV": "staging"
+        "EXPO_PUBLIC_API_URL": "https://api-staging.qictrader.com",
+        "EXPO_PUBLIC_ENVIRONMENT": "staging"
       }
     },
     "production": {
-      "autoIncrement": true,
+      "distribution": "store",
       "channel": "production",
+      "ios": {
+        "autoIncrement": true
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "autoIncrement": true
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://qictrader-backend-rs-13eab0516d9a.herokuapp.com",
-        "EXPO_PUBLIC_ENV": "production"
+        "EXPO_PUBLIC_API_URL": "https://api.qictrader.com",
+        "EXPO_PUBLIC_ENVIRONMENT": "production"
       }
     }
   },
@@ -45,11 +67,12 @@
       "ios": {
         "appleId": "PLACEHOLDER_APPLE_ID",
         "ascAppId": "PLACEHOLDER_ASC_APP_ID",
-        "appleTeamId": "PLACEHOLDER_TEAM_ID"
+        "appleTeamId": "PLACEHOLDER_APPLE_TEAM_ID"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
-        "track": "internal"
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
