@@ -8,9 +8,11 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useOffers } from "@/src/hooks/api/use-market"
 import type { Offer, OfferType } from "@/src/services/market.service"
+import { getSocket } from "@/src/lib/socket"
 
 function OfferRow({ offer, onPress }: { offer: Offer; onPress: () => void }) {
   const isBuy = offer.offerType === "buy"
@@ -60,10 +62,43 @@ function OfferRow({ offer, onPress }: { offer: Offer; onPress: () => void }) {
   )
 }
 
+const POLL_INTERVAL_MS = 30_000
+
 export default function MarketplaceScreen() {
   const router = useRouter()
+  const qc = useQueryClient()
   const [tab, setTab] = useState<OfferType>("buy")
   const { data: offers, isLoading, error, refetch, isRefetching } = useOffers({ offerType: tab })
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Real-time: subscribe to marketplace Socket.IO events + 30s polling fallback
+  useEffect(() => {
+    // Socket.IO marketplace room
+    const socket = getSocket()
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["offers"] })
+    }
+
+    if (socket) {
+      socket.emit("join_marketplace")
+      socket.on("offer_created", invalidate)
+      socket.on("offer_updated", invalidate)
+      socket.on("offer_deactivated", invalidate)
+    }
+
+    // 30s polling fallback (covers cases where WS connection is absent)
+    pollTimerRef.current = setInterval(invalidate, POLL_INTERVAL_MS)
+
+    return () => {
+      if (socket) {
+        socket.off("offer_created", invalidate)
+        socket.off("offer_updated", invalidate)
+        socket.off("offer_deactivated", invalidate)
+        socket.emit("leave_marketplace")
+      }
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [])
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
@@ -137,6 +172,7 @@ export default function MarketplaceScreen() {
               <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
                 No offers right now
               </Text>
+              <Text className="text-xs text-muted dark:text-muted-dark mt-1">Auto-refreshes every 30s</Text>
             </View>
           }
         />

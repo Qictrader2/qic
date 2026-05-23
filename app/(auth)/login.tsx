@@ -16,6 +16,7 @@ import { z } from "zod"
 import { useAuthStore } from "@/src/store/auth-store"
 import { apiClient, ApiError } from "@/src/lib/api/client"
 import { AppleSignInButton, GoogleSignInButton } from "@/src/components/features/auth/OAuthButtons"
+import { trackEvent, Sentry } from "@/src/lib/analytics"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -79,6 +80,8 @@ export default function LoginScreen() {
         role: res.user.role,
         kycTier: res.user.kycTier ?? 0,
       })
+      trackEvent({ name: "login", method: "email" })
+      Sentry.setUser({ id: res.user.uid, email: res.user.email })
     } catch (err) {
       const apiErr = err as ApiError
       if (apiErr.kind === "unauthorized") {

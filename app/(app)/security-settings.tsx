@@ -1,16 +1,19 @@
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert,
+  FlatList,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "expo-router"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { profileService } from "@/src/services/profile.service"
 import { promptBiometric, isBiometricEnabled, isBiometricAvailable } from "@/src/lib/biometric"
 import { setBiometricEnabled } from "@/src/lib/biometric"
 import { useAuthStore } from "@/src/store/auth-store"
+import { apiClient } from "@/src/lib/api/client"
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Required"),
@@ -19,8 +22,56 @@ const passwordSchema = z.object({
 })
 type PasswordForm = z.infer<typeof passwordSchema>
 
+interface ActiveSession {
+  sessionId: string
+  device: string
+  ip: string
+  location: string
+  lastActiveAt: string
+  isCurrent: boolean
+}
+
+function SessionRow({ session, onRevoke }: { session: ActiveSession; onRevoke: () => void }) {
+  return (
+    <View className="py-3 border-b border-border/30 dark:border-border-dark/30 last:border-0">
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1 mr-3">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+              {session.device}
+            </Text>
+            {session.isCurrent ? (
+              <View className="px-1.5 py-0.5 rounded-full bg-success-bg">
+                <Text className="text-xs text-success font-medium">This device</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+            {session.ip} · {session.location}
+          </Text>
+          <Text className="text-xs text-muted dark:text-muted-dark">
+            Last active: {new Date(session.lastActiveAt).toLocaleDateString(undefined, {
+              month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+            })}
+          </Text>
+        </View>
+        {!session.isCurrent ? (
+          <TouchableOpacity
+            onPress={onRevoke}
+            className="px-3 py-1.5 rounded-lg border border-error bg-error-bg"
+            activeOpacity={0.8}
+          >
+            <Text className="text-xs font-medium text-error">Revoke</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </View>
+  )
+}
+
 export default function SecuritySettingsScreen() {
   const router = useRouter()
+  const qc = useQueryClient()
   const { logout } = useAuthStore()
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSuccess, setPwSuccess] = useState(false)
@@ -29,9 +80,27 @@ export default function SecuritySettingsScreen() {
     resolver: zodResolver(passwordSchema),
   })
 
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["active-sessions"],
+    queryFn: () => apiClient.get<ActiveSession[]>("/api/v1/auth/sessions"),
+    staleTime: 30_000,
+  })
+
+  const { mutate: revokeSession, isPending: revoking } = useMutation({
+    mutationFn: (sessionId: string) =>
+      apiClient.delete<void>(`/api/v1/auth/sessions/${sessionId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-sessions"] }),
+    onError: () => Alert.alert("Error", "Failed to revoke session."),
+  })
+
+  const { mutate: revokeAllSessions, isPending: revokingAll } = useMutation({
+    mutationFn: () => apiClient.delete<void>("/api/v1/auth/sessions/all"),
+    onSuccess: () => logout(),
+    onError: () => Alert.alert("Error", "Failed to revoke all sessions."),
+  })
+
   async function onChangePassword(data: PasswordForm) {
     setPwError(null)
-
     const biometricEnabled = await isBiometricEnabled()
     const biometricAvailable = await isBiometricAvailable()
     if (biometricEnabled && biometricAvailable) {
@@ -41,7 +110,6 @@ export default function SecuritySettingsScreen() {
         return
       }
     }
-
     try {
       await profileService.changePassword(data)
       setPwSuccess(true)
@@ -49,6 +117,28 @@ export default function SecuritySettingsScreen() {
     } catch {
       setPwError("Failed to change password. Check your current password and 2FA code.")
     }
+  }
+
+  function handleRevokeSession(session: ActiveSession) {
+    Alert.alert(
+      "Revoke session",
+      `Revoke access for "${session.device}" (${session.ip})?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Revoke", style: "destructive", onPress: () => revokeSession(session.sessionId) },
+      ]
+    )
+  }
+
+  function handleRevokeAll() {
+    Alert.alert(
+      "Sign out everywhere",
+      "This will sign you out of all devices including this one.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign out all", style: "destructive", onPress: () => revokeAllSessions() },
+      ]
+    )
   }
 
   async function handleDeleteAccount() {
@@ -133,6 +223,34 @@ export default function SecuritySettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Active sessions */}
+        <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">Active sessions</Text>
+            <TouchableOpacity
+              onPress={handleRevokeAll}
+              disabled={revokingAll}
+              activeOpacity={0.8}
+            >
+              <Text className="text-xs text-error font-medium">Sign out all</Text>
+            </TouchableOpacity>
+          </View>
+
+          {sessionsLoading ? (
+            <ActivityIndicator color="#00A3F6" />
+          ) : !sessions?.length ? (
+            <Text className="text-sm text-muted dark:text-muted-dark">No sessions found.</Text>
+          ) : (
+            sessions.map((session) => (
+              <SessionRow
+                key={session.sessionId}
+                session={session}
+                onRevoke={() => handleRevokeSession(session)}
+              />
+            ))
+          )}
+        </View>
+
         {/* Danger zone */}
         <View className="rounded-xl bg-error-bg border border-error/30 p-4">
           <Text className="text-sm font-semibold text-error mb-2">Danger zone</Text>
@@ -147,6 +265,8 @@ export default function SecuritySettingsScreen() {
             <Text className="text-sm font-medium text-error">Delete my account</Text>
           </TouchableOpacity>
         </View>
+
+        <View className="h-8" />
       </ScrollView>
     </SafeAreaView>
   )

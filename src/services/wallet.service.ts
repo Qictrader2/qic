@@ -1,7 +1,7 @@
 import { apiClient } from "@/src/lib/api/client"
 
 export type Currency = "BTC" | "ETH" | "SOL" | "USDT" | "USDC"
-export type Network = "bitcoin" | "ethereum" | "solana" | "tron" | "polygon"
+export type Network = "bitcoin" | "ethereum" | "solana" | "tron" | "polygon" | "erc20" | "trc20" | "spl"
 export type TxStatus = "pending" | "confirming" | "confirmed" | "failed"
 export type TxType = "deposit" | "withdrawal" | "transfer" | "trade_lock" | "trade_release"
 

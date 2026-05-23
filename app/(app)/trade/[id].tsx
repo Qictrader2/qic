@@ -11,11 +11,12 @@ import {
 } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useTrade, useMarkPaid, useReleaseEscrow, useCancelTrade, useOpenDispute } from "@/src/hooks/api/use-trade"
 import { promptBiometric, isBiometricEnabled, isBiometricAvailable } from "@/src/lib/biometric"
 import type { TradeStatus } from "@/src/services/trade.service"
 import { ApiError } from "@/src/lib/api/client"
+import { trackEvent } from "@/src/lib/analytics"
 
 function statusLabel(s: TradeStatus): string {
   const map: Record<TradeStatus, string> = {
@@ -42,6 +43,58 @@ function statusBadgeColors(s: TradeStatus): [string, string] {
   }
 }
 
+/** Format remaining seconds as MM:SS */
+function formatCountdown(seconds: number): string {
+  if (seconds <= 0) return "00:00"
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+}
+
+function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
+  const [remaining, setRemaining] = useState(() => {
+    const diff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
+    return Math.max(0, diff)
+  })
+
+  useEffect(() => {
+    if (remaining <= 0) return
+    const timer = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const isUrgent = remaining > 0 && remaining < 300 // < 5 min
+  const color = remaining === 0 ? "#EF4444" : isUrgent ? "#F59E0B" : "#10B981"
+
+  return (
+    <View className="flex-row items-center gap-1.5 py-2 px-3 rounded-lg bg-surface dark:bg-surface-dark border border-border dark:border-border-dark mb-4">
+      <Text className="text-xs text-muted dark:text-muted-dark">Payment window:</Text>
+      <Text className="text-sm font-bold font-mono" style={{ color }}>
+        {remaining === 0 ? "Expired" : formatCountdown(remaining)}
+      </Text>
+      {isUrgent && remaining > 0 ? (
+        <Text className="text-xs text-warning">⚠ Expiring soon</Text>
+      ) : null}
+    </View>
+  )
+}
+
+const QUICK_REPLIES = [
+  "I've sent the payment",
+  "Please check your account",
+  "Payment confirmed, please release",
+  "I'm ready to proceed",
+  "Please contact support if there's an issue",
+]
+
 export default function TradeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
@@ -54,10 +107,24 @@ export default function TradeDetailScreen() {
   const [show2FA, setShow2FA] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState("")
   const [releaseError, setReleaseError] = useState<string | null>(null)
+  const [showRating, setShowRating] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [ratingComment, setRatingComment] = useState("")
+  const prevStatusRef = useRef<TradeStatus | null>(null)
+
+  // Detect trade completion to prompt rating
+  useEffect(() => {
+    if (!trade) return
+    if (prevStatusRef.current && prevStatusRef.current !== "completed" && trade.status === "completed") {
+      setShowRating(true)
+    }
+    prevStatusRef.current = trade.status
+  }, [trade?.status])
 
   async function handleMarkPaid() {
     try {
       await markPaid(id ?? "")
+      trackEvent({ name: "trade_paid", tradeId: id ?? "" })
     } catch {
       Alert.alert("Error", "Failed to mark as paid. Please try again.")
     }
@@ -65,7 +132,6 @@ export default function TradeDetailScreen() {
 
   async function handleRelease() {
     setReleaseError(null)
-    // Biometric gate required for escrow release
     const biometricEnabled = await isBiometricEnabled()
     const biometricAvailable = await isBiometricAvailable()
     if (biometricEnabled && biometricAvailable) {
@@ -84,6 +150,7 @@ export default function TradeDetailScreen() {
       await releaseEscrow({ id: id ?? "", twoFactorCode })
       setShow2FA(false)
       setTwoFactorCode("")
+      trackEvent({ name: "trade_released", tradeId: id ?? "" })
     } catch (err) {
       const apiErr = err as ApiError
       if (apiErr.kind === "unauthorized") {
@@ -103,12 +170,22 @@ export default function TradeDetailScreen() {
         onPress: async () => {
           try {
             await cancelTrade({ id: id ?? "" })
+            trackEvent({ name: "trade_cancelled", tradeId: id ?? "", reason: "user_initiated" })
           } catch {
             Alert.alert("Error", "Failed to cancel trade.")
           }
         },
       },
     ])
+  }
+
+  async function submitRating() {
+    // POST to backend rating endpoint
+    try {
+      const { apiClient } = require("@/src/lib/api/client")
+      await apiClient.post(`/api/v1/trades/${id}/rating`, { rating, comment: ratingComment })
+    } catch {}
+    setShowRating(false)
   }
 
   if (isLoading) {
@@ -149,6 +226,11 @@ export default function TradeDetailScreen() {
           <Text className="text-xs text-muted dark:text-muted-dark capitalize">{trade.role}</Text>
         </View>
 
+        {/* Live expiry countdown for active trades */}
+        {trade.expiresAt && ["initiated", "funded", "payment_pending", "payment_sent"].includes(trade.status) ? (
+          <ExpiryCountdown expiresAt={trade.expiresAt} />
+        ) : null}
+
         {/* Trade info */}
         <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
           {[
@@ -157,10 +239,14 @@ export default function TradeDetailScreen() {
             ["Price", `${trade.fiatCurrency} ${parseFloat(trade.pricePerUnit).toLocaleString()}`],
             ["Payment method", trade.paymentMethod.replace(/_/g, " ")],
             ["Counterparty", trade.counterparty.username],
+            ["Trade ID", `#${trade.id.slice(0, 8)}`],
           ].map(([label, value]) => (
-            <View key={label} className="flex-row justify-between py-2 border-b border-border/50 dark:border-border-dark/50 last:border-0">
+            <View
+              key={label}
+              className="flex-row justify-between py-2 border-b border-border/50 dark:border-border-dark/50 last:border-0"
+            >
               <Text className="text-sm text-muted dark:text-muted-dark">{label}</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark font-medium">
+              <Text className="text-sm text-foreground dark:text-foreground-dark font-medium flex-shrink ml-4 text-right">
                 {value}
               </Text>
             </View>
@@ -182,7 +268,7 @@ export default function TradeDetailScreen() {
           <Text className="text-sm font-medium text-brand">Open chat</Text>
         </TouchableOpacity>
 
-        {/* Action buttons by role + status */}
+        {/* Buyer: mark paid */}
         {trade.role === "buyer" && trade.status === "funded" ? (
           <TouchableOpacity
             onPress={handleMarkPaid}
@@ -196,6 +282,7 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Buyer: upload proof */}
         {trade.role === "buyer" && ["funded", "payment_pending"].includes(trade.status) ? (
           <TouchableOpacity
             onPress={() =>
@@ -208,6 +295,7 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Seller: release */}
         {trade.role === "seller" && trade.status === "payment_confirmed" ? (
           <TouchableOpacity
             onPress={handleRelease}
@@ -221,6 +309,7 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Cancel */}
         {["initiated", "funded", "payment_pending"].includes(trade.status) ? (
           <TouchableOpacity
             onPress={handleCancel}
@@ -232,6 +321,7 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Dispute */}
         {["payment_sent", "payment_confirmed"].includes(trade.status) ? (
           <TouchableOpacity
             onPress={() =>
@@ -244,10 +334,23 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {/* Rate counterparty for completed trade */}
+        {trade.status === "completed" ? (
+          <TouchableOpacity
+            onPress={() => setShowRating(true)}
+            className="rounded-lg border border-border dark:border-border-dark py-3.5 items-center mb-3"
+            activeOpacity={0.8}
+          >
+            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+              ⭐ Rate {trade.counterparty.username}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View className="h-8" />
       </ScrollView>
 
-      {/* 2FA modal for release */}
+      {/* 2FA release modal */}
       <Modal visible={show2FA} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-background dark:bg-background-dark rounded-t-2xl p-6">
@@ -255,7 +358,7 @@ export default function TradeDetailScreen() {
               Confirm release
             </Text>
             <Text className="text-sm text-muted dark:text-muted-dark mb-4">
-              Enter your 6-digit 2FA code to release the crypto to the buyer.
+              Enter your 6-digit 2FA code to release crypto to the buyer.
             </Text>
             {releaseError ? (
               <View className="mb-3 rounded-lg bg-error-bg px-4 py-2">
@@ -287,6 +390,50 @@ export default function TradeDetailScreen() {
               className="py-3 items-center"
             >
               <Text className="text-sm text-muted dark:text-muted-dark">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Rating modal */}
+      <Modal visible={showRating} transparent animationType="slide">
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-background dark:bg-background-dark rounded-t-2xl p-6">
+            <Text className="text-lg font-bold text-foreground dark:text-foreground-dark mb-1">
+              Rate {trade.counterparty.username}
+            </Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mb-5">
+              How was your experience with this trade?
+            </Text>
+
+            {/* Star rating */}
+            <View className="flex-row justify-center gap-3 mb-5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
+                  <Text className="text-3xl">{star <= rating ? "⭐" : "☆"}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark mb-4 h-20"
+              value={ratingComment}
+              onChangeText={setRatingComment}
+              placeholder="Add a comment (optional)"
+              placeholderTextColor="#94A3B8"
+              multiline
+              textAlignVertical="top"
+            />
+            <TouchableOpacity
+              onPress={submitRating}
+              disabled={rating === 0}
+              className={`rounded-lg py-4 items-center mb-3 ${rating > 0 ? "bg-brand" : "bg-muted/30"}`}
+              activeOpacity={0.8}
+            >
+              <Text className="text-base font-semibold text-white">Submit rating</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowRating(false)} className="py-3 items-center">
+              <Text className="text-sm text-muted dark:text-muted-dark">Skip</Text>
             </TouchableOpacity>
           </View>
         </View>

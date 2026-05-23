@@ -13,10 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useCreateOffer } from "@/src/hooks/api/use-market"
 import type { OfferType, Currency, PaymentMethodType } from "@/src/services/market.service"
 import { ApiError } from "@/src/lib/api/client"
+import { trackEvent } from "@/src/lib/analytics"
+
+const DRAFT_KEY = "qic_create_offer_draft"
 
 const CURRENCIES: Currency[] = ["BTC", "ETH", "SOL", "USDT", "USDC"]
 const PAYMENT_METHODS: { id: PaymentMethodType; label: string }[] = [
@@ -46,12 +50,14 @@ export default function CreateOfferScreen() {
   const router = useRouter()
   const { mutateAsync: createOffer } = useCreateOffer()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [draftRestored, setDraftRestored] = useState(false)
 
   const {
     control,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<Form>({
     resolver: zodResolver(schema),
@@ -67,6 +73,29 @@ export default function CreateOfferScreen() {
   const offerType = watch("offerType")
   const selectedCurrency = watch("currency")
   const selectedPaymentMethods = watch("paymentMethods") ?? []
+  const formValues = watch()
+
+  // Restore draft on mount
+  useEffect(() => {
+    AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
+      if (raw) {
+        try {
+          const draft = JSON.parse(raw) as Partial<Form>
+          reset({ ...formValues, ...draft })
+          setDraftRestored(true)
+          setTimeout(() => setDraftRestored(false), 3000)
+        } catch {}
+      }
+    })
+  }, [])
+
+  // Persist draft on every change (debounce via useEffect)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(formValues)).catch(() => {})
+    }, 500)
+    return () => clearTimeout(t)
+  }, [JSON.stringify(formValues)])
 
   function togglePaymentMethod(id: string) {
     const current = selectedPaymentMethods
@@ -92,6 +121,9 @@ export default function CreateOfferScreen() {
         paymentWindow: parseInt(data.paymentWindow),
         terms: data.terms,
       })
+      // Clear draft on successful submit
+      await AsyncStorage.removeItem(DRAFT_KEY)
+      trackEvent({ name: "offer_created", offerType: data.offerType, currency: data.currency })
       router.back()
     } catch (err) {
       const apiErr = err as ApiError
@@ -159,6 +191,12 @@ export default function CreateOfferScreen() {
           <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-6">
             Create Offer
           </Text>
+
+          {draftRestored ? (
+            <View className="mb-4 rounded-lg bg-brand-bg px-4 py-3">
+              <Text className="text-sm text-brand">Draft restored.</Text>
+            </View>
+          ) : null}
 
           {serverError ? (
             <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">

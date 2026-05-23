@@ -1,70 +1,71 @@
+/**
+ * Structured analytics + crash reporting.
+ * Sentry is initialised in app/_layout.tsx.
+ * This module re-exports the Sentry instance and GA4-parity trackEvent.
+ *
+ * Analytics events mirror web's GA4 event names + payloads exactly
+ * (same event name, same param keys, extra platform: "mobile" discriminator).
+ */
+import * as SentryRN from "@sentry/react-native"
 import { apiClient } from "@/src/lib/api/client"
 
-/** MOBILE-LAUNCH-006: Crash reporting (Sentry) + structured analytics */
-
-const isSentryAvailable = () => {
-  try {
-    require("@sentry/react-native")
-    return true
-  } catch {
-    return false
-  }
-}
-
+// Re-export Sentry so callers don't need to import @sentry/react-native directly
 export const Sentry = {
   captureException(err: unknown, context?: Record<string, unknown>) {
     if (__DEV__) {
       console.error("[Sentry]", err, context)
       return
     }
-    if (!isSentryAvailable()) return
-    const S = require("@sentry/react-native")
     if (context) {
-      S.withScope((scope: { setContext: (k: string, v: unknown) => void }) => {
+      SentryRN.withScope((scope) => {
         scope.setContext("extra", context)
-        S.captureException(err)
+        SentryRN.captureException(err)
       })
     } else {
-      S.captureException(err)
+      SentryRN.captureException(err)
     }
   },
 
-  captureMessage(msg: string, level: "info" | "warning" | "error" = "info") {
+  captureMessage(msg: string, level: SentryRN.SeverityLevel = "info") {
     if (__DEV__) {
       console.log(`[Sentry ${level}]`, msg)
       return
     }
-    if (!isSentryAvailable()) return
-    const S = require("@sentry/react-native")
-    S.captureMessage(msg, level)
+    SentryRN.captureMessage(msg, level)
   },
 
   setUser(user: { id: string; email?: string }) {
-    if (!isSentryAvailable()) return
-    const S = require("@sentry/react-native")
-    S.setUser(user)
+    SentryRN.setUser(user)
   },
 
   clearUser() {
-    if (!isSentryAvailable()) return
-    const S = require("@sentry/react-native")
-    S.setUser(null)
+    SentryRN.setUser(null)
+  },
+
+  addBreadcrumb(crumb: SentryRN.Breadcrumb) {
+    SentryRN.addBreadcrumb(crumb)
   },
 }
 
-/** Analytics events — mirror web's GA4 event names exactly */
-type AnalyticsEvent =
+/** GA4-parity event union — mirrors web's analytics event catalogue */
+export type AnalyticsEvent =
   | { name: "login"; method: "email" | "apple" | "google" }
   | { name: "sign_up"; method: "email" | "apple" | "google" }
-  | { name: "trade_initiated"; currency: string; amount: string }
+  | { name: "logout" }
+  | { name: "trade_initiated"; currency: string; amount: string; offerId: string }
   | { name: "trade_paid"; tradeId: string }
   | { name: "trade_released"; tradeId: string }
   | { name: "trade_cancelled"; tradeId: string; reason: string }
   | { name: "trade_disputed"; tradeId: string }
-  | { name: "withdrawal_submitted"; currency: string; amount: string }
+  | { name: "trade_completed"; tradeId: string; currency: string; amount: string }
+  | { name: "withdrawal_submitted"; currency: string; amount: string; network: string }
   | { name: "deposit_address_viewed"; currency: string; network: string }
   | { name: "offer_created"; offerType: string; currency: string }
+  | { name: "offer_edited"; offerId: string }
+  | { name: "offer_deactivated"; offerId: string }
   | { name: "kyc_started"; tier: number; provider: string }
+  | { name: "kyc_completed"; tier: number }
+  | { name: "resell_created"; offerId: string; markup: number }
   | { name: "screen_view"; screen_name: string }
 
 export function trackEvent(event: AnalyticsEvent) {
@@ -72,12 +73,18 @@ export function trackEvent(event: AnalyticsEvent) {
     console.log("[Analytics]", event)
     return
   }
-  // Fire to backend analytics endpoint (mirrors web's GA4 measurement protocol call)
+
+  // Add breadcrumb to Sentry for context on crashes
+  SentryRN.addBreadcrumb({ category: "analytics", message: event.name, data: event, level: "info" })
+
+  // Fire to backend analytics endpoint (mirrors web's GA4 measurement protocol relay)
   apiClient
     .post("/api/v1/analytics/event", {
       ...event,
       platform: "mobile",
       ts: Date.now(),
     })
-    .catch(() => {})
+    .catch(() => {
+      // Analytics failures must never crash the app
+    })
 }

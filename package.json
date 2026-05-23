@@ -32,6 +32,7 @@
     "@react-native-community/slider": "^5.2.0",
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@reduxjs/toolkit": "^2.8.2",
+    "@sentry/react-native": "^8.12.0",
     "@shopify/flash-list": "^2.3.1",
     "@tanstack/query-async-storage-persister": "^5.100.13",
     "@tanstack/react-query": "^5.80.2",
@@ -43,6 +44,7 @@
     "expo-constants": "~56.0.14",
     "expo-device": "^56.0.4",
     "expo-font": "~56.0.5",
+    "expo-image-manipulator": "^56.0.13",
     "expo-image-picker": "^56.0.12",
     "expo-linking": "~56.0.11",
     "expo-local-authentication": "~56.0.4",
@@ -59,15 +61,19 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.56.4",
     "react-native": "0.85.3",
+    "react-native-chart-kit": "^6.12.2",
     "react-native-gesture-handler": "^2.31.2",
+    "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "^4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.1",
+    "react-native-svg": "^15.15.5",
     "react-native-web": "~0.21.0",
     "react-native-webview": "^13.16.1",
     "react-native-worklets": "0.8.3",
     "react-redux": "^9.2.0",
     "socket.io-client": "^4.8.1",
+    "victory-native": "^41.20.3",
     "zod": "^3.24.4",
     "zustand": "^5.0.5"
   },
@@ -94,7 +100,6 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterFramework": [],
     "setupFilesAfterEnv": ["./jest.setup.ts"],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@shopify/flash-list)"

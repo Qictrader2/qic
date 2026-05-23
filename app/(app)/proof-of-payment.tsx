@@ -7,6 +7,7 @@ import { useState } from "react"
 import * as ImagePicker from "expo-image-picker"
 import { tradeService } from "@/src/services/trade.service"
 import { useQueryClient } from "@tanstack/react-query"
+import { stripExifAndCompress } from "@/src/lib/image-upload"
 
 export default function ProofOfPaymentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -25,11 +26,12 @@ export default function ProofOfPaymentScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.8,
+      quality: 1, // Strip + compress ourselves via expo-image-manipulator
     })
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0]
-      setImage({ uri: asset.uri, name: asset.fileName ?? "proof.jpg" })
+      const stripped = await stripExifAndCompress(asset.uri)
+      setImage({ uri: stripped.uri, name: stripped.name })
     }
   }
 
@@ -41,11 +43,12 @@ export default function ProofOfPaymentScreen() {
     }
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      quality: 0.8,
+      quality: 1,
     })
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0]
-      setImage({ uri: asset.uri, name: asset.fileName ?? "proof.jpg" })
+      const stripped = await stripExifAndCompress(asset.uri)
+      setImage({ uri: stripped.uri, name: stripped.name })
     }
   }
 

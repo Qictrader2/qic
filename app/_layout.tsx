@@ -9,13 +9,25 @@ import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, useState } from "react"
 import { Provider } from "react-redux"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import * as Sentry from "@sentry/react-native"
 import { store } from "@/src/store"
 import { AuthProvider } from "@/src/components/features/auth/AuthProvider"
 import { createQueryClient } from "@/src/lib/query-client"
 import { handleInitialNotification, useNotificationDeepLink } from "@/src/lib/notification-deep-link"
+
+// Initialise Sentry as early as possible — before any other imports that might throw
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
+  enabled: !__DEV__,
+  environment: process.env.EXPO_PUBLIC_ENV ?? "production",
+  tracesSampleRate: 0.2,
+  _experiments: {
+    profilesSampleRate: 0.1,
+  },
+})
 
 SplashScreen.preventAutoHideAsync()
 
@@ -24,7 +36,7 @@ function AppWithDeepLinks({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [queryClient] = useState(() => createQueryClient())
 
   const [fontsLoaded, fontError] = useFonts({
@@ -41,7 +53,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync()
-      // Handle cold-start notification tap
       handleInitialNotification().catch(() => {})
     }
   }, [fontsLoaded])
@@ -71,3 +82,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   )
 }
+
+export default Sentry.wrap(RootLayout)
