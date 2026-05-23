@@ -16,10 +16,14 @@
       "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:qictrader.com",
+        "applinks:app.qictrader.com",
+        "applinks:qictrader.com",
         "applinks:app.qictrader.com"
       ],
       "entitlements": {
         "com.apple.developer.associated-domains": [
+          "applinks:qictrader.com",
+          "applinks:app.qictrader.com",
           "applinks:qictrader.com",
           "applinks:app.qictrader.com"
         ]
@@ -28,7 +32,15 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
       },
@@ -38,7 +50,10 @@
         "NSFaceIDUsageDescription": "QicTrader uses Face ID to protect your account and authorize sensitive actions like withdrawals.",
         "NSLocalNetworkUsageDescription": "Used for development builds only.",
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["qictrader"]
+        "LSApplicationQueriesSchemes": [
+          "qictrader",
+          "qictrader"
+        ]
       }
     },
     "android": {
@@ -57,10 +72,39 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "qictrader.com", "pathPrefix": "/app" },
-            { "scheme": "https", "host": "app.qictrader.com" }
+            {
+              "scheme": "https",
+              "host": "qictrader.com",
+              "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "app.qictrader.com"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "qictrader.com",
+              "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "app.qictrader.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -70,7 +114,16 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -122,10 +175,17 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "PLACEHOLDER_EAS_PROJECT_ID"
+        "projectId": "3d4a7727-a8ac-4e1f-acf2-d2e655d5c46b"
       }
     },
-    "owner": "qictrader"
+    "owner": "jpvanzyl",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3d4a7727-a8ac-4e1f-acf2-d2e655d5c46b"
+    }
   }
 }
