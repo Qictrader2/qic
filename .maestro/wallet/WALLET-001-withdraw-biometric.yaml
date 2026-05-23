@@ -1,0 +1,43 @@
+appId: com.qictrader.app
+name: WALLET-001 - Withdraw flow with biometric mock
+
+---
+- launchApp
+
+# Assume already logged in with biometric enabled
+# (test environment bypasses actual biometric with a test token)
+
+# Should be on wallet screen
+- assertVisible: "Wallet"
+
+# Tap first wallet's Withdraw button
+- tapOn:
+    index: 0
+    id: "btn-withdraw"
+
+# Should see withdraw screen
+- assertVisible: "Confirm withdrawal"
+
+# Fill address
+- tapOn:
+    id: "input-to-address"
+- typeText: "TXDummyAddressForE2ETesting123456789"
+
+# Fill amount
+- tapOn:
+    id: "input-amount"
+- typeText: "1.00"
+
+# Wait for fee preview
+- waitForAnimationToEnd
+
+# Fill 2FA code
+- tapOn:
+    id: "input-2fa"
+- typeText: "000000"
+
+# Submit
+- tapOn: "Confirm withdrawal"
+
+# Should show success
+- assertVisible: "Withdrawal submitted"

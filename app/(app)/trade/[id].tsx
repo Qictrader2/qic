@@ -196,6 +196,18 @@ export default function TradeDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
+        {trade.role === "buyer" && ["funded", "payment_pending"].includes(trade.status) ? (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({ pathname: "/(app)/proof-of-payment", params: { id: trade.id } })
+            }
+            className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-3"
+            activeOpacity={0.8}
+          >
+            <Text className="text-sm font-medium text-brand">Upload proof of payment</Text>
+          </TouchableOpacity>
+        ) : null}
+
         {trade.role === "seller" && trade.status === "payment_confirmed" ? (
           <TouchableOpacity
             onPress={handleRelease}
@@ -217,6 +229,18 @@ export default function TradeDetailScreen() {
             activeOpacity={0.8}
           >
             <Text className="text-sm font-medium text-error">Cancel trade</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {["payment_sent", "payment_confirmed"].includes(trade.status) ? (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({ pathname: "/(app)/dispute/[id]", params: { id: trade.id } })
+            }
+            className="rounded-lg border border-error bg-error-bg py-3.5 items-center mb-3"
+            activeOpacity={0.8}
+          >
+            <Text className="text-sm font-medium text-error">Open dispute</Text>
           </TouchableOpacity>
         ) : null}
 

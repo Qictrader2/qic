@@ -156,6 +156,7 @@ export default function ProfileScreen() {
         <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark px-4">
           <SettingsRow label="Affiliate program" onPress={() => router.push("/(app)/affiliate")} />
           <SettingsRow label="Support" onPress={() => router.push("/(app)/support")} />
+          <SettingsRow label="Preferences" onPress={() => router.push("/(app)/preferences")} />
         </View>
 
         {/* Logout */}

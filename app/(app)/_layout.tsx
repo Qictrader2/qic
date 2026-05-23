@@ -18,7 +18,16 @@ export default function AppLayout() {
       <Stack.Screen name="payment-methods" options={{ title: "Payment Methods" }} />
       <Stack.Screen name="2fa-setup" options={{ title: "Two-Factor Auth", presentation: "modal" }} />
       <Stack.Screen name="affiliate" options={{ title: "Affiliate" }} />
+      <Stack.Screen name="affiliate-commissions" options={{ title: "Commission History" }} />
       <Stack.Screen name="support" options={{ title: "Support" }} />
+      <Stack.Screen name="preferences" options={{ title: "Preferences" }} />
+      <Stack.Screen name="my-offers" options={{ title: "My Offers" }} />
+      <Stack.Screen name="internal-transfer" options={{ title: "Internal Transfer", presentation: "modal" }} />
+      <Stack.Screen name="marketplace-filters" options={{ title: "Browse Offers" }} />
+      <Stack.Screen name="proof-of-payment" options={{ title: "Proof of Payment", presentation: "modal" }} />
+      <Stack.Screen name="dispute/[id]" options={{ title: "Open Dispute", presentation: "modal" }} />
+      <Stack.Screen name="kyc-webview/[provider]" options={{ title: "Verification", headerShown: false }} />
+      <Stack.Screen name="edit-offer/[id]" options={{ title: "Edit Offer" }} />
     </Stack>
   )
 }

@@ -7,36 +7,26 @@ import {
 } from "@expo-google-fonts/poppins"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Provider } from "react-redux"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { store } from "@/src/store"
 import { AuthProvider } from "@/src/components/features/auth/AuthProvider"
+import { createQueryClient } from "@/src/lib/query-client"
+import { handleInitialNotification, useNotificationDeepLink } from "@/src/lib/notification-deep-link"
 
 SplashScreen.preventAutoHideAsync()
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: (failureCount, error) => {
-        const apiError = error as { kind?: string }
-        if (
-          apiError?.kind === "unauthorized" ||
-          apiError?.kind === "forbidden" ||
-          apiError?.kind === "not_found"
-        ) {
-          return false
-        }
-        return failureCount < 2
-      },
-    },
-  },
-})
+function AppWithDeepLinks({ children }: { children: React.ReactNode }) {
+  useNotificationDeepLink()
+  return <>{children}</>
+}
 
 export default function RootLayout() {
+  const [queryClient] = useState(() => createQueryClient())
+
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -51,6 +41,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync()
+      // Handle cold-start notification tap
+      handleInitialNotification().catch(() => {})
     }
   }, [fontsLoaded])
 
@@ -64,11 +56,14 @@ export default function RootLayout() {
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="+not-found" />
-              </Stack>
+              <AppWithDeepLinks>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(app)" />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+              </AppWithDeepLinks>
             </AuthProvider>
           </QueryClientProvider>
         </Provider>

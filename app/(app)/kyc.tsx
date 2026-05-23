@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Linking,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useKycStatus } from "@/src/hooks/api/use-kyc"
 import { kycService, KycTier } from "@/src/services/kyc.service"
 import { useState } from "react"
+import { useRouter } from "expo-router"
 
 function TierBadge({ tier }: { tier: KycTier }) {
   const labels = ["Unverified", "Basic", "Intermediate", "Advanced"]
@@ -34,16 +34,18 @@ const TIER_BENEFITS: Record<number, string[]> = {
 }
 
 export default function KycScreen() {
+  const router = useRouter()
   const { data: status, isLoading, error, refetch, isRefetching } = useKycStatus()
   const [starting, setStarting] = useState(false)
 
   async function handleStartVerification() {
     setStarting(true)
     try {
-      const { url } = await kycService.startDiditSession()
-      await Linking.openURL(url)
-    } catch {
-      // TODO: surface error
+      // Navigate to the WebView screen which handles starting the session
+      router.push({
+        pathname: "/(app)/kyc-webview/[provider]",
+        params: { provider: "didit" },
+      })
     } finally {
       setStarting(false)
     }

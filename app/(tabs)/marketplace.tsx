@@ -71,12 +71,20 @@ export default function MarketplaceScreen() {
         <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
           Marketplace
         </Text>
-        <TouchableOpacity
-          onPress={() => router.push("/(app)/create-offer")}
-          className="px-3 py-1.5 rounded-lg bg-brand"
-        >
-          <Text className="text-xs font-medium text-white">+ Offer</Text>
-        </TouchableOpacity>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/my-offers")}
+            className="px-3 py-1.5 rounded-lg bg-surface dark:bg-surface-dark border border-border dark:border-border-dark"
+          >
+            <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">My offers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/create-offer")}
+            className="px-3 py-1.5 rounded-lg bg-brand"
+          >
+            <Text className="text-xs font-medium text-white">+ Offer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Buy / Sell tabs */}

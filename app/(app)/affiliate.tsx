@@ -2,8 +2,10 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Share } fr
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useQuery } from "@tanstack/react-query"
 import { profileService } from "@/src/services/profile.service"
+import { useRouter } from "expo-router"
 
 export default function AffiliateScreen() {
+  const router = useRouter()
   const { data: stats, isLoading } = useQuery({
     queryKey: ["affiliate-stats"],
     queryFn: () => profileService.getAffiliateStats(),
@@ -33,7 +35,7 @@ export default function AffiliateScreen() {
             <View className="flex-row gap-3 mb-4">
               {[
                 { label: "Referred", value: String(stats.referredCount) },
-                { label: "Pending earnings", value: `${stats.pendingEarnings} ${stats.currency}` },
+                { label: "Pending", value: `${stats.pendingEarnings} ${stats.currency}` },
                 { label: "Total earned", value: `${stats.totalEarnings} ${stats.currency}` },
               ].map(({ label, value }) => (
                 <View key={label} className="flex-1 rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-3 items-center">
@@ -45,23 +47,19 @@ export default function AffiliateScreen() {
 
             <TouchableOpacity
               onPress={handleShare}
-              className="rounded-lg bg-brand py-4 items-center mb-6"
+              className="rounded-lg bg-brand py-4 items-center mb-3"
               activeOpacity={0.8}
             >
               <Text className="text-base font-semibold text-white">Share referral link</Text>
             </TouchableOpacity>
 
-            {stats.payouts.length > 0 ? (
-              <View>
-                <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark mb-3">Payout history</Text>
-                {stats.payouts.map((p) => (
-                  <View key={p.id} className="flex-row justify-between py-2.5 border-b border-border/50 dark:border-border-dark/50">
-                    <Text className="text-sm text-foreground dark:text-foreground-dark">{p.amount} {stats.currency}</Text>
-                    <Text className="text-xs text-muted dark:text-muted-dark capitalize">{p.status}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            <TouchableOpacity
+              onPress={() => router.push("/(app)/affiliate-commissions")}
+              className="rounded-lg border border-border dark:border-border-dark py-3.5 items-center mb-6"
+              activeOpacity={0.8}
+            >
+              <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">View commission history</Text>
+            </TouchableOpacity>
           </>
         ) : null}
       </ScrollView>
