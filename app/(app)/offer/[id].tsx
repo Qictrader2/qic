@@ -188,7 +188,7 @@ export default function OfferDetailScreen() {
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting}
-            className="rounded-lg bg-brand py-4 items-center mb-8"
+            className="rounded-lg bg-brand py-4 items-center mb-3"
             activeOpacity={0.8}
           >
             {isSubmitting ? (
@@ -198,6 +198,19 @@ export default function OfferDetailScreen() {
                 {offer.offerType === "buy" ? "Start buying" : "Start selling"}
               </Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/(app)/create-resell/[offerId]",
+                params: { offerId: offer.id },
+              })
+            }
+            className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-8"
+            activeOpacity={0.8}
+          >
+            <Text className="text-sm font-medium text-brand">💹 Resell this offer</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>

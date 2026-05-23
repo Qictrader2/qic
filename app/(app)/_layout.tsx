@@ -28,6 +28,9 @@ export default function AppLayout() {
       <Stack.Screen name="dispute/[id]" options={{ title: "Open Dispute", presentation: "modal" }} />
       <Stack.Screen name="kyc-webview/[provider]" options={{ title: "Verification", headerShown: false }} />
       <Stack.Screen name="edit-offer/[id]" options={{ title: "Edit Offer" }} />
+      <Stack.Screen name="create-resell/[offerId]" options={{ title: "Resell Offer", presentation: "modal" }} />
+      <Stack.Screen name="reseller-dashboard" options={{ title: "Reseller" }} />
+      <Stack.Screen name="fiat-balance" options={{ title: "Fiat Balances" }} />
     </Stack>
   )
 }

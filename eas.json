@@ -16,7 +16,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.qictrader.com",
         "EXPO_PUBLIC_ENVIRONMENT": "development"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
