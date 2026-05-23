@@ -137,6 +137,14 @@
       "expo-local-authentication",
       "expo-apple-authentication",
       "expo-image-picker",
+      "expo-image-manipulator",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "note": "Set SENTRY_AUTH_TOKEN in EAS Secrets for source map upload"
+        }
+      ],
       [
         "expo-notifications",
         {
