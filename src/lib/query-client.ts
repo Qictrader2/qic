@@ -63,26 +63,30 @@ export function createQueryClient(): QueryClient {
     },
   })
 
-  // Persist to AsyncStorage for offline support
-  const persister = createAsyncStoragePersister({
-    storage: AsyncStorage,
-    key: "qic-rq-cache",
-    throttleTime: 1000,
-  })
+  // Persist to AsyncStorage for offline support — guarded so it degrades
+  // gracefully in Expo Go where the native module may not be available.
+  try {
+    const persister = createAsyncStoragePersister({
+      storage: AsyncStorage,
+      key: "qic-rq-cache",
+      throttleTime: 1000,
+    })
 
-  persistQueryClient({
-    queryClient: client as unknown as Parameters<typeof persistQueryClient>[0]["queryClient"],
-    persister,
-    maxAge: 24 * 60 * 60_000, // 24 hours
-    buster: "v1",
-    // Only persist non-sensitive queries
-    dehydrateOptions: {
-      shouldDehydrateQuery: (query) => {
-        const key = query.queryKey[0] as string
-        return !["wallets", "transactions"].includes(key) // don't cache financial data offline
+    persistQueryClient({
+      queryClient: client as unknown as Parameters<typeof persistQueryClient>[0]["queryClient"],
+      persister,
+      maxAge: 24 * 60 * 60_000,
+      buster: "v1",
+      dehydrateOptions: {
+        shouldDehydrateQuery: (query) => {
+          const key = query.queryKey[0] as string
+          return !["wallets", "transactions"].includes(key)
+        },
       },
-    },
-  })
+    })
+  } catch {
+    // AsyncStorage native module unavailable (Expo Go) — skip persistence
+  }
 
   return client
 }
