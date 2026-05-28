@@ -1,19 +1,28 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native"
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { useState } from "react"
+import { ChevronLeft, AlertTriangle } from "lucide-react-native"
 import { useOffer } from "@/src/hooks/api/use-market"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { marketService } from "@/src/services/market.service"
-import { useState } from "react"
-import { ApiError } from "@/src/lib/api/client"
 
 const schema = z.object({
   pricePerUnit: z.string().refine((v) => parseFloat(v) > 0, "Enter a valid price"),
-  minAmount: z.string().refine((v) => parseFloat(v) > 0),
-  maxAmount: z.string().refine((v) => parseFloat(v) > 0),
+  minAmount: z.string().refine((v) => parseFloat(v) > 0, "Enter a min"),
+  maxAmount: z.string().refine((v) => parseFloat(v) > 0, "Enter a max"),
   paymentWindow: z.string().refine((v) => parseInt(v) >= 15, "Minimum 15 min"),
   terms: z.string().optional(),
 })
@@ -41,7 +50,11 @@ export default function EditOfferScreen() {
     },
   })
 
-  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<Form>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<Form>({
     resolver: zodResolver(schema),
     ...(offer
       ? {
@@ -75,76 +88,111 @@ export default function EditOfferScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-4 py-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-6">
-          Edit Offer
-        </Text>
-
-        {serverError ? (
-          <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-            <Text className="text-sm text-error">{serverError}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-background dark:bg-background-dark"
+    >
+      <SafeAreaView className="flex-1" edges={["bottom"]}>
+        <View className="px-5 pt-2 pb-3 flex-row items-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 items-center justify-center -ml-2"
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={24} color="#64748B" />
+          </TouchableOpacity>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+              Edit offer
+            </Text>
+            {offer ? (
+              <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+                {offer.offerType === "buy" ? "Buying" : "Selling"} {offer.currency} ·{" "}
+                {offer.fiatCurrency}
+              </Text>
+            ) : null}
           </View>
-        ) : null}
+        </View>
 
-        {[
-          { name: "pricePerUnit" as const, label: "Price per unit" },
-          { name: "minAmount" as const, label: "Min amount" },
-          { name: "maxAmount" as const, label: "Max amount" },
-          { name: "paymentWindow" as const, label: "Payment window (min)" },
-        ].map(({ name, label }) => (
-          <View key={name} className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              {label}
+        <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {serverError ? (
+            <View className="mb-4 rounded-xl bg-error-bg border border-error/20 px-4 py-3 flex-row items-center gap-2">
+              <AlertTriangle size={14} color="#EF4444" />
+              <Text className="text-sm text-error flex-1">{serverError}</Text>
+            </View>
+          ) : null}
+
+          {[
+            { name: "pricePerUnit" as const, label: `Price per ${offer?.currency ?? "unit"}` },
+            { name: "minAmount" as const, label: "Min trade size" },
+            { name: "maxAmount" as const, label: "Max trade size" },
+            { name: "paymentWindow" as const, label: "Payment window (minutes)" },
+          ].map(({ name, label }) => (
+            <View key={name} className="mb-4">
+              <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+                {label}
+              </Text>
+              <Controller
+                control={control}
+                name={name}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 text-base text-foreground dark:text-foreground-dark"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={String(value ?? "")}
+                    keyboardType={name === "paymentWindow" ? "number-pad" : "decimal-pad"}
+                  />
+                )}
+              />
+              {errors[name]?.message ? (
+                <Text className="mt-1 text-xs text-error">{String(errors[name]?.message)}</Text>
+              ) : null}
+            </View>
+          ))}
+
+          <View className="mb-6">
+            <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+              Terms (optional)
             </Text>
             <Controller
               control={control}
-              name={name}
+              name="terms"
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark"
+                  className="rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 py-3 text-sm text-foreground dark:text-foreground-dark h-28"
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  value={String(value ?? "")}
-                  keyboardType="decimal-pad"
+                  value={value ?? ""}
+                  placeholder="Describe your terms…"
+                  placeholderTextColor="#94A3B8"
+                  multiline
+                  textAlignVertical="top"
                 />
               )}
             />
-            {errors[name]?.message ? (
-              <Text className="mt-1 text-xs text-error">{String(errors[name]?.message)}</Text>
-            ) : null}
           </View>
-        ))}
 
-        <View className="mb-6">
-          <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">Terms</Text>
-          <Controller
-            control={control}
-            name="terms"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark h-24"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value ?? ""}
-                multiline
-                textAlignVertical="top"
-              />
+          <View className="h-24" />
+        </ScrollView>
+
+        <View className="px-5 pt-3 pb-2 border-t border-border dark:border-border-dark bg-background dark:bg-background-dark">
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting || !isDirty}
+            className={`rounded-xl h-12 items-center justify-center ${
+              !isDirty ? "bg-brand/40" : "bg-brand"
+            }`}
+            activeOpacity={0.85}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-base font-semibold text-white">Save changes</Text>
             )}
-          />
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          className="rounded-lg bg-brand py-4 items-center mb-8"
-          activeOpacity={0.8}
-        >
-          {isSubmitting ? <ActivityIndicator color="#fff" /> : (
-            <Text className="text-base font-semibold text-white">Save changes</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   )
 }

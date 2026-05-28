@@ -1,8 +1,9 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { WebView } from "react-native-webview"
+import { ChevronLeft } from "lucide-react-native"
 import { kycService } from "@/src/services/kyc.service"
 import { useQueryClient } from "@tanstack/react-query"
 
@@ -11,31 +12,36 @@ export default function KycWebViewScreen() {
   const router = useRouter()
   const qc = useQueryClient()
   const [url, setUrl] = useState<string | null>(null)
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [starting, setStarting] = useState(false)
+  const [, setSessionId] = useState<string | null>(null)
+  const [, setLoading] = useState(true)
+  const [starting, setStarting] = useState(true)
   const webViewRef = useRef<WebView>(null)
 
-  async function startSession() {
-    setStarting(true)
-    try {
-      const res =
-        provider === "sumsub"
-          ? await kycService.startSumsubSession()
-          : await kycService.startDiditSession()
-      setUrl(res.url)
-      setSessionId(res.sessionId)
-    } catch {
-      Alert.alert("Error", "Failed to start verification. Please try again.", [
-        { text: "OK", onPress: () => router.back() },
-      ])
-    } finally {
-      setStarting(false)
+  useEffect(() => {
+    let cancelled = false
+    async function startSession() {
+      try {
+        const res =
+          provider === "sumsub"
+            ? await kycService.startSumsubSession()
+            : await kycService.startDiditSession()
+        if (cancelled) return
+        setUrl(res.url)
+        setSessionId(res.sessionId)
+      } catch {
+        if (cancelled) return
+        Alert.alert("Error", "Failed to start verification. Please try again.", [
+          { text: "OK", onPress: () => router.back() },
+        ])
+      } finally {
+        if (!cancelled) setStarting(false)
+      }
     }
-  }
-
-  // Start session immediately on mount
-  useState(() => { startSession() })
+    startSession()
+    return () => {
+      cancelled = true
+    }
+  }, [provider])
 
   function handleNavigationChange(navState: { url: string }) {
     // Detect completion/failure redirects from the provider
@@ -71,13 +77,18 @@ export default function KycWebViewScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["bottom"]}>
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border dark:border-border-dark">
-        <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
-          Identity Verification
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} className="px-3 py-1.5">
-          <Text className="text-sm text-muted dark:text-muted-dark">Cancel</Text>
+      <View className="flex-row items-center justify-between px-5 py-3 border-b border-border dark:border-border-dark">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center -ml-2"
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#64748B" />
         </TouchableOpacity>
+        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+          Identity verification
+        </Text>
+        <View className="w-10" />
       </View>
       <WebView
         ref={webViewRef}

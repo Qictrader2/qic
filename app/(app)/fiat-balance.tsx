@@ -3,7 +3,8 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
+import { ChevronLeft, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react-native"
 import { useWallets } from "@/src/hooks/api/use-wallet"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { apiClient } from "@/src/lib/api/client"
@@ -54,11 +55,27 @@ export default function FiatBalanceScreen() {
   const symbol = CURRENCY_SYMBOLS[displayCurrency]
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-4 py-4">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-xl font-bold text-foreground dark:text-foreground-dark">Fiat Balances</Text>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["bottom"]}>
+      <View className="px-5 pt-2 pb-3 flex-row items-center">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center -ml-2"
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#64748B" />
+        </TouchableOpacity>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            Fiat balances
+          </Text>
+          <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+            Portfolio value in your preferred currency
+          </Text>
         </View>
+      </View>
+
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+        <View className="h-1" />
 
         {/* Currency switcher */}
         <View className="mb-4">
@@ -91,10 +108,17 @@ export default function FiatBalanceScreen() {
         </View>
 
         {/* Show equivalents toggle */}
-        <View className="flex-row items-center justify-between mb-4 bg-surface dark:bg-surface-dark rounded-xl px-4 py-3 border border-border dark:border-border-dark">
-          <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
-            Show fiat equivalents
-          </Text>
+        <View className="flex-row items-center justify-between mb-4 bg-surface dark:bg-card-dark rounded-2xl px-4 py-3 border border-border dark:border-border-dark">
+          <View className="flex-row items-center gap-2">
+            {showEquivalents ? (
+              <Eye size={14} color="#64748B" />
+            ) : (
+              <EyeOff size={14} color="#64748B" />
+            )}
+            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+              Show fiat equivalents
+            </Text>
+          </View>
           <Switch
             value={showEquivalents}
             onValueChange={setShowEquivalents}
@@ -126,18 +150,34 @@ export default function FiatBalanceScreen() {
                     </Text>
                   </View>
                   {showEquivalents && fiat ? (
-                    <View className="flex-row justify-between items-center">
+                    <View className="flex-row justify-between items-center mt-0.5">
                       <Text className="text-xs text-muted dark:text-muted-dark">
-                        ≈ {symbol}{parseFloat(fiat.balance).toLocaleString(undefined, { maximumFractionDigits: 2 })} {displayCurrency}
+                        ≈ {symbol}
+                        {parseFloat(fiat.balance).toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        {displayCurrency}
                       </Text>
-                      <Text className={`text-xs font-medium ${
-                        parseFloat(fiat.changePercent) >= 0 ? "text-success" : "text-error"
-                      }`}>
-                        {parseFloat(fiat.changePercent) >= 0 ? "+" : ""}{fiat.changePercent}%
-                      </Text>
+                      <View className="flex-row items-center gap-1">
+                        {parseFloat(fiat.changePercent) >= 0 ? (
+                          <TrendingUp size={11} color="#10B981" />
+                        ) : (
+                          <TrendingDown size={11} color="#EF4444" />
+                        )}
+                        <Text
+                          className={`text-xs font-semibold ${
+                            parseFloat(fiat.changePercent) >= 0 ? "text-success" : "text-error"
+                          }`}
+                        >
+                          {parseFloat(fiat.changePercent) >= 0 ? "+" : ""}
+                          {fiat.changePercent}%
+                        </Text>
+                      </View>
                     </View>
                   ) : (
-                    <Text className="text-xs text-muted dark:text-muted-dark">{wallet.network}</Text>
+                    <Text className="text-xs text-muted dark:text-muted-dark mt-0.5 capitalize">
+                      {wallet.network}
+                    </Text>
                   )}
                 </TouchableOpacity>
               )

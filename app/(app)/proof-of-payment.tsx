@@ -5,6 +5,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useState } from "react"
 import * as ImagePicker from "expo-image-picker"
+import {
+  ChevronLeft,
+  ImagePlus,
+  Camera,
+  CheckCircle2,
+  Receipt,
+  X,
+} from "lucide-react-native"
 import { tradeService } from "@/src/services/trade.service"
 import { useQueryClient } from "@tanstack/react-query"
 import { stripExifAndCompress } from "@/src/lib/image-upload"
@@ -74,18 +82,21 @@ export default function ProofOfPaymentScreen() {
 
   if (uploaded) {
     return (
-      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark justify-center px-6">
-        <View className="items-center">
-          <Text className="text-5xl mb-4">✅</Text>
+      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-20 h-20 rounded-full bg-success/10 items-center justify-center mb-5">
+            <CheckCircle2 size={36} color="#10B981" />
+          </View>
           <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2">
             Proof uploaded
           </Text>
-          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8">
-            Your proof of payment has been sent to the seller.
+          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8 max-w-[300px]">
+            Your proof of payment has been sent to the seller. They'll release the escrow once they confirm receipt.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="rounded-lg bg-brand px-8 py-3.5"
+            className="rounded-xl bg-brand px-8 h-12 items-center justify-center"
+            activeOpacity={0.85}
           >
             <Text className="text-base font-semibold text-white">Back to trade</Text>
           </TouchableOpacity>
@@ -95,66 +106,97 @@ export default function ProofOfPaymentScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-4 py-4">
-        <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2">
-          Proof of Payment
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["bottom"]}>
+      <View className="px-5 pt-2 pb-3 flex-row items-center">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center -ml-2"
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={24} color="#64748B" />
+        </TouchableOpacity>
+        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+          Proof of payment
         </Text>
-        <Text className="text-sm text-muted dark:text-muted-dark mb-6 leading-relaxed">
-          Upload a screenshot or photo showing your payment. This helps the seller confirm
-          they have received funds.
-        </Text>
+      </View>
+
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+        <View className="rounded-2xl bg-brand/10 border border-brand/20 p-4 mb-5 flex-row items-center gap-3">
+          <View className="w-10 h-10 rounded-full bg-brand/20 items-center justify-center">
+            <Receipt size={18} color="#00A3F6" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-brand">Upload your receipt</Text>
+            <Text className="text-xs text-brand/80 mt-0.5">
+              A clear screenshot or photo helps the seller confirm faster.
+            </Text>
+          </View>
+        </View>
 
         {image ? (
-          <View className="mb-4">
-            <Image
-              source={{ uri: image.uri }}
-              className="w-full h-56 rounded-xl"
-              resizeMode="cover"
-            />
-            <TouchableOpacity
-              onPress={() => setImage(null)}
-              className="mt-2 items-center py-2"
-            >
-              <Text className="text-sm text-error">Remove</Text>
-            </TouchableOpacity>
+          <View className="mb-5">
+            <View className="relative rounded-2xl overflow-hidden">
+              <Image
+                source={{ uri: image.uri }}
+                className="w-full h-72"
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                onPress={() => setImage(null)}
+                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/60 items-center justify-center"
+                activeOpacity={0.85}
+              >
+                <X size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <Text className="text-xs text-muted dark:text-muted-dark mt-2 text-center">
+              EXIF data has been stripped for your privacy.
+            </Text>
           </View>
         ) : (
-          <View className="flex-row gap-3 mb-6">
+          <View className="flex-row gap-3 mb-5">
             <TouchableOpacity
               onPress={pickImage}
-              className="flex-1 rounded-xl border-2 border-dashed border-brand/50 bg-brand-bg/30 py-8 items-center"
+              className="flex-1 rounded-2xl border-2 border-dashed border-brand/40 bg-brand/5 py-8 items-center"
               activeOpacity={0.7}
             >
-              <Text className="text-2xl mb-2">🖼</Text>
-              <Text className="text-sm font-medium text-brand">Photo library</Text>
+              <View className="w-12 h-12 rounded-full bg-brand/15 items-center justify-center mb-2">
+                <ImagePlus size={20} color="#00A3F6" />
+              </View>
+              <Text className="text-sm font-semibold text-brand">Photo library</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={takePhoto}
-              className="flex-1 rounded-xl border-2 border-dashed border-brand/50 bg-brand-bg/30 py-8 items-center"
+              className="flex-1 rounded-2xl border-2 border-dashed border-brand/40 bg-brand/5 py-8 items-center"
               activeOpacity={0.7}
             >
-              <Text className="text-2xl mb-2">📷</Text>
-              <Text className="text-sm font-medium text-brand">Camera</Text>
+              <View className="w-12 h-12 rounded-full bg-brand/15 items-center justify-center mb-2">
+                <Camera size={20} color="#00A3F6" />
+              </View>
+              <Text className="text-sm font-semibold text-brand">Camera</Text>
             </TouchableOpacity>
           </View>
         )}
 
+        <View className="h-24" />
+      </ScrollView>
+
+      <View className="px-5 pt-3 pb-2 border-t border-border dark:border-border-dark bg-background dark:bg-background-dark">
         <TouchableOpacity
           onPress={handleUpload}
           disabled={!image || uploading}
-          className={`rounded-lg py-4 items-center ${image ? "bg-brand" : "bg-muted/30"}`}
-          activeOpacity={0.8}
+          className={`rounded-xl h-12 items-center justify-center ${
+            image ? "bg-brand" : "bg-brand/40"
+          }`}
+          activeOpacity={0.85}
         >
           {uploading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className={`text-base font-semibold ${image ? "text-white" : "text-muted"}`}>
-              Upload proof
-            </Text>
+            <Text className="text-base font-semibold text-white">Upload proof</Text>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   )
 }

@@ -11,7 +11,8 @@ import {
 } from "react-native"
 import { useLocalSearchParams } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
+import { Send } from "lucide-react-native"
 import { useTradeMessages, useSendMessage } from "@/src/hooks/api/use-trade"
 import { useAuthStore } from "@/src/store/auth-store"
 import { subscribeToTrade, getSocket } from "@/src/lib/socket"
@@ -197,12 +198,12 @@ export default function TradeChatScreen() {
             className={`h-10 w-10 rounded-full items-center justify-center ${
               input.trim() ? "bg-brand" : "bg-muted/30"
             }`}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             {sending ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text className="text-white text-lg">↑</Text>
+              <Send size={16} color="#FFFFFF" />
             )}
           </TouchableOpacity>
         </View>

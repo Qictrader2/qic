@@ -141,23 +141,16 @@ export default function SecuritySettingsScreen() {
     )
   }
 
-  async function handleDeleteAccount() {
+  function handleDeleteAccount() {
     Alert.alert(
       "Delete account",
-      "This is permanent and cannot be undone. All your data will be deleted.",
+      "Account deletion is processed manually by our support team to ensure all funds and open trades are settled first. Tap continue to open a support request.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete my account",
+          text: "Continue",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await profileService.changePassword({} as never)
-              await logout()
-            } catch {
-              Alert.alert("Error", "Failed to delete account. Contact support.")
-            }
-          },
+          onPress: () => router.push("/(app)/support" as never),
         },
       ]
     )

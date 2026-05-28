@@ -7,14 +7,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
   ScrollView,
 } from "react-native"
 import { Link, useRouter } from "expo-router"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { Check, Eye, EyeOff } from "lucide-react-native"
 import { apiClient, ApiError } from "@/src/lib/api/client"
-import { useAuthStore } from "@/src/store/auth-store"
 
 const signupSchema = z
   .object({
@@ -39,9 +41,9 @@ type SignupForm = z.infer<typeof signupSchema>
 
 export default function SignupScreen() {
   const router = useRouter()
-  const { setRequiresLegalAcceptance } = useAuthStore()
   const [serverError, setServerError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [showPwd, setShowPwd] = useState(false)
 
   const {
     control,
@@ -59,7 +61,7 @@ export default function SignupScreen() {
         password: data.password,
         acceptedLegal: true,
       })
-      router.replace("/(auth)/verify-email-pending")
+      router.replace("/(auth)/verify-email-pending" as never)
     } catch (err) {
       const apiErr = err as ApiError
       if (apiErr.kind === "validation") {
@@ -73,127 +75,237 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background dark:bg-background-dark"
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View className="flex-1 justify-center px-6 py-12">
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-foreground dark:text-foreground-dark">
-              Create account
-            </Text>
-            <Text className="mt-2 text-sm text-muted dark:text-muted-dark">
-              Start trading on QicTrader
-            </Text>
-          </View>
-
-          {serverError ? (
-            <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-              <Text className="text-sm text-error">{serverError}</Text>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 justify-center px-6 py-8">
+            <View className="items-center mb-6">
+              <Image
+                source={require("@/assets/images/logo.png")}
+                style={{ width: 160, height: 54 }}
+                resizeMode="contain"
+              />
             </View>
-          ) : null}
 
-          {(["email", "username", "password", "confirmPassword"] as const).map((field) => (
-            <View key={field} className="mb-4">
-              <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark capitalize">
-                {field === "confirmPassword" ? "Confirm password" : field}
+            <View className="mb-6 items-center">
+              <Text className="text-2xl font-semibold text-foreground dark:text-foreground-dark">
+                Create your account
               </Text>
+              <Text className="mt-2 text-sm text-muted dark:text-muted-dark text-center max-w-[300px]">
+                Start trading on QicTrader in minutes.
+              </Text>
+            </View>
+
+            {serverError ? (
+              <View className="mb-4 rounded-xl bg-error-bg border border-error/20 px-4 py-3">
+                <Text className="text-sm text-error">{serverError}</Text>
+              </View>
+            ) : null}
+
+            <Field
+              label="Email"
+              error={errors.email?.message ?? fieldErrors.email}
+            >
               <Controller
                 control={control}
-                name={field}
+                name="email"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <TextInput
-                    className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-base text-foreground dark:text-foreground-dark"
+                    className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 text-base text-foreground dark:text-foreground-dark"
                     onBlur={onBlur}
                     onChangeText={onChange}
-                    value={value as string}
-                    placeholder={
-                      field === "email"
-                        ? "you@example.com"
-                        : field === "username"
-                        ? "yourhandle"
-                        : "••••••••••••"
-                    }
+                    value={value ?? ""}
+                    placeholder="you@example.com"
                     placeholderTextColor="#94A3B8"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    secureTextEntry={field === "password" || field === "confirmPassword"}
-                    keyboardType={field === "email" ? "email-address" : "default"}
-                    textContentType={
-                      field === "email"
-                        ? "emailAddress"
-                        : field === "password" || field === "confirmPassword"
-                        ? "password"
-                        : "username"
-                    }
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
                     editable={!isSubmitting}
                   />
                 )}
               />
-              {(errors[field] ?? fieldErrors[field]) ? (
-                <Text className="mt-1 text-xs text-error">
-                  {errors[field]?.message ?? fieldErrors[field]}
-                </Text>
-              ) : null}
-            </View>
-          ))}
+            </Field>
 
-          {/* Legal checkbox */}
-          <Controller
-            control={control}
-            name="acceptedLegal"
-            render={({ field: { onChange, value } }) => (
-              <TouchableOpacity
-                onPress={() => onChange(value ? undefined : true)}
-                className="mb-6 flex-row items-start gap-3"
-                activeOpacity={0.7}
-              >
-                <View
-                  className={`mt-0.5 h-5 w-5 rounded border-2 items-center justify-center ${
-                    value ? "bg-brand border-brand" : "border-border dark:border-border-dark"
-                  }`}
+            <Field
+              label="Username"
+              error={errors.username?.message ?? fieldErrors.username}
+            >
+              <Controller
+                control={control}
+                name="username"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 text-base text-foreground dark:text-foreground-dark"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value ?? ""}
+                    placeholder="yourhandle"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </Field>
+
+            <Field
+              label="Password"
+              error={errors.password?.message ?? fieldErrors.password}
+            >
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <View className="relative">
+                    <TextInput
+                      className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 pr-12 text-base text-foreground dark:text-foreground-dark"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value ?? ""}
+                      placeholder="••••••••••••"
+                      placeholderTextColor="#94A3B8"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      secureTextEntry={!showPwd}
+                      textContentType="newPassword"
+                      editable={!isSubmitting}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPwd((v) => !v)}
+                      className="absolute right-3 top-3.5"
+                      hitSlop={8}
+                    >
+                      {showPwd ? (
+                        <EyeOff size={18} color="#64748B" />
+                      ) : (
+                        <Eye size={18} color="#64748B" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </Field>
+
+            <Field
+              label="Confirm password"
+              error={errors.confirmPassword?.message ?? fieldErrors.confirmPassword}
+            >
+              <Controller
+                control={control}
+                name="confirmPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 text-base text-foreground dark:text-foreground-dark"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value ?? ""}
+                    placeholder="••••••••••••"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry={!showPwd}
+                    textContentType="newPassword"
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </Field>
+
+            {/* Legal checkbox */}
+            <Controller
+              control={control}
+              name="acceptedLegal"
+              render={({ field: { onChange, value } }) => (
+                <TouchableOpacity
+                  onPress={() => onChange(value ? undefined : true)}
+                  className="mb-1 flex-row items-start gap-3"
+                  activeOpacity={0.7}
                 >
-                  {value ? <Text className="text-white text-xs font-bold">✓</Text> : null}
-                </View>
-                <Text className="flex-1 text-sm text-muted dark:text-muted-dark">
-                  I accept the{" "}
-                  <Text className="text-brand">Terms & Conditions</Text>
-                  {" "}and{" "}
-                  <Text className="text-brand">Privacy Policy</Text>
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-          {errors.acceptedLegal ? (
-            <Text className="-mt-4 mb-4 text-xs text-error">{errors.acceptedLegal.message}</Text>
-          ) : null}
-
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-            className="rounded-lg bg-brand py-4 items-center"
-            activeOpacity={0.8}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
+                  <View
+                    className={`mt-0.5 h-5 w-5 rounded-md border items-center justify-center ${
+                      value ? "bg-brand border-brand" : "border-border dark:border-border-dark"
+                    }`}
+                  >
+                    {value ? <Check size={12} color="#FFFFFF" /> : null}
+                  </View>
+                  <Text className="flex-1 text-sm text-muted dark:text-muted-dark leading-5">
+                    I accept the{" "}
+                    <Text className="text-brand font-medium">Terms & Conditions</Text>
+                    {" "}and{" "}
+                    <Text className="text-brand font-medium">Privacy Policy</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            {errors.acceptedLegal ? (
+              <Text className="mb-4 ml-8 text-xs text-error">{errors.acceptedLegal.message}</Text>
             ) : (
-              <Text className="text-base font-semibold text-white">Create account</Text>
+              <View className="mb-5" />
             )}
-          </TouchableOpacity>
 
-          <View className="mt-6 flex-row justify-center">
-            <Text className="text-sm text-muted dark:text-muted-dark">
-              Already have an account?{" "}
-            </Text>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text className="text-sm font-medium text-brand">Sign in</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              className="h-12 rounded-xl bg-brand items-center justify-center"
+              activeOpacity={0.85}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-base font-semibold text-white">Create account</Text>
+              )}
+            </TouchableOpacity>
+
+            <View className="mt-6 flex-row justify-center">
+              <Text className="text-sm text-muted dark:text-muted-dark">Already have an account? </Text>
+              <Link href={"/(auth)/login" as never} asChild>
+                <TouchableOpacity>
+                  <Text className="text-sm font-semibold text-brand">Sign in</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/marketplace" as never)}
+              className="mt-3 items-center"
+              activeOpacity={0.7}
+            >
+              <Text className="text-sm text-muted dark:text-muted-dark">
+                or browse the marketplace as a guest
+              </Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  )
+}
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error: string | undefined
+  children: React.ReactNode
+}) {
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+        {label}
+      </Text>
+      {children}
+      {error ? <Text className="mt-1 text-xs text-error">{error}</Text> : null}
+    </View>
   )
 }
