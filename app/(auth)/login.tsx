@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native"
 import { Link, useRouter } from "expo-router"
 import { useForm, Controller } from "react-hook-form"
@@ -106,13 +107,21 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="flex-1 justify-center px-6 py-12">
-          {/* Logo / Heading */}
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-foreground dark:text-foreground-dark">
-              Sign in
+          {/* Logo */}
+          <View className="items-center mb-8">
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={{ width: 180, height: 60, resizeMode: "contain" }}
+            />
+          </View>
+
+          {/* Heading — mirrors web "Welcome back" copy */}
+          <View className="mb-8 items-center">
+            <Text className="text-2xl font-semibold text-foreground dark:text-foreground-dark">
+              Welcome back
             </Text>
             <Text className="mt-2 text-sm text-muted dark:text-muted-dark">
-              Welcome back to QicTrader
+              Please enter your details to login
             </Text>
           </View>
 
@@ -124,20 +133,20 @@ export default function LoginScreen() {
           ) : null}
 
           {/* Email */}
-          <View className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              Email
+          <View className="mb-5">
+            <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+              Email Address
             </Text>
             <Controller
               control={control}
               name="email"
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-base text-foreground dark:text-foreground-dark"
+                  className="h-12 rounded-lg border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 text-base text-foreground dark:text-foreground-dark"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
-                  placeholder="you@example.com"
+                  placeholder="Enter your email"
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -153,28 +162,21 @@ export default function LoginScreen() {
           </View>
 
           {/* Password */}
-          <View className="mb-6">
-            <View className="mb-1.5 flex-row items-center justify-between">
-              <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
-                Password
-              </Text>
-              <Link href="/(auth)/forgot-password" asChild>
-                <TouchableOpacity>
-                  <Text className="text-sm text-brand">Forgot password?</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
+          <View className="mb-3">
+            <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+              Password
+            </Text>
             <Controller
               control={control}
               name="password"
               render={({ field: { onChange, onBlur, value } }) => (
                 <View className="relative">
                   <TextInput
-                    className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 pr-12 text-base text-foreground dark:text-foreground-dark"
+                    className="h-12 rounded-lg border border-border dark:border-border-dark bg-background-gray dark:bg-surface-dark px-4 pr-14 text-base text-foreground dark:text-foreground-dark"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
-                    placeholder="Your password"
+                    placeholder="Enter your password"
                     placeholderTextColor="#94A3B8"
                     secureTextEntry={!showPassword}
                     textContentType="password"
@@ -182,7 +184,8 @@ export default function LoginScreen() {
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-3.5"
+                    className="absolute right-4 top-3.5"
+                    hitSlop={8}
                   >
                     <Text className="text-sm text-brand">{showPassword ? "Hide" : "Show"}</Text>
                   </TouchableOpacity>
@@ -194,12 +197,21 @@ export default function LoginScreen() {
             ) : null}
           </View>
 
+          {/* Forgot password — right-aligned, mirrors web */}
+          <View className="mb-6 items-end">
+            <Link href="/(auth)/forgot-password" asChild>
+              <TouchableOpacity hitSlop={8}>
+                <Text className="text-sm text-brand">Forgot Password?</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+
           {/* Submit */}
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting}
-            className="rounded-lg bg-brand py-4 items-center"
-            activeOpacity={0.8}
+            className="h-12 rounded-lg bg-brand items-center justify-center"
+            activeOpacity={0.85}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
@@ -208,28 +220,30 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          {/* OAuth divider */}
+          <View className="mt-6 flex-row items-center gap-3">
+            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
+            <Text className="text-xs uppercase text-muted dark:text-muted-dark tracking-wider">
+              Or continue with
+            </Text>
+            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
+          </View>
+
+          <View className="mt-4 gap-3">
+            <GoogleSignInButton />
+            {Platform.OS === "ios" ? <AppleSignInButton /> : null}
+          </View>
+
           {/* Sign up link */}
-          <View className="mt-6 flex-row justify-center">
+          <View className="mt-8 flex-row justify-center">
             <Text className="text-sm text-muted dark:text-muted-dark">
               Don&apos;t have an account?{" "}
             </Text>
             <Link href="/(auth)/signup" asChild>
               <TouchableOpacity>
-                <Text className="text-sm font-medium text-brand">Sign up</Text>
+                <Text className="text-sm font-medium text-brand">Sign Up</Text>
               </TouchableOpacity>
             </Link>
-          </View>
-
-          {/* OAuth divider */}
-          <View className="mt-8 flex-row items-center gap-4">
-            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
-            <Text className="text-xs text-muted dark:text-muted-dark">or continue with</Text>
-            <View className="flex-1 h-px bg-border dark:bg-border-dark" />
-          </View>
-
-          <View className="mt-4 gap-3">
-            <AppleSignInButton />
-            <GoogleSignInButton />
           </View>
         </View>
       </ScrollView>

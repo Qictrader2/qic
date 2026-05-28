@@ -3,6 +3,8 @@ import { useRouter } from "expo-router"
 import { useState } from "react"
 import { apiClient, ApiError } from "@/src/lib/api/client"
 import { useAuthStore } from "@/src/store/auth-store"
+import AppleIcon from "@/assets/icons/apple.svg"
+import GoogleIcon from "@/assets/icons/google.svg"
 
 interface OAuthResponse {
   accessToken: string
@@ -75,7 +77,7 @@ export function AppleSignInButton() {
       <TouchableOpacity
         onPress={handleAppleSignIn}
         disabled={loading}
-        className="flex-row items-center justify-center rounded-lg bg-black dark:bg-white py-3.5 px-4 gap-3"
+        className="flex-row items-center justify-center rounded-lg bg-black py-3.5 px-4 gap-3"
         accessibilityLabel="Sign in with Apple"
         activeOpacity={0.85}
       >
@@ -83,8 +85,8 @@ export function AppleSignInButton() {
           <ActivityIndicator color="#fff" />
         ) : (
           <>
-            <Text className="text-white dark:text-black text-lg">🍎</Text>
-            <Text className="text-base font-medium text-white dark:text-black">
+            <AppleIcon width={18} height={18} color="#FFFFFF" />
+            <Text className="text-base font-medium text-white">
               Sign in with Apple
             </Text>
           </>
@@ -154,7 +156,7 @@ export function GoogleSignInButton() {
           <ActivityIndicator color="#00A3F6" />
         ) : (
           <>
-            <Text className="text-lg">G</Text>
+            <GoogleIcon width={18} height={18} />
             <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
               Sign in with Google
             </Text>
