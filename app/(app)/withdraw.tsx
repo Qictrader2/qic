@@ -14,7 +14,15 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useState } from "react"
-import { useWithdraw, useWithdrawFeePreview } from "@/src/hooks/api/use-wallet"
+import {
+  ChevronLeft,
+  CheckCircle2,
+  ShieldCheck,
+  AlertTriangle,
+  Fingerprint,
+} from "lucide-react-native"
+import { useWithdraw, useWithdrawFeePreview, useWallets } from "@/src/hooks/api/use-wallet"
+import type { Wallet } from "@/src/services/wallet.service"
 import { promptBiometric, isBiometricEnabled, isBiometricAvailable } from "@/src/lib/biometric"
 import { ApiError } from "@/src/lib/api/client"
 import type { Currency, Network } from "@/src/services/wallet.service"
@@ -31,13 +39,18 @@ export default function WithdrawScreen() {
   const { currency, network } = useLocalSearchParams<{ currency: string; network: string }>()
   const router = useRouter()
   const { mutateAsync: withdraw } = useWithdraw()
+  const { data: wallets } = useWallets()
   const [serverError, setServerError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const wallet = wallets?.find((w: Wallet) => w.currency === currency && w.network === network)
+  const availableBalance = wallet?.balance ?? "0"
 
   const {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Form>({ resolver: zodResolver(schema) })
 
@@ -47,7 +60,6 @@ export default function WithdrawScreen() {
   async function onSubmit(data: Form) {
     setServerError(null)
 
-    // Biometric re-auth required before withdraw (SEC rule)
     const biometricEnabled = await isBiometricEnabled()
     const biometricAvailable = await isBiometricAvailable()
     if (biometricEnabled && biometricAvailable) {
@@ -83,20 +95,30 @@ export default function WithdrawScreen() {
 
   if (success) {
     return (
-      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark justify-center px-6">
-        <View className="items-center">
-          <Text className="text-5xl mb-4">✅</Text>
+      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-20 h-20 rounded-full bg-success/10 items-center justify-center mb-5">
+            <CheckCircle2 size={36} color="#10B981" />
+          </View>
           <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2">
             Withdrawal submitted
           </Text>
-          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8">
-            Your withdrawal is being processed. Check transaction history for updates.
+          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8 max-w-[320px]">
+            Your withdrawal is being processed and will appear in your transaction history once on-chain.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="rounded-lg bg-brand px-8 py-3.5"
+            className="rounded-xl bg-brand px-8 h-12 items-center justify-center"
+            activeOpacity={0.85}
           >
             <Text className="text-base font-semibold text-white">Done</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/transactions" as never)}
+            className="mt-4 py-2"
+            activeOpacity={0.7}
+          >
+            <Text className="text-sm font-medium text-brand">View transactions</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -108,67 +130,96 @@ export default function WithdrawScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-background dark:bg-background-dark"
     >
-      <SafeAreaView className="flex-1">
-        <ScrollView className="flex-1 px-4 py-4" keyboardShouldPersistTaps="handled">
-          <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-1">
+      <SafeAreaView className="flex-1" edges={["bottom"]}>
+        <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
+          <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 items-center justify-center -ml-2" activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#64748B" />
+          </TouchableOpacity>
+          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
             Withdraw {currency}
           </Text>
-          <Text className="text-sm text-muted dark:text-muted-dark mb-6 capitalize">
-            Network: {network}
-          </Text>
+          <View className="w-10" />
+        </View>
+
+        <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {/* Balance card */}
+          <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-4">
+            <Text className="text-xs text-muted dark:text-muted-dark mb-1">Available balance</Text>
+            <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+              {parseFloat(availableBalance).toFixed(8)}{" "}
+              <Text className="text-base font-medium text-muted dark:text-muted-dark">{currency}</Text>
+            </Text>
+            <View className="flex-row items-center gap-1.5 mt-2">
+              <View className="w-1.5 h-1.5 rounded-full bg-success" />
+              <Text className="text-xs text-muted dark:text-muted-dark capitalize">
+                {network?.replace(/_/g, " ")} network
+              </Text>
+            </View>
+          </View>
 
           {serverError ? (
-            <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-              <Text className="text-sm text-error">{serverError}</Text>
+            <View className="mb-4 rounded-xl bg-error-bg border border-error/20 px-4 py-3 flex-row items-center gap-2">
+              <AlertTriangle size={14} color="#EF4444" />
+              <Text className="text-sm text-error flex-1">{serverError}</Text>
             </View>
           ) : null}
 
           {/* Address */}
-          <View className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              Destination address
-            </Text>
-            <Controller
-              control={control}
-              name="toAddress"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder={`${currency} address on ${network}`}
-                  placeholderTextColor="#94A3B8"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!isSubmitting}
-                />
-              )}
-            />
-            {errors.toAddress ? (
-              <Text className="mt-1 text-xs text-error">{errors.toAddress.message}</Text>
-            ) : null}
-          </View>
+          <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+            Destination address
+          </Text>
+          <Controller
+            control={control}
+            name="toAddress"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 text-sm text-foreground dark:text-foreground-dark"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value ?? ""}
+                placeholder={`${currency} address`}
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSubmitting}
+              />
+            )}
+          />
+          {errors.toAddress ? (
+            <Text className="mt-1 text-xs text-error">{errors.toAddress.message}</Text>
+          ) : null}
 
           {/* Amount */}
-          <View className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              Amount
-            </Text>
+          <View className="mt-4 flex-row items-center justify-between">
+            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">Amount</Text>
+            <TouchableOpacity
+              onPress={() => setValue("amount", availableBalance)}
+              className="px-2.5 py-1 rounded-md bg-brand/10"
+              activeOpacity={0.7}
+            >
+              <Text className="text-xs font-semibold text-brand">MAX</Text>
+            </TouchableOpacity>
+          </View>
+          <View className="mt-2">
             <Controller
               control={control}
               name="amount"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="0.00"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="decimal-pad"
-                  editable={!isSubmitting}
-                />
+                <View className="relative">
+                  <TextInput
+                    className="h-14 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 pr-20 text-xl font-semibold text-foreground dark:text-foreground-dark"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value ?? ""}
+                    placeholder="0.00"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="decimal-pad"
+                    editable={!isSubmitting}
+                  />
+                  <View className="absolute right-4 top-4">
+                    <Text className="text-sm font-semibold text-muted dark:text-muted-dark">{currency}</Text>
+                  </View>
+                </View>
               )}
             />
             {errors.amount ? (
@@ -178,18 +229,19 @@ export default function WithdrawScreen() {
 
           {/* Fee preview */}
           {feePreview ? (
-            <View className="mb-4 rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4">
-              <View className="flex-row justify-between mb-1">
+            <View className="mt-4 rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4">
+              <View className="flex-row justify-between py-1.5">
                 <Text className="text-xs text-muted dark:text-muted-dark">Network fee</Text>
-                <Text className="text-xs text-foreground dark:text-foreground-dark">
+                <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
                   {feePreview.fee} {currency}
                 </Text>
               </View>
-              <View className="flex-row justify-between">
-                <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
+              <View className="h-px bg-border/50 dark:bg-border-dark/50 my-1" />
+              <View className="flex-row justify-between py-1.5">
+                <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
                   You receive
                 </Text>
-                <Text className="text-xs font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-sm font-bold text-foreground dark:text-foreground-dark">
                   {feePreview.netAmount} {currency}
                 </Text>
               </View>
@@ -197,45 +249,65 @@ export default function WithdrawScreen() {
           ) : null}
 
           {/* 2FA */}
-          <View className="mb-6">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              2FA code
+          <Text className="mt-5 mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+            2FA code
+          </Text>
+          <Controller
+            control={control}
+            name="twoFactorCode"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="h-12 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 text-xl text-center tracking-[6px] font-semibold text-foreground dark:text-foreground-dark"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value ?? ""}
+                placeholder="000000"
+                placeholderTextColor="#94A3B8"
+                keyboardType="number-pad"
+                maxLength={6}
+                editable={!isSubmitting}
+              />
+            )}
+          />
+          {errors.twoFactorCode ? (
+            <Text className="mt-1 text-xs text-error">{errors.twoFactorCode.message}</Text>
+          ) : null}
+
+          <View className="mt-4 rounded-xl bg-warning-bg border border-warning/20 p-3 flex-row items-start gap-2">
+            <AlertTriangle size={14} color="#F59E0B" />
+            <Text className="text-xs text-warning flex-1 leading-5">
+              Withdrawals to the wrong address or wrong network are{" "}
+              <Text className="font-bold">irreversible</Text>. Always double-check before confirming.
             </Text>
-            <Controller
-              control={control}
-              name="twoFactorCode"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-base text-center tracking-widest text-foreground dark:text-foreground-dark"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="000000"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  editable={!isSubmitting}
-                />
-              )}
-            />
-            {errors.twoFactorCode ? (
-              <Text className="mt-1 text-xs text-error">{errors.twoFactorCode.message}</Text>
-            ) : null}
           </View>
 
+          <View className="mt-3 rounded-xl bg-brand/10 p-3 flex-row items-center gap-2">
+            <ShieldCheck size={14} color="#00A3F6" />
+            <Text className="text-xs text-brand flex-1">
+              Biometric and 2FA required for every withdrawal.
+            </Text>
+          </View>
+
+          <View className="h-24" />
+        </ScrollView>
+
+        <View className="px-5 pt-3 pb-2 border-t border-border dark:border-border-dark bg-background dark:bg-background-dark">
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting}
-            className="rounded-lg bg-brand py-4 items-center mb-8"
-            activeOpacity={0.8}
+            className="rounded-xl bg-brand h-12 items-center justify-center flex-row gap-2"
+            activeOpacity={0.85}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-base font-semibold text-white">Confirm withdrawal</Text>
+              <>
+                <Fingerprint size={18} color="#FFFFFF" />
+                <Text className="text-base font-semibold text-white">Confirm withdrawal</Text>
+              </>
             )}
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
   )

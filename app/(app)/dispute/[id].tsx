@@ -1,6 +1,14 @@
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView,
-  Image, Alert,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useLocalSearchParams, useRouter } from "expo-router"
@@ -9,6 +17,15 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import * as ImagePicker from "expo-image-picker"
+import {
+  ChevronLeft,
+  Scale,
+  AlertTriangle,
+  CheckCircle2,
+  Plus,
+  X,
+  ImagePlus,
+} from "lucide-react-native"
 import { tradeService } from "@/src/services/trade.service"
 import { useQueryClient } from "@tanstack/react-query"
 import { ApiError } from "@/src/lib/api/client"
@@ -38,11 +55,15 @@ export default function DisputeScreen() {
   const [submitted, setSubmitted] = useState(false)
 
   const {
-    control, handleSubmit, setValue, watch,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<Form>({ resolver: zodResolver(schema) })
 
   const selectedReason = watch("reason")
+  const details = watch("details") ?? ""
 
   async function addEvidence() {
     if (evidence.length >= 5) {
@@ -96,18 +117,21 @@ export default function DisputeScreen() {
 
   if (submitted) {
     return (
-      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark justify-center px-6">
-        <View className="items-center">
-          <Text className="text-5xl mb-4">⚖️</Text>
-          <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2">
+      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-20 h-20 rounded-full bg-success/10 items-center justify-center mb-5">
+            <CheckCircle2 size={36} color="#10B981" />
+          </View>
+          <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2 text-center">
             Dispute opened
           </Text>
-          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8">
-            Our team will review the evidence and resolve within 24–48 hours.
+          <Text className="text-sm text-muted dark:text-muted-dark text-center mb-8 max-w-[320px]">
+            Our team will review the evidence and resolve within 24–48 hours. You'll receive an update via email and in-app notification.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="rounded-lg bg-brand px-8 py-3.5"
+            className="rounded-xl bg-brand px-8 h-12 items-center justify-center"
+            activeOpacity={0.85}
           >
             <Text className="text-base font-semibold text-white">Back to trade</Text>
           </TouchableOpacity>
@@ -117,129 +141,181 @@ export default function DisputeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-4 py-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mb-2">
-          Open Dispute
-        </Text>
-        <Text className="text-sm text-muted dark:text-muted-dark mb-6 leading-relaxed">
-          Only open a dispute if you cannot resolve the issue directly with the counterparty
-          in the trade chat.
-        </Text>
-
-        {serverError ? (
-          <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-            <Text className="text-sm text-error">{serverError}</Text>
-          </View>
-        ) : null}
-
-        {/* Reason */}
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
-            Reason
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-background dark:bg-background-dark"
+    >
+      <SafeAreaView className="flex-1" edges={["bottom"]}>
+        <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 items-center justify-center -ml-2"
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={24} color="#64748B" />
+          </TouchableOpacity>
+          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            Open dispute
           </Text>
-          <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark overflow-hidden">
-            {DISPUTE_REASONS.map((r, i) => (
-              <TouchableOpacity
-                key={r}
-                onPress={() => setValue("reason", r)}
-                className={`flex-row items-center justify-between px-4 py-3.5 ${
-                  i < DISPUTE_REASONS.length - 1
-                    ? "border-b border-border/50 dark:border-border-dark/50"
-                    : ""
-                }`}
-                activeOpacity={0.7}
-              >
-                <Text className="text-sm text-foreground dark:text-foreground-dark flex-1 mr-3">
-                  {r}
-                </Text>
-                {selectedReason === r ? (
-                  <View className="h-5 w-5 rounded-full bg-brand items-center justify-center">
-                    <Text className="text-white text-xs">✓</Text>
-                  </View>
-                ) : (
-                  <View className="h-5 w-5 rounded-full border-2 border-border dark:border-border-dark" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-          {errors.reason ? (
-            <Text className="mt-1 text-xs text-error">{errors.reason.message}</Text>
-          ) : null}
+          <View className="w-10" />
         </View>
 
-        {/* Details */}
-        <View className="mb-4">
-          <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-            Details
+        <ScrollView
+          className="flex-1 px-5"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="rounded-2xl bg-warning-bg border border-warning/20 p-4 mb-5 flex-row items-start gap-3">
+            <View className="w-9 h-9 rounded-full bg-warning/20 items-center justify-center">
+              <Scale size={16} color="#F59E0B" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-warning mb-1">
+                Last resort
+              </Text>
+              <Text className="text-xs text-warning/90 leading-5">
+                Only open a dispute if you can't resolve the issue with the counterparty in the trade chat. Be honest — our team reviews all evidence.
+              </Text>
+            </View>
+          </View>
+
+          {serverError ? (
+            <View className="mb-4 rounded-xl bg-error-bg border border-error/20 px-4 py-3 flex-row items-center gap-2">
+              <AlertTriangle size={14} color="#EF4444" />
+              <Text className="text-sm text-error flex-1">{serverError}</Text>
+            </View>
+          ) : null}
+
+          {/* Reason */}
+          <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
+            What's the issue?
           </Text>
+          <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark overflow-hidden mb-4">
+            {DISPUTE_REASONS.map((r, i) => {
+              const selected = selectedReason === r
+              return (
+                <TouchableOpacity
+                  key={r}
+                  onPress={() => setValue("reason", r)}
+                  className={`flex-row items-center justify-between px-4 py-3.5 ${
+                    i < DISPUTE_REASONS.length - 1
+                      ? "border-b border-border/40 dark:border-border-dark/40"
+                      : ""
+                  }`}
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-sm text-foreground dark:text-foreground-dark flex-1 mr-3">
+                    {r}
+                  </Text>
+                  <View
+                    className={`h-5 w-5 rounded-full items-center justify-center ${
+                      selected
+                        ? "bg-brand"
+                        : "border-2 border-border dark:border-border-dark"
+                    }`}
+                  >
+                    {selected ? <CheckCircle2 size={12} color="#FFFFFF" /> : null}
+                  </View>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+          {errors.reason ? (
+            <Text className="-mt-3 mb-3 text-xs text-error">{errors.reason.message}</Text>
+          ) : null}
+
+          {/* Details */}
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+              Details
+            </Text>
+            <Text className="text-xs text-muted dark:text-muted-dark">
+              {details.length}/500
+            </Text>
+          </View>
           <Controller
             control={control}
             name="details"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark h-32"
+                className="rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 py-3 text-sm text-foreground dark:text-foreground-dark h-32"
                 onBlur={onBlur}
                 onChangeText={onChange}
-                value={value}
-                placeholder="Describe the issue clearly. Include payment method, amounts, dates."
+                value={value ?? ""}
+                placeholder="Describe the issue clearly. Include payment method, amounts, dates, and what went wrong."
                 placeholderTextColor="#94A3B8"
                 multiline
                 textAlignVertical="top"
+                maxLength={500}
               />
             )}
           />
           {errors.details ? (
             <Text className="mt-1 text-xs text-error">{errors.details.message}</Text>
           ) : null}
-        </View>
 
-        {/* Evidence */}
-        <View className="mb-6">
-          <Text className="mb-2 text-sm font-medium text-foreground dark:text-foreground-dark">
-            Evidence ({evidence.length}/5)
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-2">
-            {evidence.map((e, i) => (
-              <View key={i} className="relative">
-                <Image
-                  source={{ uri: e.uri }}
-                  className="h-20 w-20 rounded-lg"
-                  resizeMode="cover"
-                />
+          {/* Evidence */}
+          <View className="mt-5">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+                Evidence
+              </Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">{evidence.length}/5</Text>
+            </View>
+            <View className="flex-row flex-wrap gap-3">
+              {evidence.map((e, i) => (
+                <View key={i} className="relative">
+                  <Image
+                    source={{ uri: e.uri }}
+                    className="h-20 w-20 rounded-xl"
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setEvidence((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-error items-center justify-center border-2 border-background dark:border-background-dark"
+                    activeOpacity={0.85}
+                  >
+                    <X size={11} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {evidence.length < 5 ? (
                 <TouchableOpacity
-                  onPress={() => setEvidence((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-error items-center justify-center"
+                  onPress={addEvidence}
+                  className="h-20 w-20 rounded-xl border-2 border-dashed border-brand/40 bg-brand/5 items-center justify-center"
+                  activeOpacity={0.7}
                 >
-                  <Text className="text-white text-xs font-bold">×</Text>
+                  <ImagePlus size={20} color="#00A3F6" />
+                  <Text className="text-[10px] text-brand mt-1 font-medium">Add</Text>
                 </TouchableOpacity>
-              </View>
-            ))}
-            {evidence.length < 5 ? (
-              <TouchableOpacity
-                onPress={addEvidence}
-                className="h-20 w-20 rounded-lg border-2 border-dashed border-brand/50 bg-brand-bg/30 items-center justify-center"
-                activeOpacity={0.7}
-              >
-                <Text className="text-brand text-2xl">+</Text>
-              </TouchableOpacity>
-            ) : null}
+              ) : null}
+            </View>
+            <Text className="text-xs text-muted dark:text-muted-dark mt-2">
+              Screenshots of payment proof, chat messages, or transaction history help us resolve faster.
+            </Text>
           </View>
-        </View>
 
-        <TouchableOpacity
-          onPress={handleSubmit(onSubmit)}
-          disabled={submitting}
-          className="rounded-lg bg-error py-4 items-center mb-8"
-          activeOpacity={0.8}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-base font-semibold text-white">Submit dispute</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          <View className="h-24" />
+        </ScrollView>
+
+        <View className="px-5 pt-3 pb-2 border-t border-border dark:border-border-dark bg-background dark:bg-background-dark">
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            disabled={submitting}
+            className="rounded-xl bg-error h-12 items-center justify-center flex-row gap-2"
+            activeOpacity={0.85}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Scale size={16} color="#FFFFFF" />
+                <Text className="text-base font-semibold text-white">Submit dispute</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   )
 }
