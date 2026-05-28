@@ -10,6 +10,7 @@ import { useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useAuthStore } from "@/src/store/auth-store"
 import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable, getBiometricType } from "@/src/lib/biometric"
+import { SignInPrompt } from "@/src/components/common/SignInPrompt"
 import { useState, useEffect } from "react"
 
 function SettingsRow({
@@ -49,18 +50,28 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore()
+  const { user, logout, isAuthenticated } = useAuthStore()
   const router = useRouter()
   const [biometricOn, setBiometricOn] = useState(false)
   const [biometricType, setBiometricType] = useState("biometric")
 
   useEffect(() => {
+    if (!isAuthenticated) return
     isBiometricEnabled().then(setBiometricOn)
     getBiometricType().then((t) => {
       if (t === "facial") setBiometricType("Face ID")
       else if (t === "fingerprint") setBiometricType("Touch ID")
     })
-  }, [])
+  }, [isAuthenticated])
+
+  if (!isAuthenticated) {
+    return (
+      <SignInPrompt
+        title="Your profile"
+        message="Sign in to access your KYC, payment methods, security settings, and account preferences."
+      />
+    )
+  }
 
   async function toggleBiometric(val: boolean) {
     const available = await isBiometricAvailable()

@@ -2,6 +2,8 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "@/src/lib/api/client"
+import { useAuthStore } from "@/src/store/auth-store"
+import { SignInPrompt } from "@/src/components/common/SignInPrompt"
 
 interface Notification {
   id: string
@@ -60,8 +62,18 @@ function NotifRow({ notif, onRead }: { notif: Notification; onRead: () => void }
 
 export default function NotificationsScreen() {
   const qc = useQueryClient()
+  const { isAuthenticated } = useAuthStore()
   const { data: notifs, isLoading, error } = useNotifications()
   const { mutateAsync: markAllRead } = useMarkAllRead()
+
+  if (!isAuthenticated) {
+    return (
+      <SignInPrompt
+        title="Notifications"
+        message="Sign in to see trade updates, dispute alerts, and security notices."
+      />
+    )
+  }
 
   async function handleMarkRead(id: string) {
     try {

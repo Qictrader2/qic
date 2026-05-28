@@ -7,6 +7,12 @@ import { isBiometricEnabled, isBiometricAvailable, promptBiometric } from "@/src
 import { useSessionLifecycle } from "@/src/hooks/use-session-lifecycle"
 import { registerForPushNotifications, syncPushToken } from "@/src/lib/push-notifications"
 
+/**
+ * Mirrors web's AuthProvider behaviour:
+ * - Marketplace, landing, offer-detail are PUBLIC (browsable without auth).
+ * - Wallet, trades, profile, withdraw, etc. self-gate at the component level.
+ * - We only redirect logged-in users *away* from the auth screens.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, login, logout } = useAuthStore()
   const segments = useSegments()
@@ -25,12 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const refreshToken = await secureStorage.get("qic_refresh")
 
       if (!accessToken || !refreshToken) {
-        await logout()
         setBootDone(true)
         return
       }
 
-      // Check biometric gate
       const biometricEnabled = await isBiometricEnabled()
       const biometricAvailable = await isBiometricAvailable()
 
@@ -65,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         kycTier: user.kycTier ?? 0,
       })
 
-      // Register push token in background
       registerForPushNotifications()
         .then((token) => { if (token) return syncPushToken(token) })
         .catch(() => {})
@@ -76,14 +79,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Route guard
+  // Only redirect authed users AWAY from auth screens.
+  // Unauthed users are allowed everywhere — protected screens self-gate.
   useEffect(() => {
     if (!bootDone) return
     const inAuthGroup = segments[0] === "(auth)"
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/(auth)/login")
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)")
+    if (isAuthenticated && inAuthGroup) {
+      router.replace("/" as never)
     }
   }, [isAuthenticated, segments, bootDone])
 

@@ -113,7 +113,7 @@ export default function FiatBalanceScreen() {
               return (
                 <TouchableOpacity
                   key={wallet.id}
-                  onPress={() => router.push("/(tabs)/")}
+                  onPress={() => router.push("/(app)/wallet")}
                   className="bg-surface dark:bg-surface-dark rounded-xl p-4 mb-3 border border-border dark:border-border-dark"
                   activeOpacity={0.8}
                 >

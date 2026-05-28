@@ -15,6 +15,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useOffer, useInitiateTrade } from "@/src/hooks/api/use-market"
+import { useAuthStore } from "@/src/store/auth-store"
 import { ApiError } from "@/src/lib/api/client"
 
 const schema = z.object({
@@ -25,6 +26,7 @@ type Form = z.infer<typeof schema>
 export default function OfferDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
   const { data: offer, isLoading, error } = useOffer(id ?? "")
   const { mutateAsync: initiateTrade } = useInitiateTrade()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -43,6 +45,10 @@ export default function OfferDetailScreen() {
 
   async function onSubmit(data: Form) {
     setServerError(null)
+    if (!isAuthenticated) {
+      router.push("/(auth)/login")
+      return
+    }
     try {
       const { tradeId } = await initiateTrade({ offerId: id ?? "", amount: data.amount })
       router.replace({ pathname: "/(app)/trade/[id]", params: { id: tradeId } })
@@ -195,23 +201,29 @@ export default function OfferDetailScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text className="text-base font-semibold text-white">
-                {offer.offerType === "buy" ? "Start buying" : "Start selling"}
+                {!isAuthenticated
+                  ? "Sign in to trade"
+                  : offer.offerType === "buy"
+                    ? "Start buying"
+                    : "Start selling"}
               </Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: "/(app)/create-resell/[offerId]",
-                params: { offerId: offer.id },
-              })
-            }
-            className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-8"
-            activeOpacity={0.8}
-          >
-            <Text className="text-sm font-medium text-brand">💹 Resell this offer</Text>
-          </TouchableOpacity>
+          {isAuthenticated && (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/create-resell/[offerId]",
+                  params: { offerId: offer.id },
+                })
+              }
+              className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-8"
+              activeOpacity={0.8}
+            >
+              <Text className="text-sm font-medium text-brand">Resell this offer</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>

@@ -9,6 +9,8 @@ import {
 import { useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useActiveTrades } from "@/src/hooks/api/use-trade"
+import { useAuthStore } from "@/src/store/auth-store"
+import { SignInPrompt } from "@/src/components/common/SignInPrompt"
 import type { Trade, TradeStatus } from "@/src/services/trade.service"
 
 function statusColor(status: TradeStatus): string {
@@ -87,7 +89,17 @@ function TradeRow({ trade, onPress }: { trade: Trade; onPress: () => void }) {
 
 export default function TradesScreen() {
   const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
   const { data: trades, isLoading, error, refetch, isRefetching } = useActiveTrades()
+
+  if (!isAuthenticated) {
+    return (
+      <SignInPrompt
+        title="Your trades"
+        message="Sign in to see your active trades, chat with counterparties, and access trade history."
+      />
+    )
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">

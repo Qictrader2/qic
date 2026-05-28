@@ -44,9 +44,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
     })
   }
 
-  const token = await Notifications.getExpoPushTokenAsync({
-    projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
-  })
+  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+  const token = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined,
+  )
 
   return token.data
 }
@@ -59,9 +60,10 @@ export async function syncPushToken(token: string): Promise<void> {
 }
 
 export async function unregisterPushToken(): Promise<void> {
-  const token = await Notifications.getExpoPushTokenAsync({
-    projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
-  }).catch(() => null)
+  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+  const token = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined,
+  ).catch(() => null)
 
   if (!token) return
 

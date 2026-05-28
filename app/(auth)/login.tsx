@@ -245,6 +245,15 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Link>
           </View>
+
+          {/* Browse without signing in */}
+          <View className="mt-3 items-center">
+            <TouchableOpacity onPress={() => router.replace("/" as never)}>
+              <Text className="text-xs text-muted dark:text-muted-dark">
+                Or browse the marketplace as a guest →
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -44,7 +44,7 @@ let _isRefreshing = false
 let _refreshQueue: Array<(token: string | null) => void> = []
 
 const instance = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: process.env.EXPO_PUBLIC_API_URL ?? "",
   timeout: 30_000,
   headers: { "Content-Type": "application/json" },
 })
