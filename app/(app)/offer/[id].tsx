@@ -14,6 +14,7 @@ import { useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { ShieldCheck, ThumbsUp, Clock } from "lucide-react-native"
 import { useOffer, useInitiateTrade } from "@/src/hooks/api/use-market"
 import { useAuthStore } from "@/src/store/auth-store"
 import { ApiError } from "@/src/lib/api/client"
@@ -89,113 +90,169 @@ export default function OfferDetailScreen() {
     >
       <SafeAreaView className="flex-1">
         <ScrollView className="flex-1 px-4 py-4" keyboardShouldPersistTaps="handled">
-          {/* Offer header */}
-          <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-            <View className="flex-row items-center justify-between mb-3">
+          {/* Trader card — mirrors web offer-detail trader hero */}
+          <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-3">
+            <View className="flex-row items-center gap-3">
+              <View className="w-14 h-14 rounded-full bg-brand/20 items-center justify-center">
+                <Text className="text-lg font-bold text-brand">
+                  {offer.owner.username
+                    .split(/[\s_]/)
+                    .slice(0, 2)
+                    .map((w) => w[0]?.toUpperCase() ?? "")
+                    .join("")}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <View className="flex-row items-center gap-1.5 flex-wrap">
+                  <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                    {offer.owner.username}
+                  </Text>
+                  {offer.owner.kycTier >= 2 ? (
+                    <View className="bg-success-bg rounded-full px-1.5 py-0.5">
+                      <Text className="text-[10px] font-semibold text-success">✓ Verified</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View className="flex-row items-center gap-2 mt-1">
+                  <View className="flex-row items-center gap-1">
+                    <ThumbsUp size={11} color="#64748B" />
+                    <Text className="text-xs text-muted dark:text-muted-dark">
+                      {Math.round(offer.owner.completionRate)}%
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-muted dark:text-muted-dark">·</Text>
+                  <Text className="text-xs text-muted dark:text-muted-dark">
+                    {offer.owner.tradeCount} trades
+                  </Text>
+                  <Text className="text-xs text-muted dark:text-muted-dark">·</Text>
+                  <Text className="text-xs text-muted dark:text-muted-dark">
+                    KYC L{offer.owner.kycTier}
+                  </Text>
+                </View>
+              </View>
               <View
                 className={`px-2.5 py-1 rounded-full ${
-                  offer.offerType === "buy" ? "bg-success-bg" : "bg-error-bg"
+                  offer.offerType === "buy" ? "bg-success-bg" : "bg-info-bg"
                 }`}
               >
                 <Text
-                  className={`text-xs font-semibold uppercase ${
-                    offer.offerType === "buy" ? "text-success" : "text-error"
+                  className={`text-[10px] font-bold tracking-wider ${
+                    offer.offerType === "buy" ? "text-success" : "text-info"
                   }`}
                 >
-                  {offer.offerType}
+                  {offer.offerType === "buy" ? "BUYING" : "SELLING"}
                 </Text>
               </View>
-              <Text className="text-lg font-bold text-foreground dark:text-foreground-dark">
-                {offer.currency} / {offer.fiatCurrency}
-              </Text>
-            </View>
-
-            <View className="flex-row justify-between mb-2">
-              <Text className="text-sm text-muted dark:text-muted-dark">Price</Text>
-              <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
-                {offer.fiatCurrency} {parseFloat(offer.pricePerUnit).toLocaleString()}
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-2">
-              <Text className="text-sm text-muted dark:text-muted-dark">Limits</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark">
-                {offer.minAmount}–{offer.maxAmount} {offer.currency}
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-2">
-              <Text className="text-sm text-muted dark:text-muted-dark">Payment</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark">
-                {offer.paymentMethods.map((m) => m.replace(/_/g, " ")).join(", ")}
-              </Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-sm text-muted dark:text-muted-dark">Payment window</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark">
-                {offer.paymentWindow} min
-              </Text>
             </View>
           </View>
 
-          {/* Seller info */}
-          <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-            <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark mb-2">
-              {offer.owner.username}
+          {/* Price + limits */}
+          <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-3">
+            <Text className="text-xs text-muted dark:text-muted-dark">Price per {offer.currency}</Text>
+            <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark mt-1">
+              {offer.fiatCurrency} {parseFloat(offer.pricePerUnit).toLocaleString()}
             </Text>
-            <Text className="text-xs text-muted dark:text-muted-dark">
-              {offer.owner.completionRate}% completion · {offer.owner.tradeCount} trades · KYC tier{" "}
-              {offer.owner.kycTier}
+            <View className="h-px bg-border dark:bg-border-dark my-3" />
+            <View className="flex-row justify-between mb-1.5">
+              <Text className="text-xs text-muted dark:text-muted-dark">Trade limits</Text>
+              <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
+                {parseFloat(offer.minAmount)} – {parseFloat(offer.maxAmount)} {offer.currency}
+              </Text>
+            </View>
+            <View className="flex-row justify-between mb-1.5">
+              <Text className="text-xs text-muted dark:text-muted-dark">Payment methods</Text>
+              <Text
+                className="text-xs font-medium text-foreground dark:text-foreground-dark text-right flex-1 ml-4 capitalize"
+                numberOfLines={2}
+              >
+                {offer.paymentMethods.map((m) => m.replace(/_/g, " ")).join(", ")}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-xs text-muted dark:text-muted-dark">Payment window</Text>
+              <View className="flex-row items-center gap-1">
+                <Clock size={11} color="#64748B" />
+                <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
+                  {offer.paymentWindow} min
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Escrow protection */}
+          <View className="rounded-2xl bg-success-bg p-3.5 mb-3 flex-row items-center gap-2.5">
+            <ShieldCheck size={16} color="#10B981" />
+            <Text className="text-xs text-success flex-1">
+              Escrow protected — crypto is held by QicTrader until the trade is released.
             </Text>
           </View>
 
           {offer.terms ? (
-            <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-              <Text className="text-xs font-medium text-muted dark:text-muted-dark mb-1">Terms</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark">{offer.terms}</Text>
+            <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-3">
+              <Text className="text-xs font-semibold text-muted dark:text-muted-dark uppercase tracking-wider mb-2">
+                Trader's terms
+              </Text>
+              <Text className="text-sm text-foreground dark:text-foreground-dark leading-5">
+                {offer.terms}
+              </Text>
             </View>
           ) : null}
 
-          {/* Trade form */}
-          {serverError ? (
-            <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-              <Text className="text-sm text-error">{serverError}</Text>
-            </View>
-          ) : null}
-
-          <View className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground dark:text-foreground-dark">
-              Amount ({offer.currency})
+          {/* Quote / trade form */}
+          <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-3">
+            <Text className="text-xs font-semibold text-muted dark:text-muted-dark uppercase tracking-wider mb-3">
+              {offer.offerType === "buy" ? "Sell amount" : "Buy amount"}
             </Text>
+
+            {serverError ? (
+              <View className="mb-3 rounded-lg bg-error-bg px-3 py-2">
+                <Text className="text-xs text-error">{serverError}</Text>
+              </View>
+            ) : null}
+
             <Controller
               control={control}
               name="amount"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-3 py-3 text-sm text-foreground dark:text-foreground-dark"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder={`${offer.minAmount}–${offer.maxAmount}`}
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="decimal-pad"
-                  editable={!isSubmitting}
-                />
+                <View className="relative">
+                  <TextInput
+                    className="h-14 rounded-xl border border-border dark:border-border-dark bg-background-gray dark:bg-background-secondary-dark px-4 pr-20 text-xl font-semibold text-foreground dark:text-foreground-dark"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="0.00"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="decimal-pad"
+                    editable={!isSubmitting}
+                  />
+                  <View className="absolute right-4 top-4">
+                    <Text className="text-sm font-semibold text-muted dark:text-muted-dark">
+                      {offer.currency}
+                    </Text>
+                  </View>
+                </View>
               )}
             />
             {errors.amount ? (
               <Text className="mt-1 text-xs text-error">{errors.amount.message}</Text>
             ) : null}
-            {parseFloat(amount) > 0 ? (
-              <Text className="mt-1.5 text-xs text-muted dark:text-muted-dark">
-                = {offer.fiatCurrency} {fiatTotal}
+
+            <View className="mt-3 flex-row items-center justify-between">
+              <Text className="text-xs text-muted dark:text-muted-dark">You'll {offer.offerType === "buy" ? "receive" : "pay"}</Text>
+              <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
+                {offer.fiatCurrency} {parseFloat(amount || "0") > 0 ? fiatTotal : "0.00"}
               </Text>
-            ) : null}
+            </View>
+            <Text className="text-[11px] text-muted dark:text-muted-dark mt-1 text-right">
+              Min {parseFloat(offer.minAmount)} · Max {parseFloat(offer.maxAmount)} {offer.currency}
+            </Text>
           </View>
 
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             disabled={isSubmitting}
-            className="rounded-lg bg-brand py-4 items-center mb-3"
-            activeOpacity={0.8}
+            className="rounded-xl bg-brand py-4 items-center mb-3"
+            activeOpacity={0.85}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
@@ -204,8 +261,8 @@ export default function OfferDetailScreen() {
                 {!isAuthenticated
                   ? "Sign in to trade"
                   : offer.offerType === "buy"
-                    ? "Start buying"
-                    : "Start selling"}
+                    ? "Start selling"
+                    : "Start buying"}
               </Text>
             )}
           </TouchableOpacity>
@@ -218,10 +275,10 @@ export default function OfferDetailScreen() {
                   params: { offerId: offer.id },
                 })
               }
-              className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-8"
-              activeOpacity={0.8}
+              className="rounded-xl border border-brand bg-brand-bg py-3.5 items-center mb-8"
+              activeOpacity={0.85}
             >
-              <Text className="text-sm font-medium text-brand">Resell this offer</Text>
+              <Text className="text-sm font-semibold text-brand">Resell this offer</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

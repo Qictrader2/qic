@@ -8,6 +8,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { ChevronRight, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react-native"
 import { useAuthStore } from "@/src/store/auth-store"
 import { isBiometricEnabled, setBiometricEnabled, isBiometricAvailable, getBiometricType } from "@/src/lib/biometric"
 import { SignInPrompt } from "@/src/components/common/SignInPrompt"
@@ -33,9 +34,12 @@ function SettingsRow({
     >
       <Text className="text-sm text-foreground dark:text-foreground-dark">{label}</Text>
       {right ?? (
-        <Text className="text-sm text-muted dark:text-muted-dark">
-          {value}{onPress ? " →" : ""}
-        </Text>
+        <View className="flex-row items-center gap-1.5">
+          {value ? (
+            <Text className="text-sm text-muted dark:text-muted-dark">{value}</Text>
+          ) : null}
+          {onPress ? <ChevronRight size={14} color="#94A3B8" /> : null}
+        </View>
       )}
     </TouchableOpacity>
   )
@@ -102,10 +106,10 @@ export default function ProfileScreen() {
     .join("")
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-4">
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top"]}>
+      <ScrollView className="flex-1 px-5">
         {/* Avatar */}
-        <View className="items-center py-6">
+        <View className="items-center pt-6 pb-4">
           <View className="h-20 w-20 rounded-full bg-brand items-center justify-center mb-3">
             <Text className="text-2xl font-bold text-white">{initials}</Text>
           </View>
@@ -113,17 +117,20 @@ export default function ProfileScreen() {
             {displayName}
           </Text>
           <Text className="text-sm text-muted dark:text-muted-dark">{user?.email}</Text>
-          <View className="flex-row items-center gap-2 mt-2">
-            <View className="px-2 py-0.5 rounded-full bg-brand-bg">
-              <Text className="text-xs font-medium text-brand">KYC Tier {user?.kycTier ?? 0}</Text>
+          <View className="flex-row items-center gap-2 mt-3">
+            <View className="px-2.5 py-1 rounded-full bg-brand-bg flex-row items-center gap-1">
+              <ShieldCheck size={11} color="#00A3F6" />
+              <Text className="text-xs font-semibold text-brand">KYC L{user?.kycTier ?? 0}</Text>
             </View>
             {user?.emailVerified ? (
-              <View className="px-2 py-0.5 rounded-full bg-success-bg">
-                <Text className="text-xs font-medium text-success">Verified</Text>
+              <View className="px-2.5 py-1 rounded-full bg-success-bg flex-row items-center gap-1">
+                <CheckCircle2 size={11} color="#10B981" />
+                <Text className="text-xs font-semibold text-success">Email verified</Text>
               </View>
             ) : (
-              <View className="px-2 py-0.5 rounded-full bg-warning-bg">
-                <Text className="text-xs font-medium text-warning">Email unverified</Text>
+              <View className="px-2.5 py-1 rounded-full bg-warning-bg flex-row items-center gap-1">
+                <AlertCircle size={11} color="#F59E0B" />
+                <Text className="text-xs font-semibold text-warning">Verify email</Text>
               </View>
             )}
           </View>
@@ -131,7 +138,7 @@ export default function ProfileScreen() {
 
         {/* Account */}
         <SectionHeader title="Account" />
-        <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark px-4">
+        <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark px-4">
           <SettingsRow label="Edit profile" onPress={() => router.push("/(app)/profile-edit")} />
           <SettingsRow label="Payment methods" onPress={() => router.push("/(app)/payment-methods")} />
           <SettingsRow
@@ -139,11 +146,12 @@ export default function ProfileScreen() {
             value={`Tier ${user?.kycTier ?? 0}`}
             onPress={() => router.push("/(app)/kyc")}
           />
+          <SettingsRow label="My offers" onPress={() => router.push("/(app)/my-offers")} />
         </View>
 
         {/* Security */}
         <SectionHeader title="Security" />
-        <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark px-4">
+        <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark px-4">
           <SettingsRow label={biometricType} right={
             <Switch
               value={biometricOn}
@@ -157,17 +165,23 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(app)/2fa-setup")}
           />
           <SettingsRow
-            label="Security settings"
+            label="Active sessions & devices"
             onPress={() => router.push("/(app)/security-settings")}
           />
         </View>
 
-        {/* More */}
-        <SectionHeader title="More" />
-        <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark px-4">
+        {/* Earn */}
+        <SectionHeader title="Earn" />
+        <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark px-4">
           <SettingsRow label="Affiliate program" onPress={() => router.push("/(app)/affiliate")} />
           <SettingsRow label="Reseller dashboard" onPress={() => router.push("/(app)/reseller-dashboard")} />
+        </View>
+
+        {/* More */}
+        <SectionHeader title="More" />
+        <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark px-4">
           <SettingsRow label="Fiat balances" onPress={() => router.push("/(app)/fiat-balance")} />
+          <SettingsRow label="Transaction history" onPress={() => router.push("/(app)/transactions")} />
           <SettingsRow label="Support" onPress={() => router.push("/(app)/support")} />
           <SettingsRow label="Preferences" onPress={() => router.push("/(app)/preferences")} />
         </View>
@@ -176,10 +190,10 @@ export default function ProfileScreen() {
         <View className="mt-6 mb-10">
           <TouchableOpacity
             onPress={handleLogout}
-            className="rounded-lg border border-error bg-error-bg py-3.5 items-center"
-            activeOpacity={0.8}
+            className="rounded-xl border border-error/40 bg-error-bg py-3.5 items-center"
+            activeOpacity={0.85}
           >
-            <Text className="text-sm font-medium text-error">Log out</Text>
+            <Text className="text-sm font-semibold text-error">Log out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

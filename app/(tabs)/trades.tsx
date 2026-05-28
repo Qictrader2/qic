@@ -8,6 +8,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { ArrowLeftRight, ChevronRight, History } from "lucide-react-native"
 import { useActiveTrades } from "@/src/hooks/api/use-trade"
 import { useAuthStore } from "@/src/store/auth-store"
 import { SignInPrompt } from "@/src/components/common/SignInPrompt"
@@ -52,36 +53,51 @@ function statusLabel(status: TradeStatus): string {
 function TradeRow({ trade, onPress }: { trade: Trade; onPress: () => void }) {
   const color = statusColor(trade.status)
   const isBuyer = trade.role === "buyer"
+  const initials = trade.counterparty.username
+    .split(/[\s_]/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="bg-surface dark:bg-surface-dark rounded-xl p-4 mb-3 border border-border dark:border-border-dark"
-      activeOpacity={0.8}
+      className="bg-surface dark:bg-card-dark rounded-2xl p-4 mb-3 border border-border dark:border-border-dark"
+      activeOpacity={0.85}
     >
-      <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center gap-2">
-          <View className={`px-2 py-0.5 rounded-full`} style={{ backgroundColor: color + "20" }}>
-            <Text className="text-xs font-semibold" style={{ color }}>
-              {statusLabel(trade.status)}
-            </Text>
-          </View>
-          <Text className="text-xs text-muted dark:text-muted-dark capitalize">
-            {isBuyer ? "Buying" : "Selling"}
+      <View className="flex-row items-center gap-3">
+        <View
+          className="w-11 h-11 rounded-full items-center justify-center"
+          style={{ backgroundColor: color + "22" }}
+        >
+          <Text className="text-sm font-bold" style={{ color }}>
+            {initials}
           </Text>
         </View>
-        <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
-          {trade.cryptoAmount} {trade.currency}
-        </Text>
-      </View>
-
-      <View className="flex-row items-center justify-between">
-        <Text className="text-xs text-muted dark:text-muted-dark">
-          with {trade.counterparty.username}
-        </Text>
-        <Text className="text-xs text-muted dark:text-muted-dark">
-          {trade.fiatCurrency} {parseFloat(trade.fiatAmount).toLocaleString()}
-        </Text>
+        <View className="flex-1">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
+              {trade.counterparty.username}
+            </Text>
+            <View
+              className="px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: color + "22" }}
+            >
+              <Text className="text-[10px] font-semibold" style={{ color }}>
+                {statusLabel(trade.status)}
+              </Text>
+            </View>
+          </View>
+          <View className="flex-row items-center justify-between mt-1">
+            <Text className="text-xs text-muted dark:text-muted-dark capitalize">
+              {isBuyer ? "Buying" : "Selling"} {trade.cryptoAmount} {trade.currency}
+            </Text>
+            <Text className="text-xs text-foreground dark:text-foreground-dark font-medium">
+              {trade.fiatCurrency} {parseFloat(trade.fiatAmount).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+        <ChevronRight size={16} color="#64748B" />
       </View>
     </TouchableOpacity>
   )
@@ -102,14 +118,25 @@ export default function TradesScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">Trades</Text>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top"]}>
+      <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
+        <View>
+          <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+            Trades
+          </Text>
+          <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+            Active and recent trades
+          </Text>
+        </View>
         <TouchableOpacity
           onPress={() => router.push("/(app)/trade-history")}
-          className="px-3 py-1.5 rounded-lg bg-brand-bg"
+          className="px-3 h-10 rounded-full bg-surface dark:bg-card-dark border border-border dark:border-border-dark items-center justify-center flex-row gap-1.5"
+          activeOpacity={0.85}
         >
-          <Text className="text-xs font-medium text-brand">History</Text>
+          <History size={14} color="#64748B" />
+          <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
+            History
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -133,19 +160,28 @@ export default function TradesScreen() {
               }
             />
           )}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00A3F6" />
           }
           ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Text className="text-4xl mb-3">🔄</Text>
-              <Text className="text-base font-medium text-foreground dark:text-foreground-dark mb-1">
+            <View className="items-center justify-center py-16">
+              <View className="w-16 h-16 rounded-full bg-brand/10 items-center justify-center mb-4">
+                <ArrowLeftRight size={24} color="#00A3F6" />
+              </View>
+              <Text className="text-base font-semibold text-foreground dark:text-foreground-dark mb-1">
                 No active trades
               </Text>
-              <Text className="text-sm text-muted dark:text-muted-dark">
-                Visit the Marketplace to start trading
+              <Text className="text-sm text-muted dark:text-muted-dark text-center max-w-[240px]">
+                Head to the marketplace to find an offer and start your first trade.
               </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/marketplace")}
+                className="mt-5 px-5 py-2.5 rounded-xl bg-brand"
+                activeOpacity={0.85}
+              >
+                <Text className="text-sm font-semibold text-white">Browse marketplace</Text>
+              </TouchableOpacity>
             </View>
           }
         />

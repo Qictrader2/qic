@@ -12,36 +12,14 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { MessageCircle, ShieldCheck, Star, Upload, AlertTriangle, X } from "lucide-react-native"
 import { useTrade, useMarkPaid, useReleaseEscrow, useCancelTrade, useOpenDispute } from "@/src/hooks/api/use-trade"
 import { promptBiometric, isBiometricEnabled, isBiometricAvailable } from "@/src/lib/biometric"
 import type { TradeStatus } from "@/src/services/trade.service"
 import { ApiError } from "@/src/lib/api/client"
 import { trackEvent } from "@/src/lib/analytics"
-
-function statusLabel(s: TradeStatus): string {
-  const map: Record<TradeStatus, string> = {
-    initiated: "Initiated",
-    funded: "Funded — awaiting payment",
-    payment_pending: "Awaiting payment",
-    payment_sent: "Payment sent",
-    payment_confirmed: "Payment confirmed",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    disputed: "Disputed",
-    expired: "Expired",
-  }
-  return map[s]
-}
-
-function statusBadgeColors(s: TradeStatus): [string, string] {
-  switch (s) {
-    case "completed": return ["#10B981", "#10B98120"]
-    case "disputed": return ["#EF4444", "#EF444420"]
-    case "cancelled":
-    case "expired": return ["#6B7280", "#6B728020"]
-    default: return ["#F59E0B", "#F59E0B20"]
-  }
-}
+import { TradeStatusBanner } from "@/src/components/features/trade/TradeStatusBanner"
+import { CounterpartyCard } from "@/src/components/features/trade/CounterpartyCard"
 
 /** Format remaining seconds as MM:SS */
 function formatCountdown(seconds: number): string {
@@ -206,148 +184,176 @@ export default function TradeDetailScreen() {
     )
   }
 
-  const [badgeColor, badgeBg] = statusBadgeColors(trade.status)
-
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <ScrollView
-        className="flex-1 px-4 py-4"
+        className="flex-1"
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00A3F6" />
         }
       >
-        {/* Status badge */}
-        <View className="flex-row items-center gap-2 mb-4">
-          <View className="px-3 py-1 rounded-full" style={{ backgroundColor: badgeBg }}>
-            <Text className="text-sm font-semibold" style={{ color: badgeColor }}>
-              {statusLabel(trade.status)}
-            </Text>
-          </View>
-          <Text className="text-xs text-muted dark:text-muted-dark capitalize">{trade.role}</Text>
-        </View>
+        {/* Status banner (full-width, color-coded) */}
+        <TradeStatusBanner status={trade.status} role={trade.role} />
 
-        {/* Live expiry countdown for active trades */}
-        {trade.expiresAt && ["initiated", "funded", "payment_pending", "payment_sent"].includes(trade.status) ? (
-          <ExpiryCountdown expiresAt={trade.expiresAt} />
-        ) : null}
+        <View className="px-4 py-4">
+          {/* Live expiry countdown for active trades */}
+          {trade.expiresAt && ["initiated", "funded", "payment_pending", "payment_sent"].includes(trade.status) ? (
+            <ExpiryCountdown expiresAt={trade.expiresAt} />
+          ) : null}
 
-        {/* Trade info */}
-        <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-          {[
-            ["Crypto amount", `${trade.cryptoAmount} ${trade.currency}`],
-            ["Fiat amount", `${trade.fiatCurrency} ${parseFloat(trade.fiatAmount).toLocaleString()}`],
-            ["Price", `${trade.fiatCurrency} ${parseFloat(trade.pricePerUnit).toLocaleString()}`],
-            ["Payment method", trade.paymentMethod.replace(/_/g, " ")],
-            ["Counterparty", trade.counterparty.username],
-            ["Trade ID", `#${trade.id.slice(0, 8)}`],
-          ].map(([label, value]) => (
-            <View
-              key={label}
-              className="flex-row justify-between py-2 border-b border-border/50 dark:border-border-dark/50 last:border-0"
-            >
-              <Text className="text-sm text-muted dark:text-muted-dark">{label}</Text>
-              <Text className="text-sm text-foreground dark:text-foreground-dark font-medium flex-shrink ml-4 text-right">
-                {value}
+          {/* Counterparty */}
+          <CounterpartyCard counterparty={trade.counterparty} role={trade.role} />
+
+          {/* Amount summary */}
+          <View className="mt-3 rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4">
+            <View className="flex-row items-end justify-between">
+              <View>
+                <Text className="text-xs text-muted dark:text-muted-dark">
+                  You {trade.role === "buyer" ? "receive" : "send"}
+                </Text>
+                <Text className="text-xl font-bold text-foreground dark:text-foreground-dark mt-0.5">
+                  {trade.cryptoAmount} {trade.currency}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-xs text-muted dark:text-muted-dark">
+                  You {trade.role === "buyer" ? "send" : "receive"}
+                </Text>
+                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark mt-0.5">
+                  {trade.fiatCurrency} {parseFloat(trade.fiatAmount).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+            <View className="h-px bg-border dark:bg-border-dark my-3" />
+            <View className="flex-row justify-between">
+              <Text className="text-xs text-muted dark:text-muted-dark">Price</Text>
+              <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">
+                {trade.fiatCurrency} {parseFloat(trade.pricePerUnit).toLocaleString()} / {trade.currency}
               </Text>
             </View>
-          ))}
-        </View>
-
-        {releaseError ? (
-          <View className="mb-4 rounded-lg bg-error-bg px-4 py-3">
-            <Text className="text-sm text-error">{releaseError}</Text>
+            <View className="flex-row justify-between mt-1">
+              <Text className="text-xs text-muted dark:text-muted-dark">Payment method</Text>
+              <Text className="text-xs font-medium text-foreground dark:text-foreground-dark capitalize">
+                {trade.paymentMethod.replace(/_/g, " ")}
+              </Text>
+            </View>
+            <View className="flex-row justify-between mt-1">
+              <Text className="text-xs text-muted dark:text-muted-dark">Trade ID</Text>
+              <Text className="text-xs font-mono text-foreground dark:text-foreground-dark">
+                #{trade.id.slice(0, 8)}
+              </Text>
+            </View>
           </View>
-        ) : null}
 
-        {/* Chat button */}
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: "/(app)/trade-chat/[id]", params: { id: trade.id } })}
-          className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-3"
-          activeOpacity={0.8}
-        >
-          <Text className="text-sm font-medium text-brand">Open chat</Text>
-        </TouchableOpacity>
-
-        {/* Buyer: mark paid */}
-        {trade.role === "buyer" && trade.status === "funded" ? (
-          <TouchableOpacity
-            onPress={handleMarkPaid}
-            disabled={markingPaid}
-            className="rounded-lg bg-brand py-4 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            {markingPaid ? <ActivityIndicator color="#fff" /> : (
-              <Text className="text-base font-semibold text-white">I have paid</Text>
-            )}
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Buyer: upload proof */}
-        {trade.role === "buyer" && ["funded", "payment_pending"].includes(trade.status) ? (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({ pathname: "/(app)/proof-of-payment", params: { id: trade.id } })
-            }
-            className="rounded-lg border border-brand bg-brand-bg py-3.5 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            <Text className="text-sm font-medium text-brand">Upload proof of payment</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Seller: release */}
-        {trade.role === "seller" && trade.status === "payment_confirmed" ? (
-          <TouchableOpacity
-            onPress={handleRelease}
-            disabled={releasing}
-            className="rounded-lg bg-success py-4 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            {releasing ? <ActivityIndicator color="#fff" /> : (
-              <Text className="text-base font-semibold text-white">Release crypto</Text>
-            )}
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Cancel */}
-        {["initiated", "funded", "payment_pending"].includes(trade.status) ? (
-          <TouchableOpacity
-            onPress={handleCancel}
-            disabled={cancelling}
-            className="rounded-lg border border-error bg-error-bg py-3.5 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            <Text className="text-sm font-medium text-error">Cancel trade</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Dispute */}
-        {["payment_sent", "payment_confirmed"].includes(trade.status) ? (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({ pathname: "/(app)/dispute/[id]", params: { id: trade.id } })
-            }
-            className="rounded-lg border border-error bg-error-bg py-3.5 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            <Text className="text-sm font-medium text-error">Open dispute</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {/* Rate counterparty for completed trade */}
-        {trade.status === "completed" ? (
-          <TouchableOpacity
-            onPress={() => setShowRating(true)}
-            className="rounded-lg border border-border dark:border-border-dark py-3.5 items-center mb-3"
-            activeOpacity={0.8}
-          >
-            <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
-              ⭐ Rate {trade.counterparty.username}
+          {/* Escrow protection note */}
+          <View className="mt-3 rounded-2xl bg-success-bg p-3.5 flex-row items-center gap-2.5">
+            <ShieldCheck size={16} color="#10B981" />
+            <Text className="text-xs text-success flex-1">
+              Crypto held in custodial escrow — neither party can move funds until release.
             </Text>
-          </TouchableOpacity>
-        ) : null}
+          </View>
 
-        <View className="h-8" />
+          {releaseError ? (
+            <View className="mt-3 rounded-lg bg-error-bg px-4 py-3">
+              <Text className="text-sm text-error">{releaseError}</Text>
+            </View>
+          ) : null}
+
+          {/* Chat */}
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/(app)/trade-chat/[id]", params: { id: trade.id } })}
+            className="mt-3 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-card-dark py-3.5 flex-row items-center justify-center gap-2"
+            activeOpacity={0.85}
+          >
+            <MessageCircle size={16} color="#00A3F6" />
+            <Text className="text-sm font-semibold text-brand">Open chat</Text>
+          </TouchableOpacity>
+
+          {/* Buyer: mark paid */}
+          {trade.role === "buyer" && trade.status === "funded" ? (
+            <TouchableOpacity
+              onPress={handleMarkPaid}
+              disabled={markingPaid}
+              className="rounded-xl bg-brand py-4 items-center mt-3"
+              activeOpacity={0.85}
+            >
+              {markingPaid ? <ActivityIndicator color="#fff" /> : (
+                <Text className="text-base font-semibold text-white">I have paid</Text>
+              )}
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Buyer: upload proof */}
+          {trade.role === "buyer" && ["funded", "payment_pending"].includes(trade.status) ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({ pathname: "/(app)/proof-of-payment", params: { id: trade.id } })
+              }
+              className="rounded-xl border border-brand bg-brand-bg py-3.5 flex-row items-center justify-center gap-2 mt-3"
+              activeOpacity={0.85}
+            >
+              <Upload size={16} color="#00A3F6" />
+              <Text className="text-sm font-semibold text-brand">Upload proof of payment</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Seller: release */}
+          {trade.role === "seller" && trade.status === "payment_confirmed" ? (
+            <TouchableOpacity
+              onPress={handleRelease}
+              disabled={releasing}
+              className="rounded-xl bg-success py-4 items-center mt-3"
+              activeOpacity={0.85}
+            >
+              {releasing ? <ActivityIndicator color="#fff" /> : (
+                <Text className="text-base font-semibold text-white">Release crypto</Text>
+              )}
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Cancel */}
+          {["initiated", "funded", "payment_pending"].includes(trade.status) ? (
+            <TouchableOpacity
+              onPress={handleCancel}
+              disabled={cancelling}
+              className="rounded-xl border border-error/40 py-3.5 flex-row items-center justify-center gap-2 mt-3"
+              activeOpacity={0.85}
+            >
+              <X size={16} color="#EF4444" />
+              <Text className="text-sm font-semibold text-error">Cancel trade</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Dispute */}
+          {["payment_sent", "payment_confirmed"].includes(trade.status) ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({ pathname: "/(app)/dispute/[id]", params: { id: trade.id } })
+              }
+              className="rounded-xl border border-error/40 bg-error-bg py-3.5 flex-row items-center justify-center gap-2 mt-3"
+              activeOpacity={0.85}
+            >
+              <AlertTriangle size={16} color="#EF4444" />
+              <Text className="text-sm font-semibold text-error">Open dispute</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Rate counterparty for completed trade */}
+          {trade.status === "completed" ? (
+            <TouchableOpacity
+              onPress={() => setShowRating(true)}
+              className="rounded-xl border border-border dark:border-border-dark py-3.5 flex-row items-center justify-center gap-2 mt-3"
+              activeOpacity={0.85}
+            >
+              <Star size={16} color="#F59E0B" />
+              <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
+                Rate {trade.counterparty.username}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          <View className="h-8" />
+        </View>
       </ScrollView>
 
       {/* 2FA release modal */}

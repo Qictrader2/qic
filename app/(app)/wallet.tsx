@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { LineChart } from "react-native-chart-kit"
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Coins } from "lucide-react-native"
 import { useWallets } from "@/src/hooks/api/use-wallet"
 import { apiClient } from "@/src/lib/api/client"
 import type { Wallet } from "@/src/services/wallet.service"
@@ -151,6 +152,30 @@ function WalletCard({ wallet, onDeposit, onWithdraw }: {
   )
 }
 
+function QuickAction({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: typeof Coins
+  label: string
+  onPress?: () => void
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={!onPress}
+      className="flex-1 py-3 items-center"
+      activeOpacity={0.7}
+    >
+      <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mb-1">
+        <Icon size={18} color="#00A3F6" />
+      </View>
+      <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">{label}</Text>
+    </TouchableOpacity>
+  )
+}
+
 /** Portfolio total value chart */
 function PortfolioChart({ wallets }: { wallets: Wallet[] }) {
   const { data: portfolioHistory, isLoading } = useQuery({
@@ -223,23 +248,67 @@ export default function WalletScreen() {
   const router = useRouter()
   const { data: wallets, isLoading, error, refetch, isRefetching } = useWallets()
 
+  const firstWallet = wallets?.[0]
+
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">Wallet</Text>
+        <View>
+          <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">Wallet</Text>
+          <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+            Balances and transactions
+          </Text>
+        </View>
         <View className="flex-row gap-2">
           <TouchableOpacity
             onPress={() => router.push("/(app)/fiat-balance")}
             className="px-3 py-1.5 rounded-lg bg-brand-bg"
+            activeOpacity={0.85}
           >
             <Text className="text-xs font-medium text-brand">Fiat ≈</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(app)/transactions")}
-            className="px-3 py-1.5 rounded-lg bg-surface dark:bg-surface-dark border border-border dark:border-border-dark"
+            className="w-10 h-10 rounded-full bg-surface dark:bg-card-dark border border-border dark:border-border-dark items-center justify-center"
+            activeOpacity={0.7}
           >
-            <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">History</Text>
+            <History size={16} color="#64748B" />
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Quick actions row */}
+      <View className="px-4 mb-3">
+        <View className="flex-row gap-2 bg-surface dark:bg-card-dark rounded-2xl p-2 border border-border dark:border-border-dark">
+          <QuickAction
+            icon={ArrowDownToLine}
+            label="Deposit"
+            onPress={() =>
+              firstWallet
+                ? router.push({
+                    pathname: "/(app)/deposit",
+                    params: { currency: firstWallet.currency, network: firstWallet.network },
+                  })
+                : undefined
+            }
+          />
+          <QuickAction
+            icon={ArrowUpFromLine}
+            label="Withdraw"
+            onPress={() =>
+              firstWallet
+                ? router.push({
+                    pathname: "/(app)/withdraw",
+                    params: { currency: firstWallet.currency, network: firstWallet.network },
+                  })
+                : undefined
+            }
+          />
+          <QuickAction
+            icon={ArrowLeftRight}
+            label="Transfer"
+            onPress={() => router.push("/(app)/internal-transfer")}
+          />
         </View>
       </View>
 
@@ -262,9 +331,14 @@ export default function WalletScreen() {
           </View>
         ) : !wallets?.length ? (
           <View className="items-center justify-center py-20">
-            <Text className="text-4xl mb-3">💳</Text>
-            <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
+            <View className="w-16 h-16 rounded-full bg-brand/10 items-center justify-center mb-4">
+              <Coins size={28} color="#00A3F6" />
+            </View>
+            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
               No wallets yet
+            </Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-1 text-center">
+              Wallets are created automatically on your first deposit.
             </Text>
           </View>
         ) : (

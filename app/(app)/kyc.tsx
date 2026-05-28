@@ -7,6 +7,7 @@ import {
   RefreshControl,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { CheckCircle2, ShieldCheck, Clock, XCircle } from "lucide-react-native"
 import { useKycStatus } from "@/src/hooks/api/use-kyc"
 import { kycService, KycTier } from "@/src/services/kyc.service"
 import { useState } from "react"
@@ -28,9 +29,15 @@ function TierBadge({ tier }: { tier: KycTier }) {
 }
 
 const TIER_BENEFITS: Record<number, string[]> = {
-  1: ["Trade up to $500 per day", "Access to marketplace", "Basic deposit/withdraw"],
-  2: ["Trade up to $5,000 per day", "Higher withdrawal limits", "Priority support"],
-  3: ["Unlimited trading", "Highest limits", "Dedicated account manager"],
+  1: ["Trade up to $1,000 / day", "Marketplace access", "Government ID required"],
+  2: ["Trade up to $10,000 / day", "Higher withdrawal limits", "ID + selfie liveness"],
+  3: ["Trade up to $100,000 / day", "Highest limits available", "Plus proof of address"],
+}
+
+const TIER_REQUIREMENTS: Record<number, string[]> = {
+  1: ["Government-issued ID"],
+  2: ["Government ID", "Selfie liveness check"],
+  3: ["Government ID", "Selfie liveness check", "Proof of address"],
 }
 
 export default function KycScreen() {
@@ -59,8 +66,11 @@ export default function KycScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00A3F6" />
         }
       >
-        <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark mb-6">
-          Identity Verification
+        <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+          Identity verification
+        </Text>
+        <Text className="text-sm text-muted dark:text-muted-dark mt-1 mb-6">
+          Higher tiers unlock larger daily and monthly trade volumes.
         </Text>
 
         {isLoading ? (
@@ -71,37 +81,66 @@ export default function KycScreen() {
           </View>
         ) : (
           <>
-            {/* Current tier */}
-            <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-              <Text className="text-sm text-muted dark:text-muted-dark mb-2">Current status</Text>
-              <TierBadge tier={status.tier} />
+            {/* Current tier card */}
+            <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-xs font-semibold text-muted dark:text-muted-dark uppercase tracking-wider">
+                  Current status
+                </Text>
+                <TierBadge tier={status.tier} />
+              </View>
               {status.status === "pending" ? (
-                <View className="mt-3 rounded-lg bg-warning-bg px-3 py-2">
-                  <Text className="text-xs text-warning">
+                <View className="rounded-lg bg-warning-bg px-3 py-2.5 flex-row items-center gap-2">
+                  <Clock size={14} color="#F59E0B" />
+                  <Text className="text-xs text-warning flex-1">
                     Verification in progress — usually takes 1–2 business days.
                   </Text>
                 </View>
-              ) : null}
-              {status.status === "rejected" ? (
-                <View className="mt-3 rounded-lg bg-error-bg px-3 py-2">
-                  <Text className="text-xs text-error">
+              ) : status.status === "rejected" ? (
+                <View className="rounded-lg bg-error-bg px-3 py-2.5 flex-row items-start gap-2">
+                  <XCircle size={14} color="#EF4444" />
+                  <Text className="text-xs text-error flex-1">
                     Rejected: {status.rejectionReason ?? "Contact support for details."}
                   </Text>
                 </View>
-              ) : null}
+              ) : status.tier === 0 ? (
+                <Text className="text-xs text-muted dark:text-muted-dark">
+                  Start verification to unlock trading.
+                </Text>
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  <CheckCircle2 size={14} color="#10B981" />
+                  <Text className="text-xs text-success">Tier {status.tier} approved</Text>
+                </View>
+              )}
             </View>
 
-            {/* Tier benefits */}
+            {/* Next-tier benefits + requirements */}
             {status.tier < 3 ? (
-              <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-6">
-                <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark mb-3">
-                  Tier {status.tier + 1} benefits
+              <View className="rounded-2xl bg-surface dark:bg-card-dark border border-border dark:border-border-dark p-4 mb-3">
+                <View className="flex-row items-center gap-2 mb-3">
+                  <ShieldCheck size={16} color="#00A3F6" />
+                  <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
+                    Upgrade to Tier {status.tier + 1}
+                  </Text>
+                </View>
+                <Text className="text-xs font-semibold text-muted dark:text-muted-dark uppercase tracking-wider mb-2">
+                  What you unlock
                 </Text>
                 {(TIER_BENEFITS[status.tier + 1] ?? []).map((b) => (
-                  <View key={b} className="flex-row items-center gap-2 mb-2">
-                    <Text className="text-brand">✓</Text>
-                    <Text className="text-sm text-foreground dark:text-foreground-dark">{b}</Text>
+                  <View key={b} className="flex-row items-center gap-2 mb-1.5">
+                    <CheckCircle2 size={12} color="#10B981" />
+                    <Text className="text-xs text-foreground dark:text-foreground-dark">{b}</Text>
                   </View>
+                ))}
+                <View className="h-px bg-border dark:bg-border-dark my-3" />
+                <Text className="text-xs font-semibold text-muted dark:text-muted-dark uppercase tracking-wider mb-2">
+                  What you need
+                </Text>
+                {(TIER_REQUIREMENTS[status.tier + 1] ?? []).map((r) => (
+                  <Text key={r} className="text-xs text-muted dark:text-muted-dark mb-1">
+                    • {r}
+                  </Text>
                 ))}
               </View>
             ) : null}
@@ -111,8 +150,8 @@ export default function KycScreen() {
               <TouchableOpacity
                 onPress={handleStartVerification}
                 disabled={starting}
-                className="rounded-lg bg-brand py-4 items-center"
-                activeOpacity={0.8}
+                className="rounded-xl bg-brand py-4 items-center mt-2"
+                activeOpacity={0.85}
               >
                 {starting ? (
                   <ActivityIndicator color="#fff" />
@@ -125,11 +164,13 @@ export default function KycScreen() {
             ) : null}
 
             {status.tier === 3 ? (
-              <View className="rounded-xl bg-success-bg border border-success/30 p-4 items-center">
-                <Text className="text-lg mb-1">🎉</Text>
-                <Text className="text-sm font-semibold text-success">Fully verified</Text>
-                <Text className="text-xs text-muted dark:text-muted-dark mt-1 text-center">
-                  You have the highest verification tier. Enjoy unlimited trading.
+              <View className="rounded-2xl bg-success-bg border border-success/30 p-5 items-center">
+                <View className="w-14 h-14 rounded-full bg-success items-center justify-center mb-3">
+                  <CheckCircle2 size={24} color="#FFFFFF" />
+                </View>
+                <Text className="text-base font-semibold text-success">Fully verified</Text>
+                <Text className="text-xs text-muted dark:text-muted-dark mt-1 text-center max-w-[240px]">
+                  You have the highest verification tier. Trade up to $100,000 per day.
                 </Text>
               </View>
             ) : null}
