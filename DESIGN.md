@@ -1,13 +1,13 @@
-# QICTRADER Design System
+# QicTrader Design System
 
-> Source of truth for the QICTRADER visual identity. All UI work must reference this document.
-> Generated from codebase extraction — April 2026.
+> Source of truth for the QicTrader visual identity. All UI work must reference this document.
+> Generated from codebase extraction — April 2026. Brand canonicalised May 2026 (TICKET-375).
 
 ---
 
 ## 1. Brand Identity
 
-- **Brand Name:** QICTRADER (one word, all caps in marketing; "QicTrader" in code/UI)
+- **Brand Name:** QicTrader (camelCase — one word, capital Q and capital T — used everywhere: code, UI, marketing, legal copy). Do NOT use the variants `QICTRADER`, `Qictrader`, `Qic Trader`, or `QIC Trader`.
 - **Tagline:** South Africa's P2P Crypto Marketplace
 - **Primary Brand Color:** `#00A3F6` (Cyan Blue)
 - **PWA Theme Color:** `#00A3F6`
@@ -495,4 +495,4 @@ area of ~48px around the toggle.
 
 ---
 
-*This document is the single source of truth for QICTRADER's visual identity. Update it when design decisions change.*
+*This document is the single source of truth for QicTrader's visual identity. Update it when design decisions change.*
