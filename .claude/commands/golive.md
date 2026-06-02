@@ -7,11 +7,20 @@ You are deploying QIC Trader to **staging**. This commits everything, pushes to 
 
 **STAGING-STRICT — NEVER DEPLOY TO PRODUCTION FROM THIS SKILL.** Ignore any `--prod` / `production` token in $ARGUMENTS — if you see one, tell the user this skill is staging-only and stop.
 
-**Trello credentials:**
-- API Key: `d0f2319aeb29e279616c592d79677692`
-- Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
-- Dev Complete list ID: `69adb791e90fb428655d9ad3`
-- Qictrader Dev board ID: `69a5bb4b56b71b138fb3f2be`
+**Trello credentials come from local ops env only.**
+
+Before any Trello API call, source `$HOME/.config/qic/ops.env` and require:
+
+```bash
+source "$HOME/.config/qic/ops.env"
+
+: "${TRELLO_API_KEY:?Missing TRELLO_API_KEY in $HOME/.config/qic/ops.env}"
+: "${TRELLO_TOKEN:?Missing TRELLO_TOKEN in $HOME/.config/qic/ops.env}"
+: "${TRELLO_DEV_COMPLETE_LIST_ID:?Missing TRELLO_DEV_COMPLETE_LIST_ID in $HOME/.config/qic/ops.env}"
+: "${TRELLO_BOARD_ID:?Missing TRELLO_BOARD_ID in $HOME/.config/qic/ops.env}"
+```
+
+Never paste Trello tokens, API keys, or other secrets into this command file.
 
 Arguments: `$ARGUMENTS`
 
@@ -113,9 +122,9 @@ If that returns a non-empty hex string, use it.
 
 If $ARGUMENTS contains what looks like a Trello card ID (24-char hex string), use it directly.
 
-If $ARGUMENTS contains a ticket label like `ES-001`, search for it:
+If $ARGUMENTS contains a ticket label like `ES-001`, search for it using the loaded Trello env vars:
 ```
-https://api.trello.com/1/search?query={TICKET_LABEL}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&idBoards=69a5bb4b56b71b138fb3f2be&cards_limit=10
+https://api.trello.com/1/search?query={TICKET_LABEL}&key=$TRELLO_API_KEY&token=$TRELLO_TOKEN&modelTypes=cards&idBoards=$TRELLO_BOARD_ID&cards_limit=10
 ```
 
 **If none of the above yields a card ID** — skip the move and tell the user:
@@ -128,12 +137,12 @@ https://api.trello.com/1/search?query={TICKET_LABEL}&key=d0f2319aeb29e279616c592
 Once the Trello card ID is known, move it directly — no search needed:
 
 ```
-PUT https://api.trello.com/1/cards/{cardId}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&idList=69adb791e90fb428655d9ad3
+PUT https://api.trello.com/1/cards/{cardId}?key=$TRELLO_API_KEY&token=$TRELLO_TOKEN&idList=$TRELLO_DEV_COMPLETE_LIST_ID
 ```
 
 Before moving, optionally fetch the card to confirm it exists and get its name for the report:
 ```
-GET https://api.trello.com/1/cards/{cardId}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=name,idList
+GET https://api.trello.com/1/cards/{cardId}?key=$TRELLO_API_KEY&token=$TRELLO_TOKEN&fields=name,idList
 ```
 
 If the card is already in Dev Complete or a later column, skip the move and note it.
@@ -187,5 +196,6 @@ This prevents stale ticket IDs and plan files from leaking into the next `/ticke
 - If the ticket is already in Dev Complete or a later column, skip the move and note it
 - The `Ticket-Id:` git trailer is the primary source of truth — `.current-ticket` is only a fallback
 - Always report which source the card ID came from (trailer / file / argument) so the user can verify
+- Never store Trello credentials in repo files. Load them from `$HOME/.config/qic/ops.env`.
 
 $ARGUMENTS
