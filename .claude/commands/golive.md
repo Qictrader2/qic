@@ -77,9 +77,9 @@ Backend → Heroku staging via fast deploy:
 ./scripts/fast-deploy-backend.sh --staging
 ```
 
-Frontend → Vercel preview (no `--prod`):
+Frontend → Vercel preview (explicit preview target, no `--prod`):
 ```bash
-cd frontend && vercel --yes --scope qictraders-projects
+cd frontend && vercel deploy --target preview --yes --scope qictraders-projects
 ```
 
 Capture the Vercel preview URL from the output and include it in the report. Wait for both deploys to complete. If either fails, STOP and report the error to the user. Do not move the ticket.
