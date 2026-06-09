@@ -9,9 +9,38 @@ QIC Trader is a crypto P2P trading platform. Two submodules:
 **Read these before implementing any ticket.** They define what we are building and how it actually works today.
 
 - **Intent** (what we are aiming for): `qictrader-backend-rs/docs/intended-entity-state-machines.md`
-- **AS BOLT** (how it is actually implemented): `qictrader-backend-rs/docs/as-built-state-machines.md`
+- **AS BUILT** (how it is actually implemented): `qictrader-backend-rs/docs/as-built/as-built-state-machines.md`
+- **Per-entity design system** (intended / as-built / drift): `qictrader-backend-rs/docs/design/README.md`
 
-Any implementation that contradicts the intent document is wrong. If the AS BOLT diverges from intent, flag it — don't silently perpetuate the divergence.
+Any implementation that contradicts the intent document is wrong. If the AS BUILT diverges from intent, flag it — don't silently perpetuate the divergence.
+
+## Design Doc Interview Questionnaire
+
+When seeding or updating the intended design doc for an entity (`qictrader-backend-rs/docs/design/{entity}.md`), run **one interview session per entity** and ask the assigned dev exactly these questions, then write the answers into the entity doc using the structured schema in `docs/design/README.md`:
+
+1. **Overview** — In one paragraph, what is this entity and what is it responsible for?
+2. **States** — What are all the valid states? For each, when is the entity in it?
+3. **Terminal states** — Which states are terminal (no further transitions)?
+4. **Allowed transitions** — For every transition, fill the row: `| From | To | Trigger | Actor | Notes |`. List only transitions that are intended; anything else is invalid by definition.
+5. **Role guards** — For each transition/action, who is allowed to perform it (Buyer, Seller, Reseller, Admin, Moderator, System)? What authorization check enforces it?
+6. **Business invariants** — What must always be true (e.g. amounts non-negative, balance ≥ held, one active escrow per trade)? What must never happen?
+7. **Ledger effects** — Which transitions post ledger entries / move money? Debit what, credit what, to whom, in what currency? Is it ledger-only or on-chain?
+8. **Fee effects** — Which transitions accrue or charge fees (platform fee, reseller commission, affiliate commission, network fee)? Who pays, who receives, when?
+9. **Timeout / job behavior** — What background jobs or timeouts act on this entity? After how long, and what transition do they trigger?
+10. **Open questions** — Anything undecided. Record each with an owner and date.
+
+Write tables (not prose) for transitions and role guards so drift detection is deterministic. Add the `<!-- design-entity: {entity} -->` marker and every `<!-- design-anchor: {entity}.{section} -->` anchor.
+
+## Design Doc Agent Operating Rule
+
+When changing entity lifecycle, role guards, ledger effects, fee behavior, timeout behavior, or state transitions:
+
+1. Run `cargo run --bin design-check`.
+2. Read any generated drift report.
+3. If drift exists, ask the dev: "This change drifts from the intended design for {entity}.{section}. Is this an intentional design change or a bug?"
+4. If **intentional design change**: update `docs/design/{entity}.md`, regenerate as-built and drift, rerun `cargo run --bin design-check`.
+5. If **bug**: fix the code to match the intended design, regenerate as-built and drift, rerun `cargo run --bin design-check`.
+6. Do not silently leave unresolved drift. Never hand-edit a generated file under `docs/design/.generated/`.
 
 ## Design System
 
