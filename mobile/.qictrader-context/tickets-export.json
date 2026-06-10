@@ -1,0 +1,398 @@
+[
+  {
+    "id": "MOBILE-INIT-001",
+    "title": "MOBILE-INIT-001: React Native + Expo project scaffolding & monorepo integration",
+    "kind": "infra",
+    "desc": "## Scope\nBootstrap the QicTrader mobile app inside the existing Qictrader monorepo. Stack: **Expo (managed workflow) + React Native + TypeScript**.\n\n- Create `mobile/` directory at repo root alongside `frontend/` and `qictrader-backend-rs/`\n- Initialise with `npx create-expo-app@latest --template tabs` (TypeScript)\n- Lock Node + Bun versions in `.nvmrc` / `package.json` engines to match `frontend/`\n- Decide on package manager: bun (parity with frontend) — confirm Expo CLI works with bun\n- Add `mobile/.gitignore`, `mobile/README.md`, `mobile/DESIGN-PORT.md` (notes on how DESIGN.md applies)\n- Wire monorepo scripts in root: `mobile:dev`, `mobile:ios`, `mobile:android`, `mobile:test`, `mobile:lint`\n- Update root `commit-all.sh` to accept `--mobile-only` flag\n- Document local dev prerequisites (Xcode, Android Studio, Watchman, JDK)\n\n## Out of scope\n- Any UI / screens (separate tickets)\n- CI/CD (MOBILE-INIT-004)\n\n## Acceptance criteria\n- [ ] `cd mobile && bun install && bun expo start` boots Metro\n- [ ] `bun expo run:ios` launches in iOS simulator\n- [ ] `bun expo run:android` launches in Android emulator\n- [ ] TypeScript strict mode enabled (`strict: true`, `noUncheckedIndexedAccess: true`)\n- [ ] ESLint + Prettier configs aligned with `frontend/`\n- [ ] Root README documents how to start mobile dev\n\n## Dependencies\nBlocks every other MOBILE-* ticket.\n\n## Tech notes\n- Prefer Expo managed workflow until we genuinely need bare RN (we likely won't — Expo supports native modules via config plugins)\n- Use Expo SDK 52+ for React 19 / RN 0.76 New Architecture support\n- Reference the engineering principles in `CLAUDE.md` — types first, no `any`, no swallowed errors"
+  },
+  {
+    "id": "MOBILE-INIT-002",
+    "title": "MOBILE-INIT-002: Port DESIGN.md system + UI library setup (NativeWind + tokens)",
+    "kind": "infra",
+    "desc": "## Scope\nPort the visual identity from `DESIGN.md` (the web frontend's source of truth) to React Native so the mobile app is visually consistent with web.\n\n- Install **NativeWind v4** (Tailwind for React Native) — closest parity with the web frontend's Tailwind usage\n- Mirror the design tokens from `frontend/src/app/globals.css` and `DESIGN.md`:\n  - Brand blue `#00A3F6` → `--brand-blue`\n  - Spacing scale, radius scale, shadow levels\n  - Color palette (light + dark)\n- Install **Poppins** font (weights 400/500/600/700) via `expo-google-fonts/poppins`\n- Create `mobile/src/components/ui/` with primitive components: `Button`, `Input`, `Card`, `Text`, `Heading`, `Badge`\n- Build a Storybook-equivalent (Expo Storybook or simple `/dev` screen) to showcase tokens + components\n- Document the anti-patterns from `DESIGN.md` §11 in `mobile/DESIGN-PORT.md` and enforce via ESLint rule where possible (e.g. no hardcoded hex)\n\n## Acceptance criteria\n- [ ] All design tokens exist as Tailwind theme entries in `tailwind.config.js`\n- [ ] Poppins loads before first paint (use `expo-splash-screen` to hold splash until font ready)\n- [ ] At least 6 UI primitives implemented and visually identical to web equivalents\n- [ ] Dark mode toggleable via system preference + manual override\n- [ ] No hardcoded hex values in components — only tokens\n\n## Dependencies\nBlocked by: MOBILE-INIT-001\nBlocks: every UI ticket"
+  },
+  {
+    "id": "MOBILE-INIT-003",
+    "title": "MOBILE-INIT-003: Navigation, state management, API client",
+    "kind": "infra",
+    "desc": "## Scope\nLay the architectural foundations that all features will lean on.\n\n### Navigation\n- Install **React Navigation v7** (`@react-navigation/native`, `native-stack`, `bottom-tabs`, `drawer`)\n- Define top-level structure:\n  - Auth stack (login, signup, verify, forgot-password) — shown when unauthenticated\n  - Main tabs (Marketplace, Wallet, Trades, Profile)\n  - Modal stack (Trade detail, Offer detail, Deposit, Withdraw, KYC)\n- Type-safe navigation via `RootStackParamList` (strict TS types for every route + params)\n- Deep linking config (scheme: `qictrader://`, universal links from `www.qictrader.com`)\n\n### State management\n- **Redux Toolkit** for global app state (user, auth status, currency preference) — mirrors frontend\n- **Zustand** for ephemeral / UI state (sheets, modals, filters) — mirrors frontend\n- **React Query (TanStack Query v5)** for server state + cache invalidation\n\n### API client\n- Axios instance with base URL from env\n- Auth interceptor that:\n  - Reads access token from `expo-secure-store`\n  - Falls back to cookie storage via `@react-native-cookies/cookies` for cookie-auth parity with web\n  - Auto-refreshes on 401 (mirror `frontend/src/lib/api-client.ts`)\n- Request signing / CSRF header injection on mutating requests (parity with web)\n- Error handling: typed `ApiError` discriminated union, no thrown strings\n\n## Acceptance criteria\n- [ ] Navigating between tabs preserves state; back gestures work on both iOS + Android\n- [ ] Deep link `qictrader://trade/abc-123` opens the right screen\n- [ ] React Query devtools accessible in dev builds\n- [ ] API client typed end-to-end; backend response shapes mirrored as TS types\n- [ ] 401 triggers refresh; if refresh fails, navigate to login + clear state\n\n## Dependencies\nBlocked by: MOBILE-INIT-001"
+  },
+  {
+    "id": "MOBILE-INIT-004",
+    "title": "MOBILE-INIT-004: Environment config + EAS Build CI/CD",
+    "kind": "infra",
+    "desc": "## Scope\n- Configure **EAS Build** (Expo Application Services) for managed cloud builds\n- Set up build profiles in `eas.json`: `development`, `preview`, `staging`, `production`\n- Environment variables per profile via EAS Secrets:\n  - `EXPO_PUBLIC_API_URL` (dev → localhost, staging → qictrader-backend-staging, prod → qictrader-backend-rs)\n  - `EXPO_PUBLIC_GA4_ID`, `EXPO_PUBLIC_SENTRY_DSN` etc.\n- GitHub Actions workflow `.github/workflows/mobile-ci.yml`:\n  - On PR: typecheck + lint + test\n  - On main push: trigger EAS preview build (internal distribution)\n  - On tag `mobile-v*`: trigger EAS production build (store submission)\n- Add `mobile/scripts/deploy-staging.sh` and `mobile/scripts/deploy-production.sh`\n\n## Acceptance criteria\n- [ ] `eas build --profile preview --platform ios` produces an installable IPA\n- [ ] `eas build --profile preview --platform android` produces an installable APK\n- [ ] PR CI catches type errors, lint errors, and failing tests\n- [ ] Production builds embed Sentry source maps automatically\n- [ ] No secrets in repo — all via EAS Secrets / GitHub Actions secrets\n\n## Dependencies\nBlocked by: MOBILE-INIT-001"
+  },
+  {
+    "id": "MOBILE-INIT-005",
+    "title": "MOBILE-INIT-005: Branding assets — app icons, splash screens, launch screens",
+    "kind": "infra",
+    "desc": "## Scope\nProduce all visual assets required by iOS + Android stores and Expo.\n\n- App icon master (1024×1024 PNG, no transparency, no rounded corners — store rounds them)\n- iOS icon set (all sizes generated via Expo asset script)\n- Android adaptive icon (foreground + background layers)\n- Splash screen (light + dark variants) using brand blue + Qic logo\n- Notification icon (monochrome, 96×96 for Android)\n- Marketing screenshots templates (will be filled in by MOBILE-LAUNCH-003)\n\n## Acceptance criteria\n- [ ] App icon renders crisp on iPad, iPhone, Android (all densities)\n- [ ] Splash screen appears for ≤ 1.5s on app launch\n- [ ] Adaptive icon looks correct in circular, squircle, rounded-square Android launchers\n- [ ] All assets live in `mobile/assets/` and are committed to git (PNG, not binary blobs > 500KB each)\n\n## Dependencies\nBlocked by: MOBILE-INIT-001, MOBILE-INIT-002 (design tokens)"
+  },
+  {
+    "id": "MOBILE-AUTH-001",
+    "title": "MOBILE-AUTH-001: Login screen + secure token storage",
+    "kind": "feature",
+    "desc": "## Scope\n- Login screen UI matching frontend: email + password fields, 'Show password' toggle, 'Forgot password?' link, 'Sign in' button, 'Sign Up' redirect\n- Form validation (email format, password ≥ 1 char) via `react-hook-form` + `zod` (mirrors web)\n- Submit calls `POST /api/v1/auth/login`\n- On success:\n  - Store `qic_access` JWT in `expo-secure-store` (Keychain on iOS, EncryptedSharedPreferences on Android)\n  - Store `qic_refresh` separately (more restricted access)\n  - Populate Redux `auth` slice\n  - Navigate to Marketplace tab\n- On 401: show inline error 'Invalid credentials'\n- On 2FA required: navigate to MOBILE-AUTH-004 screen with `twoFactorToken`\n- On network error: show toast 'Cannot connect to server'\n- Loading state: disable inputs + button, show spinner\n\n## Acceptance criteria\n- [ ] Login with valid creds reaches Marketplace within 2s on Wi-Fi\n- [ ] Token survives app cold restart (read from SecureStore on boot, validate, restore session)\n- [ ] Biometric prompt offered after first successful login (defers to MOBILE-AUTH-005)\n- [ ] No token written to AsyncStorage or unsafe storage\n- [ ] Login attempt with bad creds shows error, never logs to console\n\n## Dependencies\nBlocked by: MOBILE-INIT-003 (navigation + API client)"
+  },
+  {
+    "id": "MOBILE-AUTH-002",
+    "title": "MOBILE-AUTH-002: Signup + Terms acceptance flow",
+    "kind": "feature",
+    "desc": "## Scope\n- Signup screen: email, username (3-30 chars), password (≥ 12 chars), confirm password, accept legal checkbox\n- Strength meter for password (mirror web — zxcvbn-based)\n- POST `/api/v1/auth/signup` with `acceptedLegal: true`\n- On success: route to `verify-email-pending` screen (next ticket)\n- Honor backend validation errors (400) — display inline per field\n- GA4 event `sign_up_attempt` and `sign_up_success`\n- Honor referral code via deep link `qictrader://signup?ref=XXX`\n\n## Acceptance criteria\n- [ ] All validation matches backend's `SignupRequest` validator exactly\n- [ ] Legal documents (T&Cs, Privacy, Cookie) accessible from signup screen via in-app browser\n- [ ] Referral code persisted across app restarts if signup not completed in one session\n- [ ] Successful signup with referral records the affiliate link server-side\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-AUTH-003",
+    "title": "MOBILE-AUTH-003: Email verification + Forgot password / Reset password",
+    "kind": "feature",
+    "desc": "## Scope\n### Email verification\n- `verify-email-pending` screen with 'Resend email' button (rate-limited UI)\n- Deep link handler `qictrader://verify-email?token=XYZ` calls `POST /api/v1/auth/verify-email`\n- On success: auto-login if backend returns tokens, else route to login\n\n### Forgot password\n- `forgot-password` screen: email input, 'Send reset link' button\n- Calls `POST /api/v1/auth/forgot-password`\n- Always shows success message (no user enumeration)\n\n### Reset password\n- Deep link `qictrader://reset-password?token=XYZ` opens reset screen\n- New password + confirm fields with strength meter\n- Calls `POST /api/v1/auth/reset-password`\n- On success: route to login with toast 'Password reset successful'\n\n## Acceptance criteria\n- [ ] Email links from backend (web URLs) gracefully open the mobile app via Universal Links / App Links\n- [ ] Reset token expiry handled gracefully (show 'link expired' message)\n- [ ] No password values logged or sent to analytics\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-AUTH-004",
+    "title": "MOBILE-AUTH-004: 2FA setup + verify",
+    "kind": "feature",
+    "desc": "## Scope\n### 2FA setup (from Profile > Security)\n- Display QR code from `POST /api/v1/auth/2fa/setup` (TOTP secret)\n- Manual key fallback (copyable)\n- 6-digit code input + verify\n- Display 8 backup codes (downloadable as text)\n\n### 2FA verify on login\n- After login, if backend returns `requires2fa: true`, navigate to verify screen\n- Single 6-digit input (auto-advance, paste-friendly)\n- 'Use backup code' fallback link\n- Calls `POST /api/v1/auth/2fa/verify-login` with `twoFactorToken` + `code`\n- On success: store tokens, route to Marketplace\n\n### 2FA disable\n- Requires current password + current TOTP code\n- Calls `DELETE /api/v1/auth/2fa`\n\n## Acceptance criteria\n- [ ] Backup codes are shown once only and warning issued before navigating away\n- [ ] 2FA verify supports auto-fill from system TOTP managers (iOS Passwords, Authy, Google Auth) where possible\n- [ ] Backend's exempt-list (SEC-CSRF-001) is honored — no CSRF errors on 2FA verify\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-AUTH-005",
+    "title": "MOBILE-AUTH-005: Biometric auth + session lifecycle",
+    "kind": "feature",
+    "desc": "## Scope\n### Biometric enrolment\n- After first successful login, prompt 'Use Face ID / Touch ID / Fingerprint to sign in next time?'\n- Store opt-in in SecureStore\n- Use `expo-local-authentication`\n\n### Biometric login\n- On cold start, if user opted in: prompt biometric immediately\n- On success: read access token from SecureStore, validate via `GET /api/v1/me`, restore session\n- On failure or biometric not available: route to manual login screen\n\n### Session lifecycle\n- Periodic background `/me` check every 5 min to detect server-side session revocation\n- Auto-refresh access token before expiry (silent, via React Query mutation)\n- On refresh failure (401 from `/auth/refresh-token`): clear SecureStore + Redux, route to login\n\n### Re-auth for sensitive actions\n- Trigger biometric re-prompt before: withdraw, change password, disable 2FA, delete account\n\n## Acceptance criteria\n- [ ] No tokens leak to memory dumps (verify with `expo-secure-store` only)\n- [ ] Session restoration on cold start < 1s if cached + valid\n- [ ] Backgrounding app for > 5 min triggers re-auth on next foreground (configurable)\n- [ ] Force-logout from web invalidates mobile session within 5 min\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-AUTH-006",
+    "title": "MOBILE-AUTH-006: OAuth — Apple Sign-In + Google Sign-In",
+    "kind": "feature",
+    "desc": "## Scope\n### Apple Sign-In (iOS + Android via web flow)\n- `expo-apple-authentication` on iOS (required for App Store compliance if any other social auth is offered)\n- POST identity token to `/api/v1/auth/oauth/apple` (backend already supports it)\n- Honor `APPLE_SERVICES_ID` audience claim — verify backend SEC-SPRINT closeout\n\n### Google Sign-In\n- `@react-native-google-signin/google-signin` (iOS + Android native flow)\n- POST ID token to `/api/v1/auth/oauth/google`\n- Honor `GOOGLE_OAUTH_CLIENT_ID` audience claim\n\n### Common\n- New user: backend creates account + returns tokens immediately\n- Existing user: link OAuth identity to existing account (if email matches and verified)\n- Conflict (email exists, not OAuth-linked): show 'Sign in with password to link Apple/Google to your account'\n\n## Acceptance criteria\n- [ ] Apple Sign-In button conforms to Apple HIG (height, color, label)\n- [ ] Google Sign-In button conforms to Google brand guidelines\n- [ ] OAuth signup auto-creates a verified email account (no extra verification step)\n- [ ] iOS app cannot be submitted if Google Sign-In is offered without Apple Sign-In (Apple policy)\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-KYC-001",
+    "title": "MOBILE-KYC-001: KYC status display + tier indicators",
+    "kind": "feature",
+    "desc": "## Scope\n- KYC status screen accessible from Profile > Verification\n- Display current tier (L0 unverified → L1 email + phone → L2 ID → L3 enhanced)\n- Per-tier benefits explanation (limits, features unlocked) — copy from web\n- Per-tier requirements + 'Start' / 'Continue' / 'Verified' state\n- Pulls from `GET /api/v1/kyc/status`\n- Gating warnings on Withdraw, Trade, Create Offer when user under required tier\n\n## Acceptance criteria\n- [ ] Status matches backend; no stale cache > 30s when user actively in KYC flow\n- [ ] L3 evidence backfill (`ops/kyc-l3-evidence-backfill.md`) reflected correctly\n- [ ] Status transitions trigger push notification (deferred to MOBILE-NOTIF-* but UI handles it)\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-KYC-002",
+    "title": "MOBILE-KYC-002: Didit KYC flow integration (WebView)",
+    "kind": "feature",
+    "desc": "## Scope\nDidit is the current default KYC provider (per `architecture/DIDIT-MIGRATION-SPEC.md`).\n\n- From KYC status screen, 'Start verification' opens a Didit session\n- Backend creates session via `POST /api/v1/kyc/didit/session` and returns a URL\n- Open URL in `WebView` (Didit's hosted flow — easier than native SDK for first ship)\n- Listen for postMessage / URL navigation to detect completion\n- On webhook delivery (`POST /webhooks/kyc/didit`), backend updates user → mobile picks up via push or polling\n- Handle Didit return URL `qictrader://kyc/didit/return?status=completed`\n\n## Acceptance criteria\n- [ ] Camera + microphone permissions requested in correct order\n- [ ] WebView allows file uploads (iOS + Android)\n- [ ] User can abort mid-flow and resume later\n- [ ] Status updates from webhook reflect in app within 30s of completion\n\n## Dependencies\nBlocked by: MOBILE-KYC-001"
+  },
+  {
+    "id": "MOBILE-KYC-003",
+    "title": "MOBILE-KYC-003: SumSub WebSDK fallback / legacy integration",
+    "kind": "feature",
+    "desc": "## Scope\nSumSub is the legacy / fallback KYC provider (still wired in backend per `architecture/HEROKU-MIGRATION-SPEC.md`).\n\n- For users assigned to SumSub provider (per `KYC_PROVIDER` env), use SumSub WebSDK in WebView\n- Backend issues access token via `POST /api/v1/kyc/sumsub/access-token`\n- Mobile renders SumSub iframe via WebView with token\n- Handle webhook completion at `/webhooks/kyc/sumsub` (backend already enforces secret via SEC-SPRINT fail-closed)\n- Same UX surface as Didit so users can't tell the difference\n\n## Acceptance criteria\n- [ ] SumSub `SUMSUB_LEVEL_NAME` honored\n- [ ] Live-selfie + ID document capture works on physical iPhone + Android device\n- [ ] WebView console errors surfaced to Sentry\n\n## Dependencies\nBlocked by: MOBILE-KYC-001"
+  },
+  {
+    "id": "MOBILE-KYC-004",
+    "title": "MOBILE-KYC-004: Document camera capture + native photo upload helper",
+    "kind": "feature",
+    "desc": "## Scope\nShared utility used by KYC, Proof-of-Payment (MOBILE-TRADE-004), dispute evidence (MOBILE-TRADE-006), avatar upload (MOBILE-PROFILE-002).\n\n- `useDocumentCapture()` hook wrapping `expo-image-picker` + `expo-camera`\n- Native camera UI with document outline overlay (rectangle frame for IDs)\n- Auto-detect document edges + auto-crop (optional, can be deferred)\n- Compress to ≤ 2 MB before upload (preserve EXIF only when not sensitive)\n- Strip GPS / EXIF metadata before upload (privacy)\n- Multi-photo support (e.g. ID front + back)\n- Upload progress callback\n- Retry on flaky network\n\n## Acceptance criteria\n- [ ] Camera permission rationale shown before system prompt\n- [ ] iOS Info.plist + Android manifest entries correct\n- [ ] EXIF GPS stripped before upload (verified with test image)\n- [ ] Failed upload allows retry without re-capturing photo\n- [ ] Works without flash; flash toggle available\n\n## Dependencies\nBlocked by: MOBILE-INIT-003"
+  },
+  {
+    "id": "MOBILE-WALLET-001",
+    "title": "MOBILE-WALLET-001: Wallet overview + multi-crypto balances",
+    "kind": "feature",
+    "desc": "## Scope\nMain Wallet tab screen.\n\n- Top: Portfolio total in user's fiat (ZAR default, NGN if `ENABLE_NGN` flag on)\n- Horizontal scroll of asset cards: BTC, ETH, USDT (with network sub-labels), SOL, TRX\n- Each card: amount, fiat value, 24h change\n- 'Show all wallets' toggle to reveal lesser-used assets\n- Pull-to-refresh\n- Tap card → asset detail screen with deposit/withdraw/transfer buttons + tx history\n- 'Quick actions' row: Deposit, Withdraw, Transfer\n\n## Acceptance criteria\n- [ ] Balances match `GET /api/v1/wallet` exactly\n- [ ] No fiat balance displayed for NGN if `ENABLE_NGN=false` on backend\n- [ ] Hidden wallets persist across sessions\n- [ ] Card themes (matching web) supported\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-WALLET-002",
+    "title": "MOBILE-WALLET-002: Deposit flow — address + QR code + network selector",
+    "kind": "feature",
+    "desc": "## Scope\n- Deposit screen accessible from wallet card or Quick Actions\n- Crypto selector (BTC, ETH, USDT, SOL, TRX)\n- For USDT: network selector tabs (ERC-20, TRC-20, SPL) — clearly warn users about wrong-network deposits\n- Display deposit address from `GET /api/v1/wallet/deposit/{currency}?network={network}`\n- QR code via `react-native-qrcode-svg`\n- 'Copy address' button (haptic feedback on copy)\n- 'Share' button (system share sheet)\n- Min deposit amount + estimated arrival time displayed\n- Memo / destination tag input where applicable (TRX, XRP if added)\n- Pending deposit indicator (poll `/wallet/transactions`)\n\n## Acceptance criteria\n- [ ] QR code scannable from external wallet without zooming\n- [ ] Wrong-network warning is visually prominent (red banner)\n- [ ] Address validation prevents copy if backend returns invalid address (defensive)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001"
+  },
+  {
+    "id": "MOBILE-WALLET-003",
+    "title": "MOBILE-WALLET-003: Withdraw flow — address + amount + network + 2FA confirm",
+    "kind": "feature",
+    "desc": "## Scope\n- Withdraw screen with crypto + network selector\n- Recipient address input with QR scanner (`expo-barcode-scanner`)\n- Amount input with 'Max' button and live fiat conversion\n- Estimated network fee + receivable amount\n- Address whitelist check (warn if not whitelisted, defer enforcement to later)\n- 'Continue' → review screen → biometric / 2FA confirmation → `POST /api/v1/wallet/withdraw`\n- Honor `SOLANA-FEATURE-FLAG-001` (don't paint SOL routes for non-allowed users)\n- For USDT, default to cheapest network (SPL > TRC-20 > ERC-20) — surface this in UI\n- Post-submit: navigate to transaction detail with pending state\n\n## Acceptance criteria\n- [ ] Cannot submit withdraw if amount > balance, or below min, or above daily limit\n- [ ] Biometric re-auth (MOBILE-AUTH-005) required before final submit\n- [ ] Network fee preview matches backend's `calculate_withdraw_fee` exactly\n- [ ] Solana SPL withdraw works for allowed-flag users\n- [ ] Withdraws to invalid address fail with specific error (not generic 500)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001, MOBILE-AUTH-005"
+  },
+  {
+    "id": "MOBILE-WALLET-004",
+    "title": "MOBILE-WALLET-004: Transaction history — list, filters, detail screen",
+    "kind": "feature",
+    "desc": "## Scope\n- Transaction list (paginated, infinite scroll) from `GET /api/v1/wallet/transactions`\n- Filters: type (deposit / withdrawal / transfer / escrow), status (completed / confirmed / pending / failed), date range, currency\n- Search by TX hash\n- Row: icon + type + amount + currency + timestamp + status badge\n- Tap row → detail screen with:\n  - TX hash (tappable to open block explorer in browser)\n  - Confirmations count (live for pending)\n  - From / to addresses\n  - Network + fee\n  - Audit trail (state changes)\n\n## Acceptance criteria\n- [ ] List virtualized via FlashList (handles 1000+ tx without jank)\n- [ ] Block explorer URLs correct per network (Etherscan, Tronscan, Solscan, Mempool.space)\n- [ ] Pending TX badge updates live via WebSocket / polling\n- [ ] Filters persist for the session, not across app restarts (configurable later)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001"
+  },
+  {
+    "id": "MOBILE-WALLET-005",
+    "title": "MOBILE-WALLET-005: Internal transfer between user's own wallets",
+    "kind": "feature",
+    "desc": "## Scope\n- Transfer screen: source wallet → destination wallet (same user, different currencies / sub-accounts)\n- Amount input with conversion preview\n- Confirm screen + biometric prompt\n- Calls `POST /api/v1/wallet/transfer`\n- Shows confirmation + updates both balances optimistically\n\n## Acceptance criteria\n- [ ] Cannot transfer to same wallet as source\n- [ ] Internal transfers are instant (no on-chain fees)\n- [ ] Trade-locked funds cannot be transferred (UI warning + backend rejection)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001"
+  },
+  {
+    "id": "MOBILE-WALLET-006",
+    "title": "MOBILE-WALLET-006: Fiat balance + currency switcher (ZAR / NGN)",
+    "kind": "feature",
+    "desc": "## Scope\n- User's preferred fiat currency drives display values across the app (Wallet, Marketplace, Trade)\n- Currency switcher in Profile > Preferences\n- Honor `ENABLE_NGN` feature flag: only show NGN option if flag is on (`GET /api/v1/config/public` exposes this)\n- All amounts in fiat use the backend's `MarketSnapshot.fx_per_currency` map (added in FIAT-NGN-001)\n- Cached client-side for 60s\n\n## Acceptance criteria\n- [ ] Switching from ZAR to NGN updates every screen without app restart\n- [ ] When NGN flag is off, switcher only shows ZAR\n- [ ] Conversion math matches backend to 4 decimal places (no client-side drift)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001"
+  },
+  {
+    "id": "MOBILE-WALLET-007",
+    "title": "MOBILE-WALLET-007: Live price ticker + portfolio chart",
+    "kind": "feature",
+    "desc": "## Scope\n### Price ticker\n- Section on Wallet screen: BTC / ETH / USDT / SOL / TRX prices, 24h % change\n- Tap → asset detail with price chart (24h, 7d, 30d, 90d, 1y)\n- Data from `GET /api/v1/market/prices` (backend handles CoinGecko / Binance fallback)\n\n### Portfolio chart\n- Donut/pie of user's asset allocation by fiat value\n- Line chart of total portfolio value over time (if backend tracks; else compute client-side)\n\n## Acceptance criteria\n- [ ] Charts use the same library as web (Recharts equivalent on RN: `react-native-svg-charts` or `victory-native`)\n- [ ] Gracefully degrade when backend price source is rate-limited (show 'Prices delayed' badge)\n- [ ] No jank when rendering 365 data points\n\n## Dependencies\nBlocked by: MOBILE-WALLET-001"
+  },
+  {
+    "id": "MOBILE-WALLET-008",
+    "title": "MOBILE-WALLET-008: Withdraw fee preview + bottom-sheet 2FA confirmation",
+    "kind": "feature",
+    "desc": "## Scope\n- Reusable bottom-sheet component for withdraw confirmation\n- Shows: recipient, amount, network, fee breakdown, receivable, ETA\n- Biometric OR 6-digit TOTP entry inline (no full-screen redirect)\n- 'Edit' button returns to withdraw form\n- 'Confirm withdraw' → backend call → success state with TX hash\n\n## Acceptance criteria\n- [ ] Confirmation cannot be dismissed accidentally (swipe-down disabled while submitting)\n- [ ] 2FA challenge required if user has 2FA enabled, otherwise biometric only\n- [ ] Failed confirms preserve form state (no data loss)\n\n## Dependencies\nBlocked by: MOBILE-WALLET-003, MOBILE-AUTH-004"
+  },
+  {
+    "id": "MOBILE-MARKET-001",
+    "title": "MOBILE-MARKET-001: Marketplace list — Buy / Sell tabs with live updates",
+    "kind": "feature",
+    "desc": "## Scope\n- Tab bar: Buy Offers / Sell Offers (mirrors web)\n- Tab selection persists across navigations (FnHEXjUi behaviour)\n- Each row: advertiser, crypto, price (fiat per crypto), available, limits, payment method, action button ('Buy' or 'Sell')\n- Pulls from `GET /api/v1/offers?offerType={buy|sell}&status=active`\n- Pull-to-refresh + auto-refresh every 30s when tab is foreground\n- Empty state when no offers\n- Skeleton loader during initial load\n\n## Acceptance criteria\n- [ ] Tab + filter state restored when navigating back from offer detail\n- [ ] Background tab doesn't auto-refresh (battery)\n- [ ] Row tap latency ≤ 100ms (FlashList rendering)\n\n## Dependencies\nBlocked by: MOBILE-INIT-003"
+  },
+  {
+    "id": "MOBILE-MARKET-002",
+    "title": "MOBILE-MARKET-002: Marketplace filters + sort + search",
+    "kind": "feature",
+    "desc": "## Scope\n- Filter sheet: crypto (multi), payment method (multi), fiat (ZAR / NGN per flag), price range, advertiser trade count threshold, completion-rate threshold\n- Sort: Best rate, Most trades, Fastest, Recent\n- Search by advertiser username\n- 'Reset filters' button\n- Active filter chips above the list\n\n## Acceptance criteria\n- [ ] Filter combinations match web exactly\n- [ ] No filter combinations produce 500s (backend tested)\n- [ ] Search debounced (300ms) to avoid spamming API\n\n## Dependencies\nBlocked by: MOBILE-MARKET-001"
+  },
+  {
+    "id": "MOBILE-MARKET-003",
+    "title": "MOBILE-MARKET-003: Offer detail screen + initiate trade",
+    "kind": "feature",
+    "desc": "## Scope\n- Offer detail screen accessed from marketplace row\n- Shows: advertiser profile preview, price formula (fixed / market-based), available, limits, payment methods, terms, completion rate, escrow info\n- 'Start trade' button opens trade-init bottom sheet:\n  - Amount input (in fiat or crypto, toggle)\n  - Payment method selector (from offer's accepted methods)\n  - Confirm → `POST /api/v1/trades` → navigate to Trade detail (MOBILE-TRADE-002)\n- Honor user's KYC tier vs offer's required tier (block + redirect to KYC if insufficient)\n\n## Acceptance criteria\n- [ ] Fiat amount uses offer's currency (QIC-195: render fiat amounts with the offer's actual currency symbol)\n- [ ] Cannot initiate trade if user's KYC tier < offer's required tier\n- [ ] Cannot initiate trade with self\n- [ ] Trade limits respected (min/max)\n\n## Dependencies\nBlocked by: MOBILE-MARKET-001, MOBILE-KYC-001"
+  },
+  {
+    "id": "MOBILE-MARKET-004",
+    "title": "MOBILE-MARKET-004: Create offer flow",
+    "kind": "feature",
+    "desc": "## Scope\n- Multi-step form (Create Offer):\n  1. Offer type (Buy / Sell)\n  2. Crypto + network\n  3. Fiat currency + price (fixed amount OR market %)\n  4. Available amount + per-trade limits (min/max)\n  5. Payment methods (from user's saved methods)\n  6. Required KYC tier of counterparty\n  7. Time limit for trade (15 min / 30 min / 1h / 2h)\n  8. Terms (free-text)\n  9. Review + publish\n- `POST /api/v1/offers` on publish\n- Honor `SOLANA-FEATURE-FLAG-001` — don't allow SOL offers for non-allowed users\n- GA4 event `first_offer_created` (already emitted by web; mobile fires its own)\n- KYC L2+ required for sellers (enforce in UI before submit)\n\n## Acceptance criteria\n- [ ] All offer fields validated against backend\n- [ ] Draft state persisted (so user can resume after backgrounding)\n- [ ] Cannot publish if user balance < offered amount (for sell offers)\n\n## Dependencies\nBlocked by: MOBILE-MARKET-001, MOBILE-PROFILE-004"
+  },
+  {
+    "id": "MOBILE-MARKET-005",
+    "title": "MOBILE-MARKET-005: My offers management — pause, edit, delete",
+    "kind": "feature",
+    "desc": "## Scope\n- Accessible from Profile > My Offers\n- Tabs: Active / Paused / Closed\n- Per-offer actions: Pause/Resume, Edit (limited fields), Delete (soft-delete)\n- Status transitions via `PUT /api/v1/offers/{id}/status`\n- Stats: trades initiated, completion rate, average release time per offer\n\n## Acceptance criteria\n- [ ] Cannot delete an offer with open trades\n- [ ] Edit only permits non-breaking field changes (price, available, terms) — not type or crypto\n- [ ] Pause is reversible without data loss\n\n## Dependencies\nBlocked by: MOBILE-MARKET-004"
+  },
+  {
+    "id": "MOBILE-MARKET-006",
+    "title": "MOBILE-MARKET-006: Resell deal flow (reseller / brokerage)",
+    "kind": "feature",
+    "desc": "## Scope\nMirror the web's 'Resell Deal' feature.\n\n- From marketplace row: 'Resell' button on eligible offers\n- Set markup % or fixed spread\n- System auto-publishes a relisted offer at marked-up price\n- Reseller earns the difference when matched\n- 'My Resells' tab in My Offers\n- Resell-specific analytics: spread captured, daily P&L\n\n## Acceptance criteria\n- [ ] Resold offer references parent via `parent_offer_id`\n- [ ] Spread can't be set below platform fee (backend enforces; UI shows preview)\n- [ ] Reseller's KYC tier must satisfy original offer's required tier\n\n## Dependencies\nBlocked by: MOBILE-MARKET-005"
+  },
+  {
+    "id": "MOBILE-TRADE-001",
+    "title": "MOBILE-TRADE-001: Active trades list",
+    "kind": "feature",
+    "desc": "## Scope\n- Trades tab: list of user's active trades\n- Row: counterparty, crypto, fiat amount, status, time remaining (if applicable)\n- Status pill colored by state machine stage (per `qictrader-backend-rs/docs/intended-entity-state-machines.md`)\n- Sort by: time remaining (ascending), recent activity, oldest\n- Empty state CTA: 'Browse marketplace'\n- Badge on tab icon when there's a trade waiting on user action\n\n## Acceptance criteria\n- [ ] Trades load < 500ms when cached\n- [ ] State machine displayed accurately (no UI shows a state the backend can't reach)\n- [ ] Time remaining ticks down in real-time without re-rendering whole list\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-TRADE-002",
+    "title": "MOBILE-TRADE-002: Trade detail screen + state machine timeline",
+    "kind": "feature",
+    "desc": "## Scope\n- Trade detail accessed from trades list or push notification\n- Header: counterparty + crypto + fiat amount + status\n- Timeline showing every state transition (initiated → escrow funded → marked paid → released / cancelled / disputed)\n- Context-aware action buttons per current state + role (buyer / seller)\n- Trade ID + 'Copy' for support\n- Sub-sections: Payment instructions, Counterparty profile, Chat link, Files\n\n## Acceptance criteria\n- [ ] State machine matches `as-built-state-machines.md` exactly\n- [ ] Actions disabled when not user's turn (e.g. 'Mark paid' hidden for sellers)\n- [ ] Stale-state warning if backend reports newer state than UI\n\n## Dependencies\nBlocked by: MOBILE-TRADE-001"
+  },
+  {
+    "id": "MOBILE-TRADE-003",
+    "title": "MOBILE-TRADE-003: Trade chat (Socket.IO realtime)",
+    "kind": "feature",
+    "desc": "## Scope\n- In-trade chat tab accessible from trade detail\n- Realtime via Socket.IO (`socket.io-client` for RN)\n- Auth via cookie or bearer (same as web `/ws` route)\n- Message types: text, image, file, system\n- Typing indicator\n- Read receipts (delivered + read)\n- Pagination (load older on scroll up)\n- Push notification on new message when app backgrounded\n- 'Quick replies' (e.g. 'On my way', 'Payment sent', 'Please confirm')\n\n## Acceptance criteria\n- [ ] Reconnect handles network changes seamlessly (Wi-Fi → cellular)\n- [ ] No duplicate messages on reconnect\n- [ ] Chat scrolls smoothly with 500+ messages\n- [ ] WebSocket auth enforced (SEC-SPRINT: no anonymous WS)\n\n## Dependencies\nBlocked by: MOBILE-TRADE-002"
+  },
+  {
+    "id": "MOBILE-TRADE-004",
+    "title": "MOBILE-TRADE-004: Proof of payment upload",
+    "kind": "feature",
+    "desc": "## Scope\n- 'Upload proof of payment' action on buyer's trade detail (when in MarkedPaid-eligible state)\n- Uses `useDocumentCapture()` from MOBILE-KYC-004\n- Multi-image support (e.g. SMS confirmation + bank app screenshot)\n- Uploads to S3 (presigned URL via `POST /api/v1/trades/{id}/proof-upload-url`)\n- After upload: 'Mark as paid' button enabled\n\n## Acceptance criteria\n- [ ] Upload retries on flaky network\n- [ ] Image redaction tool (optional, defer) — for now, just warn user to avoid uploading sensitive account numbers\n- [ ] EXIF stripped before upload\n\n## Dependencies\nBlocked by: MOBILE-TRADE-002, MOBILE-KYC-004"
+  },
+  {
+    "id": "MOBILE-TRADE-005",
+    "title": "MOBILE-TRADE-005: Mark as paid + Release escrow + 2FA confirmation",
+    "kind": "feature",
+    "desc": "## Scope\n### Mark as paid (buyer)\n- Available only after proof of payment uploaded\n- Calls `POST /api/v1/trades/{id}/mark-paid`\n- State machine transition: EscrowFunded → MarkedPaid\n\n### Release escrow (seller)\n- Available only after buyer marked paid\n- Requires biometric OR 2FA confirmation\n- Calls `POST /api/v1/trades/{id}/release`\n- State machine transition: MarkedPaid → Released → Completed\n\n## Acceptance criteria\n- [ ] Both actions are idempotent (double-tap doesn't double-release)\n- [ ] Release shows clear warning: 'This is irreversible'\n- [ ] Action lock UI while submitting prevents user spam-tap\n- [ ] Backend authorization verified: only seller of THIS trade can release\n\n## Dependencies\nBlocked by: MOBILE-TRADE-002, MOBILE-AUTH-005"
+  },
+  {
+    "id": "MOBILE-TRADE-006",
+    "title": "MOBILE-TRADE-006: Dispute flow + evidence upload",
+    "kind": "feature",
+    "desc": "## Scope\n- 'Open dispute' action available in specific trade states (e.g. MarkedPaid but seller won't release, or buyer claims paid but didn't)\n- Dispute reason selector (per backend's enum)\n- Free-text explanation\n- Evidence upload (multi-file, mirrors MOBILE-TRADE-004)\n- Submits to `POST /api/v1/trades/{id}/dispute`\n- Trade state machine transition: any active state → InDispute\n- Once disputed: chat continues, but actions are limited to messaging + uploading more evidence\n- Resolution by admin → notify user\n\n## Acceptance criteria\n- [ ] Dispute is only initiable when state machine permits\n- [ ] User cannot dispute a completed trade\n- [ ] Evidence shown read-only to both parties after submission\n- [ ] Admin resolution updates state correctly + sends push\n\n## Dependencies\nBlocked by: MOBILE-TRADE-002, MOBILE-KYC-004"
+  },
+  {
+    "id": "MOBILE-TRADE-007",
+    "title": "MOBILE-TRADE-007: Trade history + filters",
+    "kind": "feature",
+    "desc": "## Scope\n- Profile > Trade History (and 'Closed' tab in trades list)\n- All non-active trades (completed, cancelled, expired, disputed-resolved)\n- Filters: outcome, crypto, fiat, date range, counterparty\n- Tap → read-only trade detail\n- CSV export (deferred to follow-up if backend doesn't have an endpoint yet)\n\n## Acceptance criteria\n- [ ] Pagination handles users with 1000+ historical trades without freeze\n- [ ] Read-only state clearly indicated (no action buttons)\n\n## Dependencies\nBlocked by: MOBILE-TRADE-001"
+  },
+  {
+    "id": "MOBILE-TRADE-008",
+    "title": "MOBILE-TRADE-008: Trade cancellation + expiry timer + warnings",
+    "kind": "feature",
+    "desc": "## Scope\n### Cancellation\n- 'Cancel trade' action available in Initiated / Funded states (before payment marked)\n- Reason selector + confirmation\n- Calls `POST /api/v1/trades/{id}/cancel`\n\n### Expiry timer\n- Live countdown on trade detail header during time-bound states\n- Push notification at T-5min, T-1min\n- On expiry: state transitions to Expired automatically (backend); UI updates\n\n## Acceptance criteria\n- [ ] Cancellation cannot happen after buyer marks paid\n- [ ] Expiry timer uses server time (not device time) — fetch on screen mount\n- [ ] Notifications fire even if app is backgrounded\n\n## Dependencies\nBlocked by: MOBILE-TRADE-002, MOBILE-NOTIF-001"
+  },
+  {
+    "id": "MOBILE-NOTIF-001",
+    "title": "MOBILE-NOTIF-001: Push notifications — FCM + APNs registration",
+    "kind": "feature",
+    "desc": "## Scope\n- Integrate `expo-notifications` (works with FCM on Android, APNs on iOS)\n- On first login: request notification permission, register device token with backend (`POST /api/v1/notifications/devices`)\n- Backend stores token per user-session; new endpoint may be needed (coordinate with backend team)\n- Token refresh on app updates\n- Topic categories: trade_updates, marketplace_alerts, security_alerts, marketing (each can be toggled)\n\n## Acceptance criteria\n- [ ] iOS uses APNs production environment in production builds, sandbox in dev/staging\n- [ ] Android uses FCM v1 API (legacy FCM is deprecated)\n- [ ] Permission denial gracefully handled (in-app banner asking user to enable in Settings)\n- [ ] Device unregistered on logout\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-NOTIF-002",
+    "title": "MOBILE-NOTIF-002: In-app notification center + preferences",
+    "kind": "feature",
+    "desc": "## Scope\n### Notification center\n- Bell icon in app header with unread badge\n- Sheet listing recent notifications (paginated)\n- Mark-as-read on tap; mark-all-as-read button\n- Tap → deep link to relevant screen (trade, KYC, marketplace, etc.)\n\n### Preferences\n- Profile > Notification Preferences\n- Per-topic toggles + per-channel (push, email, in-app)\n- Calls `GET/PUT /api/v1/notifications/preferences`\n\n## Acceptance criteria\n- [ ] Unread count consistent with backend\n- [ ] Toggle changes persist within 1s\n- [ ] No notifications fire for disabled topics\n\n## Dependencies\nBlocked by: MOBILE-NOTIF-001"
+  },
+  {
+    "id": "MOBILE-NOTIF-003",
+    "title": "MOBILE-NOTIF-003: Deep linking + background notification handling + badge",
+    "kind": "feature",
+    "desc": "## Scope\n- Tapping a notification with `data.deepLink: 'qictrader://trade/abc-123'` opens the correct screen, even from cold start\n- Background notification handlers: silent updates (e.g. trade state change refresh)\n- App icon badge count synced with unread notifications\n- Local notifications for in-app events that fire while app is foregrounded (in-app banner)\n\n## Acceptance criteria\n- [ ] Cold-start deep link works on iOS + Android\n- [ ] App badge cleared when notification center opened\n- [ ] Silent updates don't show user-visible alert but do refresh state\n\n## Dependencies\nBlocked by: MOBILE-NOTIF-001, MOBILE-NOTIF-002"
+  },
+  {
+    "id": "MOBILE-PROFILE-001",
+    "title": "MOBILE-PROFILE-001: User profile screen + stats",
+    "kind": "feature",
+    "desc": "## Scope\n- Profile screen (matches web /profile)\n- Avatar, username, joined date, KYC tier badge, trader reputation rating\n- Stats grid: total trades, completion rate, disputes won, avg release time\n- 'Edit profile' button → MOBILE-PROFILE-002\n- Quick sections: Wallet, My Offers, Trade History, Affiliate Dashboard, Settings\n- Trust & Safety status (KYC, 2FA, email verified, phone verified)\n\n## Acceptance criteria\n- [ ] Stats match backend exactly\n- [ ] Avatar fallback to first-letter chip if user has no avatar\n- [ ] Pull-to-refresh refreshes all sections\n\n## Dependencies\nBlocked by: MOBILE-AUTH-001"
+  },
+  {
+    "id": "MOBILE-PROFILE-002",
+    "title": "MOBILE-PROFILE-002: Edit profile + avatar upload",
+    "kind": "feature",
+    "desc": "## Scope\n- Editable fields: display name (not username, which is immutable post-signup), avatar, bio, country\n- Avatar upload via `useDocumentCapture()` with circular crop (use `react-native-image-crop-picker` or in-app crop tool)\n- Calls `PATCH /api/v1/me` and `POST /api/v1/me/avatar`\n- Image resize + compress before upload (target ≤ 200 KB)\n\n## Acceptance criteria\n- [ ] Avatar appears in all places (header, comments, trades) within 5s of upload\n- [ ] Validation matches backend\n\n## Dependencies\nBlocked by: MOBILE-PROFILE-001, MOBILE-KYC-004"
+  },
+  {
+    "id": "MOBILE-PROFILE-003",
+    "title": "MOBILE-PROFILE-003: Security settings (2FA, password change, active sessions)",
+    "kind": "feature",
+    "desc": "## Scope\n- Settings > Security\n- 2FA setup / disable (links to MOBILE-AUTH-004)\n- Change password (current + new + confirm, biometric required)\n- Active sessions list: device, IP, last active, location estimate\n  - 'Revoke' action on individual sessions (calls `POST /api/v1/auth/logout-all/{session_id}` if backend supports per-session revoke, else logout-all)\n- Recent security events (login, password change, etc.) — pulled from audit log\n\n## Acceptance criteria\n- [ ] Password change forces re-login on this device (with new password)\n- [ ] Revoking session invalidates that session's tokens within 1 min (server-side check)\n- [ ] Current session marked clearly in list\n\n## Dependencies\nBlocked by: MOBILE-AUTH-005, MOBILE-AUTH-004"
+  },
+  {
+    "id": "MOBILE-PROFILE-004",
+    "title": "MOBILE-PROFILE-004: Payment methods CRUD",
+    "kind": "feature",
+    "desc": "## Scope\n- Settings > Payment Methods\n- List of user's saved payment methods (bank transfer, mobile money, etc.)\n- Add new method: type selector → form with required fields per type\n- Edit / delete with confirmation\n- Default method selector\n- Cannot delete a method in use by active offers (UI warning + backend enforcement)\n\n## Acceptance criteria\n- [ ] Validation matches backend's payment method schema\n- [ ] Sensitive fields (account numbers) masked when displayed (last 4 digits only)\n- [ ] Mobile money providers per region (MTN, Vodacom, MPESA, Airtel) configurable\n\n## Dependencies\nBlocked by: MOBILE-PROFILE-001"
+  },
+  {
+    "id": "MOBILE-PROFILE-005",
+    "title": "MOBILE-PROFILE-005: Preferences — currency, theme, language",
+    "kind": "feature",
+    "desc": "## Scope\n- Settings > Preferences\n- Currency: ZAR / NGN (gated by `ENABLE_NGN`)\n- Theme: System / Light / Dark / Ocean / Sunset / Forest / Midnight (mirror web card themes)\n- Language: English (default), expand later (deferred)\n- All preferences stored both locally (AsyncStorage) and synced to backend (`/api/v1/me/preferences`)\n\n## Acceptance criteria\n- [ ] Theme change is instant, no flicker, no reload\n- [ ] Currency change updates every visible screen without app restart\n- [ ] Preferences sync across devices logged into same account\n\n## Dependencies\nBlocked by: MOBILE-WALLET-006"
+  },
+  {
+    "id": "MOBILE-AFF-001",
+    "title": "MOBILE-AFF-001: Affiliate dashboard + referral link share",
+    "kind": "feature",
+    "desc": "## Scope\n- Profile > Affiliate Dashboard\n- Stats: total earnings, pending earnings, users referred, active referrals, rank\n- Referral link (e.g. `qictrader.com/affiliate?ref=XXX`)\n- Native share sheet (`expo-sharing`) for sharing via WhatsApp, Telegram, Email, SMS\n- QR code of referral link (for in-person sharing)\n- Calls `GET /api/v1/affiliate/dashboard`\n\n## Acceptance criteria\n- [ ] Share message customisable in app; default copy in 'I'm trading on QicTrader — use my link to sign up.'\n- [ ] QR codes encode the same URL as the link (no drift)\n\n## Dependencies\nBlocked by: MOBILE-PROFILE-001"
+  },
+  {
+    "id": "MOBILE-AFF-002",
+    "title": "MOBILE-AFF-002: Commission history + analytics",
+    "kind": "feature",
+    "desc": "## Scope\n- Commission ledger: each commission earned (referred user trade → commission amount)\n- Filters: date range, paid / pending\n- Withdrawal request flow (if backend supports affiliate cashout)\n- Charts: monthly earnings, referral conversion rate\n\n## Acceptance criteria\n- [ ] Pending commissions clearly distinguished from paid\n- [ ] Withdrawal request requires KYC L2+ if backend enforces\n- [ ] Numbers reconcile with backend `/affiliate/commissions` endpoint\n\n## Dependencies\nBlocked by: MOBILE-AFF-001"
+  },
+  {
+    "id": "MOBILE-SUPPORT-001",
+    "title": "MOBILE-SUPPORT-001: Help center / FAQ (in-app)",
+    "kind": "feature",
+    "desc": "## Scope\n- Help center accessible from menu drawer or Profile footer\n- Categories: Getting Started, KYC, Wallet, Trading, Safety, Affiliate, Account\n- Article list per category, search across all articles\n- Articles rendered from markdown (committed in `mobile/content/help/` or fetched from `/api/v1/help/articles`)\n- 'Was this helpful?' thumbs up/down (telemetry)\n- 'Contact support' fallback button (links to MOBILE-SUPPORT-002)\n\n## Acceptance criteria\n- [ ] Search returns results within 200ms\n- [ ] Articles render correctly in dark mode\n- [ ] Offline reading supported (articles cached on first visit)\n\n## Dependencies\nBlocked by: MOBILE-INIT-002"
+  },
+  {
+    "id": "MOBILE-SUPPORT-002",
+    "title": "MOBILE-SUPPORT-002: Submit support ticket + report bug + in-app feedback",
+    "kind": "feature",
+    "desc": "## Scope\n### Submit support ticket\n- Form: category, subject, description, attachments\n- Auto-include: app version, OS version, device model, user ID\n- POST to `/api/v1/support/tickets` (backend may need new endpoint)\n- Confirmation with ticket reference\n\n### Report a bug\n- Same form, pre-filled category 'Bug'\n- Includes optional screen recording (deferred) and current screen screenshot\n\n### In-app feedback\n- Lightweight feedback prompt after 5+ successful trades (one-time per user)\n- 'Rate us' link to App Store / Play Store after positive feedback\n\n## Acceptance criteria\n- [ ] Tickets created on backend with all metadata attached\n- [ ] Bug report attachments include device + app context automatically\n- [ ] Feedback prompt respects 'don't ask again' choice\n\n## Dependencies\nBlocked by: MOBILE-PROFILE-001"
+  },
+  {
+    "id": "MOBILE-SEC-001",
+    "title": "MOBILE-SEC-001: Certificate pinning (TLS pinning)",
+    "kind": "infra",
+    "desc": "## Scope\n- Pin TLS certificates of `qictrader-backend-rs-13eab0516d9a.herokuapp.com` and any custom backend domain\n- Use `expo-secure-network` or `react-native-ssl-pinning`\n- Pin via SPKI hash (rotates with certs, not full cert)\n- Fallback strategy when pin fails (don't brick the app; surface user-visible error + Sentry alert)\n- Document rotation procedure in `mobile/ops/cert-pinning.md`\n\n## Acceptance criteria\n- [ ] MITM via Charles / mitmproxy is blocked (manual verification)\n- [ ] Cert rotation procedure documented; backup pin always present\n- [ ] No false positives on real network (Wi-Fi, cellular, VPN)\n\n## Dependencies\nBlocked by: MOBILE-INIT-003"
+  },
+  {
+    "id": "MOBILE-SEC-002",
+    "title": "MOBILE-SEC-002: Jailbreak / root detection + screen capture protection",
+    "kind": "infra",
+    "desc": "## Scope\n### Jailbreak / root detection\n- Use `react-native-jail-monkey` or equivalent\n- On detection: show warning, restrict sensitive actions (withdraw, change password), log to Sentry\n- Don't outright block app (false-positive risk too high)\n\n### Screen capture protection\n- Disable screenshots + screen recording on sensitive screens:\n  - Login, Signup, 2FA setup, Withdraw, Seed phrases (if added), KYC document capture\n- iOS: use `FLAG_SECURE` equivalent (limited on iOS — show blur overlay on app-switcher screenshot)\n- Android: `FLAG_SECURE` window flag\n- Toggle via `expo-screen-capture`\n\n## Acceptance criteria\n- [ ] Sensitive screens cannot be screenshotted on Android\n- [ ] iOS app-switcher preview shows blurred/placeholder on sensitive screens\n- [ ] Jailbreak warning is dismissible but logged\n\n## Dependencies\nBlocked by: MOBILE-INIT-001"
+  },
+  {
+    "id": "MOBILE-SEC-003",
+    "title": "MOBILE-SEC-003: SecureStore audit + sensitive data review",
+    "kind": "infra",
+    "desc": "## Scope\n- Comprehensive audit: every place sensitive data is stored, ensure it uses `expo-secure-store` not AsyncStorage\n- Sensitive data inventory: access token, refresh token, biometric opt-in, 2FA backup codes (if cached), payment method details (last-4 only)\n- Logging audit: ensure no PII or secrets are written to console / Sentry / analytics\n- Memory hygiene: clear sensitive variables explicitly after use where possible\n- Backup exclusion: mark sensitive files as excluded from iCloud / Google Drive backups (iOS `kSecAttrSynchronizable`, Android `android:allowBackup=false`)\n\n## Acceptance criteria\n- [ ] No tokens in AsyncStorage / sqlite / file system in plaintext\n- [ ] Sentry breadcrumbs don't contain PII\n- [ ] Pen-test simulation: pulling device backup yields no credentials\n\n## Dependencies\nBlocked by: MOBILE-AUTH-005"
+  },
+  {
+    "id": "MOBILE-SEC-004",
+    "title": "MOBILE-SEC-004: Session timeout + biometric re-auth + privacy on logout",
+    "kind": "infra",
+    "desc": "## Scope\n### Session timeout\n- Auto-lock app after configurable inactivity (default 5 min)\n- Lock screen requires biometric / PIN to unlock\n- App background → blur overlay\n\n### Privacy on logout\n- Clear all local cache (React Query cache, Redux persist, AsyncStorage app data)\n- Optionally keep SecureStore biometric opt-in (asks user)\n- Sign out from analytics (GA4 user ID reset)\n\n## Acceptance criteria\n- [ ] After timeout + lock, user must biometric to continue, even if backend session valid\n- [ ] Logout clears all cached personal data\n- [ ] No user data persists in any cache after explicit logout (verified via app data inspection)\n\n## Dependencies\nBlocked by: MOBILE-AUTH-005"
+  },
+  {
+    "id": "MOBILE-PERF-001",
+    "title": "MOBILE-PERF-001: Image caching + list virtualization (FlashList)",
+    "kind": "infra",
+    "desc": "## Scope\n- Replace `FlatList` with `@shopify/flash-list` throughout (marketplace, trades, transactions, notifications)\n- Image caching via `expo-image` (replaces `Image`) — handles caching + placeholders + transitions\n- Pre-warm critical images on app start (logo, default avatars)\n- Memory + CPU budget audit on low-end devices (target: iPhone SE 1st gen, Android with 2GB RAM)\n\n## Acceptance criteria\n- [ ] Marketplace list scrolls at 60 fps with 100+ offers\n- [ ] Avatar images load instantly after first view (cached)\n- [ ] App memory < 150 MB on a 5-screen typical session\n\n## Dependencies\nBlocked by: MOBILE-MARKET-001, MOBILE-WALLET-004"
+  },
+  {
+    "id": "MOBILE-PERF-002",
+    "title": "MOBILE-PERF-002: Offline mode + React Query cache strategy",
+    "kind": "infra",
+    "desc": "## Scope\n- React Query persist plugin (`@tanstack/query-async-storage-persister`)\n- Stale-while-revalidate strategy for read-heavy endpoints (marketplace, prices, profile)\n- Offline indicator banner when network unreachable\n- Read-only mode when offline (show cached data, disable mutations with informative toast)\n- Queue mutations for retry when connection returns? — deferred; for now block them\n\n## Acceptance criteria\n- [ ] App opens to last-cached state when offline\n- [ ] Marketplace still browsable offline (read-only)\n- [ ] Mutations blocked offline with clear error\n- [ ] Cache TTL per endpoint matches data freshness needs\n\n## Dependencies\nBlocked by: MOBILE-INIT-003"
+  },
+  {
+    "id": "MOBILE-PERF-003",
+    "title": "MOBILE-PERF-003: Skeleton loaders + optimistic updates + pull-to-refresh",
+    "kind": "infra",
+    "desc": "## Scope\n- Skeleton loader components matching each screen's layout\n- Use on first load only; subsequent loads use cached data\n- Optimistic updates for: mark-as-read on notifications, status toggle on offers, like / star (if any)\n- Pull-to-refresh on every list screen with haptic feedback\n- Animated transitions (subtle, mirror web's micro-interactions)\n\n## Acceptance criteria\n- [ ] No 'jank' transition between skeleton → content\n- [ ] Optimistic updates roll back on backend failure with toast\n- [ ] Pull-to-refresh works on Android + iOS with native feel\n\n## Dependencies\nBlocked by: MOBILE-INIT-002"
+  },
+  {
+    "id": "MOBILE-TEST-001",
+    "title": "MOBILE-TEST-001: Unit + component test setup (Jest + React Native Testing Library)",
+    "kind": "infra",
+    "desc": "## Scope\n- Jest config with React Native preset + TypeScript\n- React Native Testing Library installed\n- Test utilities: mock providers (Redux, Query, Navigation), mock API responses\n- Coverage thresholds: lines 70%, branches 60% (initially; raise over time)\n- CI runs unit + component tests on every PR\n- First test files for: API client interceptor, auth slice, form validators (zod)\n\n## Acceptance criteria\n- [ ] `bun run test:unit` passes locally + in CI\n- [ ] At least 10 component tests covering primitive UI components\n- [ ] Coverage report uploaded as PR comment\n\n## Dependencies\nBlocked by: MOBILE-INIT-001"
+  },
+  {
+    "id": "MOBILE-TEST-002",
+    "title": "MOBILE-TEST-002: E2E framework (Maestro) + critical path tests",
+    "kind": "infra",
+    "desc": "## Scope\n- **Maestro** chosen over Detox for ease of authoring + cloud CI support (Maestro Cloud)\n- Install Maestro + write flows under `mobile/.maestro/`\n- Critical path tests:\n  1. Sign up → email verify → KYC start → first wallet deposit address\n  2. Login → marketplace → initiate trade → mark paid (mock seller side)\n  3. Withdraw flow with biometric mock\n- Run against EAS preview builds in CI on PRs\n\n## Acceptance criteria\n- [ ] Each critical-path flow runs end-to-end on iOS sim + Android emulator\n- [ ] Flaky tests retry up to 2× before failing the build\n- [ ] CI report identifies which screen / step failed\n\n## Dependencies\nBlocked by: MOBILE-TEST-001, MOBILE-AUTH-005"
+  },
+  {
+    "id": "MOBILE-TEST-003",
+    "title": "MOBILE-TEST-003: Visual regression + performance benchmarks",
+    "kind": "infra",
+    "desc": "## Scope\n### Visual regression\n- `react-native-storybook` + Chromatic, OR a homegrown approach using Maestro screenshots\n- Per-screen baseline images for iOS + Android, light + dark theme\n- Diff threshold + visual review in PRs\n\n### Performance benchmarks\n- Measure: app cold start time, time-to-interactive on marketplace, scroll fps on trades list\n- Track in CI with a soft budget (warn on regression > 10%, block > 25%)\n\n## Acceptance criteria\n- [ ] Visual diffs surface in PR\n- [ ] Performance regression flagged before merge\n\n## Dependencies\nBlocked by: MOBILE-TEST-002, MOBILE-PERF-001"
+  },
+  {
+    "id": "MOBILE-LAUNCH-001",
+    "title": "MOBILE-LAUNCH-001: App Store Connect setup + iOS certificates + provisioning",
+    "kind": "infra",
+    "desc": "## Scope\n- Apple Developer Program enrolment (Org account: Qic Trade Systems Limited — confirm enrolment status)\n- App Store Connect app record creation (bundle ID: `com.qictrader.app`)\n- Certificates: Apple Distribution, Apple Push Notification (APNs)\n- Provisioning profiles: App Store, Ad Hoc\n- App ID with capabilities enabled: Push Notifications, Associated Domains (for Universal Links), Sign In with Apple, Keychain Sharing\n- Use EAS Submit to automate provisioning + uploads\n\n## Acceptance criteria\n- [ ] Bundle ID matches Expo config\n- [ ] APNs certs valid + auto-renewed via EAS\n- [ ] Universal Links resolve to `qictrader.com` apple-app-site-association\n\n## Dependencies\nBlocked by: MOBILE-INIT-004"
+  },
+  {
+    "id": "MOBILE-LAUNCH-002",
+    "title": "MOBILE-LAUNCH-002: Google Play Console setup + signing + app listing",
+    "kind": "infra",
+    "desc": "## Scope\n- Google Play Console account (Org: Qic Trade Systems Limited)\n- Application registration (package: `com.qictrader.app`)\n- App signing: Play App Signing enabled, upload key managed via EAS\n- Service account for EAS Submit to upload builds automatically\n- App content declarations: data safety, ads (none), target audience, privacy policy URL\n- App category: Finance\n\n## Acceptance criteria\n- [ ] Internal testing track works end-to-end via EAS Submit\n- [ ] Data safety form completed accurately (encryption in transit + at rest, no third-party data sales)\n- [ ] App passes Pre-Launch Report\n\n## Dependencies\nBlocked by: MOBILE-INIT-004"
+  },
+  {
+    "id": "MOBILE-LAUNCH-003",
+    "title": "MOBILE-LAUNCH-003: App store listing — copy, screenshots, ASO",
+    "kind": "infra",
+    "desc": "## Scope\n### Copy (both stores)\n- App name: QicTrader\n- Subtitle / short description: 'P2P Crypto Marketplace + Escrow'\n- Long description (highlighting: escrow, KYC, multi-currency, resell feature, instant withdrawals)\n- Keywords (ASO research): 'crypto p2p', 'usdt', 'btc trade', 'escrow', 'south africa crypto'\n- Promotional text\n\n### Screenshots\n- 6.5\" iPhone, 5.5\" iPhone, 12.9\" iPad, Android phone, Android tablet\n- Light + dark versions\n- Annotated marketing screenshots emphasizing: marketplace, escrow security, wallet, profit dashboard\n\n### Other assets\n- App preview video (30-60s) — defer to v1.1 if tight on time\n- Privacy policy URL (link to existing web page)\n- Support URL\n\n## Acceptance criteria\n- [ ] All screenshots match current UI (no outdated mockups)\n- [ ] Copy adheres to App Store + Play Store content guidelines\n- [ ] Localization-ready (copy stored in JSON, translatable later)\n\n## Dependencies\nBlocked by: MOBILE-LAUNCH-001, MOBILE-LAUNCH-002"
+  },
+  {
+    "id": "MOBILE-LAUNCH-004",
+    "title": "MOBILE-LAUNCH-004: TestFlight beta program — internal + external",
+    "kind": "infra",
+    "desc": "## Scope\n### Internal beta\n- Internal testers (up to 100): Qic team via App Store Connect\n- Builds auto-uploaded via EAS Submit on every `mobile-rc-*` git tag\n\n### External beta\n- Open beta link for early-access community\n- Beta App Review required (one-time when first external build submitted)\n- Crash reports + feedback flowing into Sentry + email\n\n## Acceptance criteria\n- [ ] Internal testers receive new builds within 1h of tag push\n- [ ] External beta link distributable (e.g. publish on landing page)\n- [ ] Feedback loop (TestFlight feedback → Trello ticket or Slack channel)\n\n## Dependencies\nBlocked by: MOBILE-LAUNCH-001"
+  },
+  {
+    "id": "MOBILE-LAUNCH-005",
+    "title": "MOBILE-LAUNCH-005: Google Play internal + closed beta",
+    "kind": "infra",
+    "desc": "## Scope\n### Internal testing\n- Up to 100 testers via email lists in Play Console\n- Auto-upload via EAS Submit\n\n### Closed testing (alpha / beta)\n- Email list or Google Group\n- Requires staged rollout strategy: 10% → 25% → 50% → 100%\n\n### Open testing\n- Public beta after closed beta stable\n- Surface on landing page\n\n## Acceptance criteria\n- [ ] Each track receives builds on the correct trigger\n- [ ] Pre-Launch Report results triaged for each release\n- [ ] Rollback procedure documented in `mobile/ops/play-rollback.md`\n\n## Dependencies\nBlocked by: MOBILE-LAUNCH-002"
+  },
+  {
+    "id": "MOBILE-LAUNCH-006",
+    "title": "MOBILE-LAUNCH-006: Crash reporting (Sentry) + structured analytics (GA4 + custom events)",
+    "kind": "infra",
+    "desc": "## Scope\n### Sentry\n- `sentry-expo` integration\n- Source maps uploaded automatically by EAS Build\n- User context attached (anonymous user ID, no PII)\n- Breadcrumbs from navigation + API\n- Alerts: crash rate > 0.5%, ANR rate > 0.3%, network failure rate > 5%\n\n### Analytics\n- GA4 (Firebase Analytics) — mirror frontend's GA4 events (sign_up, kyc_verification_completed, first_offer_created, trade_initiated, trade_completed, etc.)\n- Consent Mode v2 (link with `ops/ga4-gtm-setup.md`)\n- Custom events for mobile-only signals (push opt-in rate, biometric usage)\n\n## Acceptance criteria\n- [ ] Sentry receives all crashes with readable stack traces (source maps)\n- [ ] GA4 dashboard shows mobile traffic distinct from web\n- [ ] No PII transmitted to either Sentry or GA4\n\n## Dependencies\nBlocked by: MOBILE-INIT-004"
+  },
+  {
+    "id": "MOBILE-LAUNCH-007",
+    "title": "MOBILE-LAUNCH-007: Production release runbook + on-call playbook",
+    "kind": "infra",
+    "desc": "## Scope\n- Document the end-to-end release process in `mobile/ops/release-runbook.md`:\n  - Cut a release branch from `main`\n  - Update version + build numbers\n  - Tag `mobile-v{version}` → triggers EAS production build\n  - Submit to App Store + Play Store via EAS Submit\n  - Staged rollout on Play (10% / 25% / 100%)\n  - Phased release on App Store (7-day Apple-managed phased release)\n- On-call playbook for mobile incidents:\n  - Crash spike: how to read Sentry, decide between hotfix + over-the-air update (EAS Update)\n  - Cert pinning failure: rotation procedure\n  - Backend incompatibility: emergency message in-app via Remote Config (deferred or simple maintenance flag)\n- Hotfix path via EAS Update (for JS-only fixes that don't need a store review)\n\n## Acceptance criteria\n- [ ] Runbook walked through by JP without referring to outside knowledge — succeeds end-to-end\n- [ ] EAS Update can ship a JS fix in < 5 min without store review\n- [ ] Rollback procedure documented for native + OTA paths\n\n## Dependencies\nBlocked by: MOBILE-LAUNCH-001, MOBILE-LAUNCH-002, MOBILE-LAUNCH-006"
+  }
+]
