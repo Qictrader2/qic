@@ -42,11 +42,37 @@ interface PriceHistory {
   currentPrice: number
 }
 
+// Same symbol -> CoinGecko id map the web uses (prices-api.ts)
+const COINGECKO_IDS: Record<string, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  SOL: "solana",
+  USDT: "tether",
+  USDC: "usd-coin",
+  TRX: "tron",
+}
+
 function usePriceHistory(currency: string, enabled: boolean) {
+  const coinId = COINGECKO_IDS[currency]
   return useQuery({
     queryKey: ["price-history", currency],
-    queryFn: () => apiClient.get<PriceHistory>(`/api/v1/market/price-history?currency=${currency}&period=7d`),
-    enabled,
+    // Backend route (same as web): GET /prices/{coingecko_id}/history?days=7&mode=line
+    queryFn: async (): Promise<PriceHistory> => {
+      const res = await apiClient.get<{
+        coinId: string
+        prices: Array<{ timestamp: number; price: number }>
+      }>(`/api/v1/prices/${coinId}/history?days=7&mode=line`)
+      const series = res.prices.map((p) => p.price)
+      const first = series[0] ?? 0
+      const last = series[series.length - 1] ?? 0
+      return {
+        currency,
+        prices: series,
+        change24h: first > 0 ? ((last - first) / first) * 100 : 0,
+        currentPrice: last,
+      }
+    },
+    enabled: enabled && !!coinId,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
   })
@@ -176,13 +202,19 @@ function QuickAction({
   )
 }
 
-/** Portfolio total value chart */
+/**
+ * Portfolio total value card.
+ *
+ * Parity note: the backend has no portfolio-history (value-over-time)
+ * endpoint and the web app has no such chart either — web derives a
+ * snapshot from balances x spot prices. We do the same here using
+ * GET /prices (the same source web's PriceCards use).
+ */
 function PortfolioChart({ wallets }: { wallets: Wallet[] }) {
-  const { data: portfolioHistory, isLoading } = useQuery({
-    queryKey: ["portfolio-history"],
-    queryFn: () => apiClient.get<{ values: number[]; labels: string[]; totalUsd: number; change24h: number }>(
-      "/api/v1/market/portfolio-history?period=7d"
-    ),
+  const { data: prices, isLoading } = useQuery({
+    queryKey: ["spot-prices"],
+    queryFn: () =>
+      apiClient.get<Array<{ symbol: string; price: number; change24h: number }>>("/api/v1/prices"),
     staleTime: 60_000,
   })
 
@@ -194,18 +226,28 @@ function PortfolioChart({ wallets }: { wallets: Wallet[] }) {
     )
   }
 
-  if (!portfolioHistory?.values || portfolioHistory.values.length < 2) return null
+  if (!prices?.length || !wallets.length) return null
 
-  const change24h = portfolioHistory.change24h ?? 0
+  const priceBySymbol = new Map(prices.map((p) => [p.symbol.toUpperCase(), p]))
+  const holdings = wallets.map((w) => {
+    const spot = priceBySymbol.get(w.currency.toUpperCase())
+    const value = spot ? parseFloat(w.balance) * spot.price : 0
+    return { value, change24h: spot?.change24h ?? 0 }
+  })
+  const totalUsd = holdings.reduce((sum, h) => sum + h.value, 0)
+  // Value-weighted 24h change across holdings
+  const change24h = totalUsd > 0
+    ? holdings.reduce((sum, h) => sum + h.change24h * h.value, 0) / totalUsd
+    : 0
   const chartColor = change24h >= 0 ? "#10B981" : "#EF4444"
 
   return (
     <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
-      <View className="flex-row justify-between items-start mb-3">
+      <View className="flex-row justify-between items-start">
         <View>
           <Text className="text-xs text-muted dark:text-muted-dark">Portfolio value</Text>
           <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
-            ${portfolioHistory.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Text>
         </View>
         <View
@@ -217,29 +259,6 @@ function PortfolioChart({ wallets }: { wallets: Wallet[] }) {
           </Text>
         </View>
       </View>
-
-      <LineChart
-        data={{
-          labels: portfolioHistory.labels ?? [],
-          datasets: [{ data: portfolioHistory.values, color: () => chartColor, strokeWidth: 2 }],
-        }}
-        width={SCREEN_WIDTH - 64}
-        height={100}
-        withDots={false}
-        withInnerLines={false}
-        withOuterLines={false}
-        withHorizontalLabels={false}
-        withVerticalLabels={false}
-        chartConfig={{
-          backgroundGradientFrom: "transparent",
-          backgroundGradientTo: "transparent",
-          color: () => chartColor,
-          strokeWidth: 2,
-          propsForBackgroundLines: { stroke: "transparent" },
-        }}
-        bezier
-        style={{ paddingRight: 0, marginLeft: -16 }}
-      />
     </View>
   )
 }

@@ -55,6 +55,19 @@ export interface DepositAddress {
   confirmationsRequired: number
 }
 
+// Backend network keys are snake_case `{chain}_mainnet` (web converts
+// bitcoinMainnet -> bitcoin_mainnet the same way).
+const NETWORK_TO_BACKEND: Record<Network, string> = {
+  bitcoin: "bitcoin_mainnet",
+  ethereum: "ethereum_mainnet",
+  solana: "solana_mainnet",
+  tron: "tron_mainnet",
+  polygon: "polygon_mainnet",
+  erc20: "ethereum_mainnet",
+  trc20: "tron_mainnet",
+  spl: "solana_mainnet",
+}
+
 export const walletService = {
   async getAll(): Promise<Wallet[]> {
     return apiClient.get("/api/v1/wallet")
@@ -64,12 +77,29 @@ export const walletService = {
     return apiClient.get(`/api/v1/wallet/deposit-address`, { currency, network })
   },
 
+  // Matches web (GasFeeDisplay/WithdrawModal): fees come from the gas service,
+  // GET /gas/withdrawal-fee/network. There is no /wallet/withdraw/fee-preview
+  // route on the backend. Fee is charged ON TOP: the recipient receives the
+  // full amount and the wallet is debited amount + gasFee.
   async previewWithdrawFee(
     currency: Currency,
     network: Network,
     amount: string
   ): Promise<WithdrawFeePreview> {
-    return apiClient.get("/api/v1/wallet/withdraw/fee-preview", { currency, network, amount })
+    const backendNetwork = NETWORK_TO_BACKEND[network]
+    const res = await apiClient.get<{
+      success: boolean
+      data: { gasFee: number; gasFeeFormatted: string; feeCurrency: string; totalRequired: number }
+    }>("/api/v1/gas/withdrawal-fee/network", {
+      network: backendNetwork,
+      cryptocurrency: currency.toUpperCase(),
+      withdrawalAmount: amount,
+    })
+    return {
+      fee: res.data.gasFeeFormatted ?? String(res.data.gasFee),
+      netAmount: amount, // fee-on-top: recipient receives the full amount
+      estimatedArrival: "",
+    }
   },
 
   async withdraw(req: WithdrawRequest): Promise<{ transactionId: string }> {

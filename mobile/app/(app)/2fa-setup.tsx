@@ -53,10 +53,11 @@ export default function TwoFASetupScreen() {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiClient.post<{ qrCodeUrl: string; secret: string }>(
-        "/api/v1/auth/2fa/setup",
+      // Backend route is /users/2fa/setup and returns { qrCode, secret, otpauthUrl }
+      const res = await apiClient.post<{ qrCode: string; secret: string; otpauthUrl: string }>(
+        "/api/v1/users/2fa/setup",
       )
-      setQrUrl(res.qrCodeUrl)
+      setQrUrl(res.qrCode)
       setSecret(res.secret)
     } catch {
       setError("Failed to start 2FA setup. Please try again.")
@@ -68,7 +69,7 @@ export default function TwoFASetupScreen() {
   async function onVerify(data: VerifyForm) {
     setError(null)
     try {
-      await apiClient.post("/api/v1/auth/2fa/verify", { code: data.code })
+      await apiClient.post("/api/v1/users/2fa/verify", { code: data.code })
       setDone(true)
     } catch {
       setError("Invalid code. Try again.")

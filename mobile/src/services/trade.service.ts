@@ -54,7 +54,7 @@ export const tradeService = {
   },
 
   async getHistory(params?: { page?: number; limit?: number }): Promise<Trade[]> {
-    return apiClient.get("/api/v1/trades/history", params as Record<string, unknown>)
+    return apiClient.get("/api/v1/trades/completed", params as Record<string, unknown>)
   },
 
   async getTrade(id: string): Promise<Trade> {

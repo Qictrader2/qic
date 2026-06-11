@@ -43,7 +43,7 @@ export async function getPlatformConfig(): Promise<PlatformConfig> {
   if (inMemoryConfig && now - lastFetch < CONFIG_TTL_MS) return inMemoryConfig
 
   try {
-    const raw = await apiClient.get<Partial<PlatformConfig>>("/api/v1/config/public")
+    const raw = await apiClient.get<Partial<PlatformConfig>>("/api/v1/config")
     inMemoryConfig = { ...DEFAULT_CONFIG, ...raw }
     lastFetch = now
     await AsyncStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ config: inMemoryConfig, ts: now }))

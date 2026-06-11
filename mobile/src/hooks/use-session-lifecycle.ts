@@ -26,7 +26,7 @@ export function useSessionLifecycle() {
         emailVerified: boolean
         role: "user" | "admin" | "support" | "moderator" | null
         kycTier: number
-      }>("/api/v1/me")
+      }>("/api/v1/users/me")
       setUser({
         uid: user.uid,
         email: user.email,

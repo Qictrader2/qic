@@ -30,11 +30,41 @@ export default function FiatBalanceScreen() {
   const [displayCurrency, setDisplayCurrency] = useState<FiatCurrency>("ZAR")
   const [showEquivalents, setShowEquivalents] = useState(true)
 
+  // Parity note: there is no /wallets/fiat-equivalent endpoint. Like the web,
+  // fiat values are derived client-side: USD spot from GET /prices, and the
+  // USD->ZAR rate from GET /prices/fx (the backend's only fiat FX reference).
+  // Other display currencies have no backend rate source yet.
   const { data: fiatBalances } = useQuery({
-    queryKey: ["fiat-balances", displayCurrency],
+    queryKey: ["fiat-balances", displayCurrency, wallets?.length],
     queryFn: async (): Promise<FiatBalance[]> => {
-      const d = await apiClient.get<unknown>(`/api/v1/wallets/fiat-equivalent`, { currency: displayCurrency })
-      return Array.isArray(d) ? (d as FiatBalance[]) : []
+      const prices = await apiClient.get<Array<{ symbol: string; price: number; change24h: number }>>(
+        "/api/v1/prices",
+      )
+      const usdToFiat =
+        displayCurrency === "USD"
+          ? 1
+          : displayCurrency === "ZAR"
+            ? (await apiClient.get<{ usdZar: number }>("/api/v1/prices/fx")).usdZar
+            : null
+      if (usdToFiat === null) return []
+
+      const priceBySymbol = new Map(prices.map((p) => [p.symbol.toUpperCase(), p]))
+      let totalFiat = 0
+      let weightedChange = 0
+      for (const w of wallets ?? []) {
+        const spot = priceBySymbol.get(w.currency.toUpperCase())
+        if (!spot) continue
+        const value = parseFloat(w.balance) * spot.price * usdToFiat
+        totalFiat += value
+        weightedChange += spot.change24h * value
+      }
+      const changePercent = totalFiat > 0 ? weightedChange / totalFiat : 0
+      return [{
+        currency: displayCurrency,
+        balance: totalFiat.toFixed(2),
+        change24h: ((totalFiat * changePercent) / 100).toFixed(2),
+        changePercent: changePercent.toFixed(2),
+      }]
     },
     enabled: !!wallets?.length,
   })

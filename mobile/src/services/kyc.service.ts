@@ -14,6 +14,7 @@ export interface KycStatus {
 export interface KycSessionUrl {
   url: string
   sessionId: string
+  provider?: "didit" | "sumsub"
 }
 
 export const kycService = {
@@ -21,12 +22,16 @@ export const kycService = {
     return apiClient.get("/api/v1/kyc/status")
   },
 
+  // Backend exposes one provider-agnostic session endpoint (POST /kyc/session,
+  // empty body) that returns { provider: "didit", sessionId, url, vendorData }.
+  // The old /kyc/didit/start and /kyc/sumsub/start paths never existed; Sumsub
+  // is retired on the web (its token route 500s on prod).
   async startDiditSession(): Promise<KycSessionUrl> {
-    return apiClient.post("/api/v1/kyc/didit/start")
+    return apiClient.post("/api/v1/kyc/session", {})
   },
 
   async startSumsubSession(): Promise<KycSessionUrl> {
-    return apiClient.post("/api/v1/kyc/sumsub/start")
+    return apiClient.post("/api/v1/kyc/session", {})
   },
 
   async uploadDocument(formData: FormData): Promise<{ success: boolean }> {

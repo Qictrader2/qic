@@ -52,22 +52,21 @@ export async function registerForPushNotifications(): Promise<string | null> {
   return token.data
 }
 
+// KNOWN GAP (parity audit 2026-06-11): the backend has no
+// /notifications/register-device or /notifications/unregister-device routes —
+// push delivery is mobile-only and needs a backend device registry first.
+// These are explicit no-ops (with a dev warning) until that endpoint exists,
+// so login/logout flows don't fire requests that are guaranteed to 404.
 export async function syncPushToken(token: string): Promise<void> {
-  await apiClient.post("/api/v1/notifications/register-device", {
-    token,
-    platform: Platform.OS,
-  })
+  if (__DEV__) {
+    console.warn(
+      `[push] device token registration skipped — backend endpoint not implemented (token: ${token.slice(0, 12)}…)`,
+    )
+  }
 }
 
 export async function unregisterPushToken(): Promise<void> {
-  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID
-  const token = await Notifications.getExpoPushTokenAsync(
-    projectId ? { projectId } : undefined,
-  ).catch(() => null)
-
-  if (!token) return
-
-  await apiClient.post("/api/v1/notifications/unregister-device", {
-    token: token.data,
-  }).catch(() => {})
+  if (__DEV__) {
+    console.warn("[push] device token unregistration skipped — backend endpoint not implemented")
+  }
 }

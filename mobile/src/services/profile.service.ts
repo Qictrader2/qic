@@ -53,29 +53,29 @@ export interface AffiliateStats {
 
 export const profileService = {
   async getProfile(): Promise<UserProfile> {
-    return apiClient.get("/api/v1/me")
+    return apiClient.get("/api/v1/users/me")
   },
 
   async updateProfile(req: UpdateProfileRequest): Promise<UserProfile> {
-    return apiClient.patch("/api/v1/me", req)
+    return apiClient.patch("/api/v1/users/me", req)
   },
 
   async uploadAvatar(formData: FormData): Promise<{ avatarUrl: string }> {
-    return apiClient.upload("/api/v1/me/avatar", formData)
+    return apiClient.upload("/api/v1/users/me/avatar", formData)
   },
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    return apiClient.get("/api/v1/me/payment-methods")
+    return apiClient.get("/api/v1/payment-methods")
   },
 
   async addPaymentMethod(
     method: Omit<PaymentMethod, "id" | "createdAt">
   ): Promise<PaymentMethod> {
-    return apiClient.post("/api/v1/me/payment-methods", method)
+    return apiClient.post("/api/v1/payment-methods", method)
   },
 
   async deletePaymentMethod(id: string): Promise<{ success: boolean }> {
-    return apiClient.delete(`/api/v1/me/payment-methods/${id}`)
+    return apiClient.delete(`/api/v1/payment-methods/${id}`)
   },
 
   async getAffiliateStats(): Promise<AffiliateStats> {
@@ -87,6 +87,6 @@ export const profileService = {
     newPassword: string
     twoFactorCode: string
   }): Promise<{ success: boolean }> {
-    return apiClient.post("/api/v1/me/change-password", req)
+    return apiClient.post("/api/v1/users/password/change", req)
   },
 }

@@ -40,11 +40,11 @@ describe("kycService", () => {
     expect(result.status).toBe("approved")
   })
 
-  test("startDiditSession returns url and sessionId", async () => {
-    const expected = { url: "https://verify.didit.me/session/abc", sessionId: "abc" }
+  test("startDiditSession calls provider-agnostic /kyc/session and returns url + sessionId", async () => {
+    const expected = { provider: "didit", url: "https://verify.didit.me/session/abc", sessionId: "abc" }
     mockPost.mockResolvedValueOnce(expected)
     const result = await kycService.startDiditSession()
-    expect(mockPost).toHaveBeenCalledWith("/api/v1/kyc/didit/start")
+    expect(mockPost).toHaveBeenCalledWith("/api/v1/kyc/session", {})
     expect(result.url).toBe(expected.url)
     expect(result.sessionId).toBe("abc")
   })

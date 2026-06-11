@@ -94,7 +94,8 @@ export default function SecuritySettingsScreen() {
   })
 
   const { mutate: revokeAllSessions, isPending: revokingAll } = useMutation({
-    mutationFn: () => apiClient.delete<void>("/api/v1/auth/sessions/all"),
+    // Backend has no DELETE /auth/sessions/all — revoking every session is POST /auth/logout-all
+    mutationFn: () => apiClient.post<void>("/api/v1/auth/logout-all"),
     onSuccess: () => logout(),
     onError: () => Alert.alert("Error", "Failed to revoke all sessions."),
   })

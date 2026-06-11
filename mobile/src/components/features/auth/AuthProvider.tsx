@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailVerified: boolean
         role: "user" | "admin" | "support" | "moderator" | null
         kycTier: number
-      }>("/api/v1/me")
+      }>("/api/v1/users/me")
 
       await login(accessToken, refreshToken, {
         uid: user.uid,

@@ -67,8 +67,10 @@ export default function NotificationsSettingsScreen() {
     queryFn: () => apiClient.get("/api/v1/notifications/preferences"),
   })
   const { mutate: updatePref } = useMutation({
+    // GET lives at /notifications/preferences but updates go through
+    // PATCH /users/me/notifications (the only prefs-write route on the backend)
     mutationFn: (updates: Partial<NotifPrefs>) =>
-      apiClient.patch("/api/v1/notifications/preferences", updates),
+      apiClient.patch("/api/v1/users/me/notifications", updates),
   })
   const [local, setLocal] = useState<Partial<NotifPrefs>>({})
 

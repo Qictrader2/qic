@@ -77,14 +77,7 @@ export function trackEvent(event: AnalyticsEvent) {
   // Add breadcrumb to Sentry for context on crashes
   SentryRN.addBreadcrumb({ category: "analytics", message: event.name, data: event, level: "info" })
 
-  // Fire to backend analytics endpoint (mirrors web's GA4 measurement protocol relay)
-  apiClient
-    .post("/api/v1/analytics/event", {
-      ...event,
-      platform: "mobile",
-      ts: Date.now(),
-    })
-    .catch(() => {
-      // Analytics failures must never crash the app
-    })
+  // KNOWN GAP (parity audit 2026-06-11): the backend has no /analytics/event
+  // route (web uses GA4/GTM directly, not a backend relay). Events are kept as
+  // Sentry breadcrumbs only until a backend endpoint or mobile GA4 SDK lands.
 }

@@ -66,7 +66,7 @@ export const marketService = {
   },
 
   async getMyOffers(): Promise<Offer[]> {
-    return apiClient.get("/api/v1/offers/mine")
+    return apiClient.get("/api/v1/offers/me")
   },
 
   async createOffer(req: CreateOfferRequest): Promise<Offer> {
