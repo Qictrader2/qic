@@ -23,8 +23,8 @@ REPEAT:
   1. PICK TICKET     -> Fetch top card from Trello "To Do" list
   2. /ticket FLOW    -> Implement (read .claude/commands/ticket.md and follow it)
   3. /temper FLOW    -> Review   (read .claude/commands/temper.md and follow it)
-  4. /git-commit     -> Commit   (read .claude/commands/git-commit.md and follow it)
-  5. /golive FLOW    -> Deploy   (read .claude/commands/golive.md and follow it)
+  4. /git-commit     -> Commit on a feature branch
+  5. OPEN PR         -> Push branch + open PR (Heroku review app is auto-created)
   6. LOG RESULT      -> Append to ticket_summary.md
   7. NEXT TICKET     -> Go back to step 1
 ```
@@ -111,18 +111,21 @@ Read `.claude/commands/git-commit.md` and follow ALL steps:
 
 ---
 
-## STEP 5: DEPLOY — Follow /golive
+## STEP 5: OPEN PR (review app) — see DEPLOYMENT.md
 
-Read `.claude/commands/golive.md` and follow ALL steps:
+We do **not** deploy from the pipeline. Each ticket ends as a **PR** that a human
+reviews and merges. Deploys are automatic: merge → staging, then a gated promote
+→ production (see repo-root `DEPLOYMENT.md`).
 
-1. Deploy backend to Heroku (if backend changes): `cd qictrader-backend-rs && git pull --rebase origin main && git push heroku main`
-2. Deploy frontend via Vercel CLI (if frontend changes — **MUST pull first**):
-   ```bash
-   cd frontend && git pull --rebase origin main && bun run build && vercel --prod --yes --scope qictraders-projects
-   ```
-3. Move Trello card to Dev Complete:
+1. Make sure work is on a **feature branch** in the relevant submodule(s), built
+   clean (`bun run build` / `cargo build`), then `git pull --rebase origin main`
+   and push the branch.
+2. Open a PR (`gh pr create --fill`). Opening it auto-creates a **Heroku review
+   app** seeded from staging — note its URL in the ticket summary.
+3. Move the Trello card to Dev Complete:
    `PUT https://api.trello.com/1/cards/{cardId}?key=...&token=...&idList=69adb791e90fb428655d9ad3`
-4. Clean up: remove `.current-ticket` and plan file
+4. Clean up: remove `.current-ticket` and plan file. Do **not** merge or promote —
+   that is a human-gated step.
 
 ---
 
@@ -134,7 +137,7 @@ Append to `ticket_summary.md`:
 ---
 ## [TICKET-LABEL]: [Card Name]
 **Date:** [today]
-**Result:** DEPLOYED / PARKED
+**Result:** PR OPENED / PARKED
 **Changes:** [1-line summary of what was implemented]
 ```
 
@@ -167,6 +170,6 @@ Append to `ticket_summary.md`:
 4. **Always verify auth** — every handler must check resource ownership
 5. **Follow the intent doc** when AS BUILT diverges
 6. **Log everything** — both successes and parked tickets
-7. **One ticket at a time** — finish (deploy or park) before starting the next
-8. **Deploy via CLI** — frontend uses `cd frontend && vercel --prod --yes --scope qictraders-projects`
+7. **One ticket at a time** — finish (PR opened or park) before starting the next
+8. **Never deploy from the pipeline** — each ticket ends as a PR; humans merge and promote (see `DEPLOYMENT.md`)
 9. **Keep looping** — after each ticket, immediately fetch the next one from To Do

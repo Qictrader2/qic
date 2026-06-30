@@ -53,30 +53,33 @@ When changing entity lifecycle, role guards, ledger effects, fee behavior, timeo
 
 ## Deployment
 
-**Full deployment guide: [`DEPLOYMENT.md`](DEPLOYMENT.md)**
+**Full deployment guide: [`DEPLOYMENT.md`](DEPLOYMENT.md) — read it before any deploy work.**
 
-Key points:
-- `main` is the source of truth — all developers commit to `main`
-- Production deploys only from **tagged releases** verified on staging
-- Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes)
-- `git pull --rebase origin main` is **mandatory** before every deploy
+Everything is on **Heroku** (no Vercel). Deploys are **PR-driven and automatic** —
+you never run a deploy command by hand:
 
-For monorepo commits and deploys use `./commit-all.sh`:
+- Branch → open a PR → a **Heroku review app** is created (seeded from staging).
+- Merge to `main` → **staging auto-deploys** (`staging.qictrader.com` / backend staging).
+- **Promote** the verified staging release in the Heroku pipeline → **production**
+  (`www.qictrader.com` / `qictrader-backend-rs`). Production is manual + gated.
+
+Rules:
+- All changes go through a **PR**. Never push directly to `main`. Never force-push.
+- `git pull --rebase origin main` is **mandatory** before you start and before you push.
+- Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes).
+- Backend is **Heroku buildpack only** (Heroku compiles server-side). The old local
+  cross-compile + Slug-API path (`scripts/fast-deploy-backend.sh`) was **removed**
+  after the 2026-06-15 prod outage — do not reintroduce it.
+
+`./commit-all.sh` is a **commit/push helper only** (it never deploys):
 
 ```
-./commit-all.sh "message"                  # commit all submodules + update root
-./commit-all.sh "message" --push           # commit + push all
-./commit-all.sh "message" --deploy         # commit + push + deploy both (fast: cross-compile + Slug API)
-./commit-all.sh "message" --buildpack      # commit + push + deploy both (slow: git push heroku main)
-./commit-all.sh "message" --frontend-only  # frontend submodule only
-./commit-all.sh "message" --backend-only   # backend submodule only
-./commit-all.sh "message" --dry-run        # preview without making changes
+./commit-all.sh "TICKET-ID: message"                 # commit submodules + update root pointer
+./commit-all.sh "TICKET-ID: message" --push          # commit + push current branch(es)
+./commit-all.sh "TICKET-ID: message" --frontend-only  # frontend submodule only
+./commit-all.sh "TICKET-ID: message" --backend-only   # backend submodule only
+./commit-all.sh "TICKET-ID: message" --dry-run        # preview without making changes
 ```
-
-Deploy targets:
-- Frontend → `vercel --prod --yes --scope qictraders-projects` from `frontend/` dir
-- Backend (default) → cross-compile + Heroku Slug API via `scripts/fast-deploy-backend.sh` (~30s deploy)
-- Backend (--buildpack) → `git push heroku main` (Heroku buildpack, ~4min deploy)
 
 ---
 
@@ -251,30 +254,10 @@ Multiple agents create migrations concurrently. **Before creating any migration:
 
 Always use `bun` (not npm/yarn/pnpm). Run `bun run build` to verify before pushing.
 
-### Vercel Deployment Settings (DO NOT CHANGE)
+### Hosting (Heroku)
 
-The Vercel dashboard project settings **must** match `frontend/vercel.json`. If they drift, builds silently fail with 0ms build time because Vercel runs nothing.
-
-Required dashboard settings (project: `qictraders-projects/frontend`):
-- **Framework Preset**: Next.js
-- **Install Command**: `bun install`
-- **Build Command**: `bun run build`
-- **Output Directory**: Next.js default (leave blank)
-
-If builds start failing, verify with:
-```bash
-cd frontend && npx vercel project inspect
-```
-
-If settings are wrong, fix via API:
-```bash
-TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.local/share/com.vercel.cli/auth.json'))['token'])")
-curl -X PATCH "https://api.vercel.com/v9/projects/prj_yQHTj7qBt9hKHI95nEcCOSywetlp" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"framework":"nextjs","installCommand":"bun install","buildCommand":"bun run build","outputDirectory":null}'
-```
-
-Then sync locally: `cd frontend && npx vercel pull --yes`
-
-**Never** use `vercel pull` to initialize a new project without verifying that the pulled settings match `vercel.json` — Vercel defaults to "Other" framework with empty commands.
+The frontend runs on Heroku as a Next.js **standalone** server (`output: "standalone"`
+in `next.config.ts`, booted via the `Procfile`; static assets copied by the
+`heroku-postbuild` script). It is built from the `Qictrader2/Frontend` repo via the
+`qictrader-frontend` Heroku pipeline. There is **no Vercel** — see
+[`DEPLOYMENT.md`](DEPLOYMENT.md) for the full deploy process and Config Var setup.

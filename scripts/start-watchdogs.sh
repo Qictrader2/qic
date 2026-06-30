@@ -1,24 +1,21 @@
 #!/usr/bin/env bash
-# start-watchdogs.sh — Launch both watchdogs in the background.
+# start-watchdogs.sh — Launch the migration watchdog in the background.
 #
 # Usage:
-#   ./scripts/start-watchdogs.sh          # start both
-#   ./scripts/start-watchdogs.sh stop     # stop both
+#   ./scripts/start-watchdogs.sh          # start
+#   ./scripts/start-watchdogs.sh stop     # stop
 #   ./scripts/start-watchdogs.sh status   # check if running
 #
 # Logs:
-#   /tmp/vercel-watchdog.log
 #   /tmp/migration-watchdog.log
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-VERCEL_PID_FILE="/tmp/vercel-watchdog.pid"
 MIG_PID_FILE="/tmp/migration-watchdog.pid"
-VERCEL_LOG="/tmp/vercel-watchdog.log"
 MIG_LOG="/tmp/migration-watchdog.log"
 
 stop_watchdogs() {
-  for pidfile in "$VERCEL_PID_FILE" "$MIG_PID_FILE"; do
+  for pidfile in "$MIG_PID_FILE"; do
     if [ -f "$pidfile" ]; then
       pid=$(cat "$pidfile")
       if kill -0 "$pid" 2>/dev/null; then
@@ -31,7 +28,7 @@ stop_watchdogs() {
 }
 
 status_watchdogs() {
-  for name in vercel-watchdog migration-watchdog; do
+  for name in migration-watchdog; do
     pidfile="/tmp/${name}.pid"
     if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
       echo "$name: RUNNING (PID $(cat "$pidfile"))"
@@ -53,9 +50,6 @@ case "${1:-start}" in
     stop_watchdogs
 
     echo "Starting watchdogs..."
-    nohup "$SCRIPT_DIR/vercel-watchdog.sh" > "$VERCEL_LOG" 2>&1 &
-    echo "  vercel-watchdog:    PID $! -> $VERCEL_LOG"
-
     nohup "$SCRIPT_DIR/migration-watchdog.sh" > "$MIG_LOG" 2>&1 &
     echo "  migration-watchdog: PID $! -> $MIG_LOG"
 

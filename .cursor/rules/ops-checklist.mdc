@@ -1,0 +1,25 @@
+---
+description: Ops folder checklist — must be consulted on every ticket and deploy
+alwaysApply: true
+---
+
+# Ops Checklist
+
+Before working on any ticket or deploying, **read these**:
+
+- `ops/trello.md` — Trello API credentials, board IDs, column workflow
+- `DEPLOYMENT.md` (repo root) — the single source of truth for the deploy flow
+
+## On Every Ticket
+
+1. Read `ops/trello.md` to know the board, lists, and how to move cards via API
+2. Read `DEPLOYMENT.md` to know the deploy flow and rules
+3. After completing a ticket, move the Trello card to the appropriate column using the Trello API
+
+## On Every Deploy
+
+1. Follow `DEPLOYMENT.md` exactly — work on a branch, open a PR (review app),
+   merge to `main` (staging auto-deploys), then promote to production
+2. Pull latest before pushing (`git pull --rebase origin main`)
+3. Update Trello board: move deployed cards to "Testing in Progress"
+4. Never promote to production without explicit JP confirmation

@@ -1,0 +1,62 @@
+---
+description: Backend deploys to Heroku via the pipeline (buildpack); promote to prod, never cross-compile
+alwaysApply: true
+---
+
+# Heroku: Backend Deploy
+
+The Rust backend (`qictrader-backend-rs`) is built by Heroku's **buildpack**
+(Heroku compiles server-side, ~2–3 min). There is **no local cross-compile /
+Heroku Slug-API path**. The full process lives in the repo-root **`DEPLOYMENT.md`** —
+this rule captures the hard constraints.
+
+The old `scripts/fast-deploy-backend.sh` (local `cargo zigbuild` cross-compile +
+Slug API) was **removed on 2026-06-15** after it crash-looped production. Do **not**
+recreate it or reach for `cargo zigbuild`, `cargo-zigbuild`, or the Heroku Slug API.
+
+## How deploys happen (PR-driven, automatic)
+
+- Open a PR on `Qictrader2/qictrader-backend-rs` → a **review app** is created
+  (Postgres seeded from a staging copy; see DEPLOYMENT.md §5).
+- Merge to `main` → **staging auto-deploys** (`qictrader-backend-staging`).
+- **Promote** the verified staging release in the `qictrader-backend` pipeline →
+  production (`qictrader-backend-rs`). Promotion ships the exact staging slug.
+
+```bash
+# Production = promote the verified staging release (JP sign-off required)
+heroku pipelines:promote -a qictrader-backend-staging
+```
+
+> Manual `git push heroku-staging main` is only an interim fallback if pipeline
+> auto-deploy is unavailable. Never `git push` a plain `main` checkout to the
+> production remote; production is always a **promotion** of verified staging.
+> `git pull --rebase origin main` is mandatory before any push.
+
+## Verify after every deploy
+
+```bash
+heroku releases -a <app> -n 1
+curl -sS -o /dev/null -w '%{http_code}\n' https://<app-host>/health   # expect 200
+heroku logs -a <app> -n 100 | grep -iE 'migrat|panic|Error:|crashed'
+```
+
+## Migrations run at boot — do not break the boot path
+
+SQLx migrations run on startup; a failing migration crash-loops the dyno and
+takes the service down. Lessons from the 2026-06-15 outage:
+
+1. **`ledger_entries` is append-only** (DB trigger). A migration that `UPDATE`s
+   historical ledger rows is rejected and crash-loops boot. Never mutate history
+   in a migration — post a compensating entry or filter in the reader.
+2. **Rollback can't fix an applied-but-missing migration.** Once a migration is
+   recorded in `_sqlx_migrations`, an older slug lacking that file refuses to
+   boot ("previously applied but is missing in the resolved migrations"). For
+   migration failures, **fix-forward** (make the bad migration a safe no-op and
+   redeploy) rather than rolling back.
+
+## Do not
+
+- Do not recreate `scripts/fast-deploy-backend.sh` or any local cross-compile.
+- Do not deploy the backend via the Heroku Slug API.
+- Do not `git push heroku main` from a plain `main` checkout for production — promote instead.
+- Do not deploy without pulling first, or to prod without JP confirmation.

@@ -44,28 +44,30 @@ When changing entity lifecycle, role guards, ledger effects, fee behavior, timeo
 
 ## Deployment
 
-**Full deployment guide: [`DEPLOYMENT.md`](DEPLOYMENT.md)**
+**Full deployment guide: [`DEPLOYMENT.md`](DEPLOYMENT.md) — read it before any deploy work.**
 
-Key points:
-- `main` is the source of truth — all developers commit to `main`
-- Production deploys only from **tagged releases** verified on staging
-- Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes)
-- `git pull --rebase origin main` is **mandatory** before every deploy
+Everything is on **Heroku** (no Vercel). Deploys are **PR-driven and automatic** —
+you never run a deploy command by hand:
 
-For monorepo commits and deploys use `./commit-all.sh`:
+- Branch → open a PR → a **Heroku review app** is created (seeded from staging).
+- Merge to `main` → **staging auto-deploys**.
+- **Promote** the verified staging release in the Heroku pipeline → **production**
+  (manual + gated; production needs JP sign-off).
+
+Rules:
+- All changes go through a **PR**. Never push directly to `main`. Never force-push.
+- `git pull --rebase origin main` is **mandatory** before you start and before you push.
+- Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes).
+
+`./commit-all.sh` is a **commit/push helper only** (it never deploys):
 
 ```
-./commit-all.sh "message"                  # commit all submodules + update root
-./commit-all.sh "message" --push           # commit + push all
-./commit-all.sh "message" --deploy         # commit + push + deploy both (Vercel + Heroku)
-./commit-all.sh "message" --frontend-only  # frontend submodule only
-./commit-all.sh "message" --backend-only   # backend submodule only
-./commit-all.sh "message" --dry-run        # preview without making changes
+./commit-all.sh "TICKET-ID: message"                 # commit submodules + update root pointer
+./commit-all.sh "TICKET-ID: message" --push          # commit + push current branch(es)
+./commit-all.sh "TICKET-ID: message" --frontend-only  # frontend submodule only
+./commit-all.sh "TICKET-ID: message" --backend-only   # backend submodule only
+./commit-all.sh "TICKET-ID: message" --dry-run        # preview without making changes
 ```
-
-Deploy targets:
-- Frontend → `vercel --prod --yes --scope qictraders-projects` from `frontend/` dir
-- Backend → `git push heroku main` (Heroku app: `qictrader-backend-rs`)
 
 ---
 
