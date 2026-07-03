@@ -67,6 +67,10 @@ Rules:
 - All changes go through a **PR**. Never push directly to `main`. Never force-push.
 - `git pull --rebase origin main` is **mandatory** before you start and before you push.
 - Commit messages follow: `TICKET-ID: Short description` (no emoji prefixes).
+- GitHub text (PR titles, PR descriptions, PR/issue comments, review comments) is
+  written in the **first person** ("I fixed the header alignment", not "this PR
+  fixes" or "Marcello flagged") and **never contains em dashes**. Use plain
+  sentences, commas, or parentheses instead.
 - Backend is **Heroku buildpack only** (Heroku compiles server-side). The old local
   cross-compile + Slug-API path (`scripts/fast-deploy-backend.sh`) was **removed**
   after the 2026-06-15 prod outage — do not reintroduce it.
