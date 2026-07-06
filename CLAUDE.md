@@ -14,6 +14,10 @@ QIC Trader is a crypto P2P trading platform. Two submodules:
 
 Any implementation that contradicts the intent document is wrong. If the AS BUILT diverges from intent, flag it — don't silently perpetuate the divergence.
 
+## Behavioral patterns
+
+- **HARC** (Hold → Alert → Resolve-or-Cancel): the canonical way to *gracefully refuse* a user action that cannot complete right now (treasury shortage, reserve-floor breach, broadcast failure, reserve-read error). Park it `Pending` with a `hold_reason`, alert admins (socket + email), then resume within the window or auto-cancel (balance restored, user notified gently). Internal status stays honest (`Failed`); user copy stays soft ("cancelled, balance restored") — no `Cancelled` enum variant. Full spec: `qictrader-backend-rs/docs/design/patterns/HARC.md`. When you need "refuse this action," HARC it — don't invent a new flow.
+
 ## Design Doc Interview Questionnaire
 
 When seeding or updating the intended design doc for an entity (`qictrader-backend-rs/docs/design/{entity}.md`), run **one interview session per entity** and ask the assigned dev exactly these questions, then write the answers into the entity doc using the structured schema in `docs/design/README.md`:
