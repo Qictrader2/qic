@@ -150,12 +150,28 @@ check(
 
 // ── deep links ──────────────────────────────────────────────────────────────
 
+const PRODUCTION_HOST = "www.qictrader.com";
+// Exact hosts only. A wildcard entry such as `*.qictrader.com` would hand every
+// subdomain the right to open the app, so the allowlist is enumerated rather
+// than pattern-matched, and anything outside it fails below.
+const ALLOWED_DEEP_LINK_HOSTS = new Set([PRODUCTION_HOST, "staging.qictrader.com"]);
+
 const filters = app.android.intentFilters ?? [];
 const hosts = filters.flatMap((f) => (f.data ?? []).map((d) => d.host));
+
 check(
   "production host must be registered for deep links",
-  hosts.includes("www.qictrader.com"),
+  hosts.some((h) => h === PRODUCTION_HOST),
   `registered hosts: ${hosts.join(", ") || "none"}`
+);
+
+const unexpectedHosts = hosts.filter((h) => !ALLOWED_DEEP_LINK_HOSTS.has(h));
+check(
+  "every deep-link host must be an exact, allowlisted hostname",
+  unexpectedHosts.length === 0,
+  `unexpected host(s): ${unexpectedHosts.join(", ")}. Android matches intent-filter ` +
+    "hosts as patterns, so a wildcard or a lookalike domain lets a host we do not " +
+    "control open the app and receive the link. List exact hostnames only."
 );
 
 // `autoVerify: true` without a served assetlinks.json leaves links opening in
