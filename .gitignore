@@ -15,6 +15,10 @@ scripts/.vercel-deploy-hook
 # noisy and machine-specific — don't push it to origin.
 ops/prod-deploys.log
 
+# QIC-631: the on-chain cost backfill runbook stays a local operator
+# document — it is not a shipping artifact and never goes to origin.
+ops/onchain-cost-backfill.md
+
 # Dependencies and build caches
 node_modules/
 .DS_Store
