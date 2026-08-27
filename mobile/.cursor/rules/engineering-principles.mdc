@@ -1,0 +1,105 @@
+---
+description: Core engineering principles for QicTrader mobile (React Native + TypeScript)
+alwaysApply: true
+---
+
+# Engineering Principles — Mobile
+
+Write code that is correct by construction. Prefer the type-checker catching bugs over tests over humans.
+
+These principles are carried from the main monorepo's `engineering-principles.mdc` and adapted for the RN / TypeScript-only context.
+
+## Types First
+
+- Define or update types/interfaces BEFORE writing logic
+- Use enums/discriminated unions for domain concepts (status, currency, payment type) — never raw strings
+- Make invalid states unrepresentable: if it type-checks, it's valid
+- Exhaustive matching — no catch-all `default:` that silently swallows new variants
+- Use `never` returns in default branches of exhaustive matches to force compile errors when enums grow
+
+```ts
+function statusColor(s: TradeStatus): string {
+  switch (s) {
+    case 'initiated': return 'blue';
+    case 'funded':    return 'amber';
+    case 'completed': return 'green';
+    case 'cancelled': return 'gray';
+    case 'disputed':  return 'red';
+    default:
+      const _exhaustive: never = s;
+      return _exhaustive;
+  }
+}
+```
+
+## Error Handling
+
+- Every error path must be explicitly handled — no swallowing errors
+- Every `await fetch()` and every Promise chain handles both success and error
+- No empty `catch {}` — every catch does something (log, surface, rethrow)
+- Design errors as typed discriminated unions, not strings:
+
+```ts
+type ApiError =
+  | { kind: 'network' }
+  | { kind: 'unauthorized' }
+  | { kind: 'validation', fields: Record<string, string> }
+  | { kind: 'server',  status: number, message: string };
+```
+
+- All errors get logged to Sentry with breadcrumbs
+- User-facing errors are friendly, never raw stack traces
+
+## Auth & Security
+
+- Every screen loading user-specific data MUST verify the user is authorized for THAT resource — not just authenticated
+- Token storage: `expo-secure-store` ONLY. Never `AsyncStorage`. Never a wrapper. See `no-asyncstorage-for-secrets.mdc`.
+- Biometric re-auth required before: withdraw, change password, disable 2FA, delete account
+- Cert pinning enabled in production builds (MOBILE-SEC-001)
+- Screen capture protection on sensitive screens (MOBILE-SEC-002)
+
+## Frontend ↔ Backend Contract
+
+The backend (`qictrader-backend-rs`) uses `#[serde(rename_all = "camelCase")]` — Rust `snake_case` fields become `camelCase` in JSON.
+
+- When sending data TO the backend, map your variable names to the backend's expected `camelCase` names (e.g. `type` → `offerType`, `type` → `paymentType`)
+- When receiving data FROM the backend, map `camelCase` back to local names
+- Always check the backend Rust struct definition before writing API calls:
+  - Models: `/Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/models/`
+  - Handlers: `/Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/api/`
+- Backend list endpoints may return flat arrays; don't assume `{ items: [...], total }` wrappers
+
+## Pure Logic, Side Effects at the Edges
+
+- Core domain logic (validators, formatters, fee calc) should be pure and testable without IO
+- Push side effects (API calls, native modules, navigation) to the boundaries (screens, hooks)
+- Immutable by default
+- Avoid `let mut`-style assignments in business logic — use `const` and derive
+
+## Testing
+
+- Tests make real assertions about specific values — not just "did not crash"
+- NEVER `not.toBe(404)` — assert `toBe(200)`
+- NEVER `toBeDefined()` alone — assert the expected value
+- NEVER `if (!res.ok) { return }` — that's a silent pass
+- Empty `catch {}` in tests is forbidden
+- E2E (Maestro) > component tests (RNTL) > unit tests
+- Tests must be independent; no shared mutable state between `it()` blocks
+
+## Design System
+
+All UI work follows `DESIGN.md` (synced from the main monorepo via `scripts/sync-from-web.sh`):
+
+- Poppins font only (weights 400–700). No other font families.
+- Brand blue `#00A3F6` via the design-token constant `colors.brand`. No hardcoded hex.
+- Spacing, radius, shadow scales from `design-tokens.json` — no magic numbers in components
+- NativeWind classes map to the same Tailwind tokens as web — `bg-brand`, `text-foreground`, `rounded-lg` work identically
+- Check the anti-patterns section in `DESIGN.md` before writing any markup
+
+## Commit Discipline
+
+- One logical change per commit
+- Commit message: `MOBILE-XXX-NNN: short summary` matching the Trello ticket
+- Build passes before pushing — no "fix build" follow-up chains
+- Never include secrets in commits
+- Run pre-push secret-scan and `let _ =` ban scan (see `AGENTS.md`)

@@ -1,0 +1,391 @@
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+} from "react-native"
+import { useRouter } from "expo-router"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { LineChart } from "react-native-chart-kit"
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Coins } from "lucide-react-native"
+import { useWallets } from "@/src/hooks/api/use-wallet"
+import { apiClient } from "@/src/lib/api/client"
+import type { Wallet } from "@/src/services/wallet.service"
+
+const SCREEN_WIDTH = Dimensions.get("window").width
+
+const CURRENCY_COLORS: Record<string, string> = {
+  BTC: "#F7931A",
+  ETH: "#627EEA",
+  SOL: "#9945FF",
+  USDT: "#26A17B",
+  USDC: "#2775CA",
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  BTC: "₿",
+  ETH: "Ξ",
+  SOL: "◎",
+  USDT: "₮",
+  USDC: "$",
+}
+
+interface PriceHistory {
+  currency: string
+  prices: number[] // last 7 data points
+  change24h: number
+  currentPrice: number
+}
+
+// Same symbol -> CoinGecko id map the web uses (prices-api.ts)
+const COINGECKO_IDS: Record<string, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  SOL: "solana",
+  USDT: "tether",
+  USDC: "usd-coin",
+  TRX: "tron",
+}
+
+function usePriceHistory(currency: string, enabled: boolean) {
+  const coinId = COINGECKO_IDS[currency]
+  return useQuery({
+    queryKey: ["price-history", currency],
+    // Backend route (same as web): GET /prices/{coingecko_id}/history?days=7&mode=line
+    queryFn: async (): Promise<PriceHistory> => {
+      const res = await apiClient.get<{
+        coinId: string
+        prices: Array<{ timestamp: number; price: number }>
+      }>(`/api/v1/prices/${coinId}/history?days=7&mode=line`)
+      const series = res.prices.map((p) => p.price)
+      const first = series[0] ?? 0
+      const last = series[series.length - 1] ?? 0
+      return {
+        currency,
+        prices: series,
+        change24h: first > 0 ? ((last - first) / first) * 100 : 0,
+        currentPrice: last,
+      }
+    },
+    enabled: enabled && !!coinId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+  })
+}
+
+function MiniSparkline({ prices, color }: { prices: number[]; color: string }) {
+  if (prices.length < 2) return null
+  return (
+    <LineChart
+      data={{ labels: [], datasets: [{ data: prices, color: () => color, strokeWidth: 2 }] }}
+      width={80}
+      height={32}
+      withDots={false}
+      withInnerLines={false}
+      withOuterLines={false}
+      withHorizontalLabels={false}
+      withVerticalLabels={false}
+      chartConfig={{
+        backgroundGradientFrom: "transparent",
+        backgroundGradientTo: "transparent",
+        color: () => color,
+        strokeWidth: 2,
+      }}
+      bezier
+      style={{ paddingRight: 0, paddingTop: 0 }}
+    />
+  )
+}
+
+function WalletCard({ wallet, onDeposit, onWithdraw }: {
+  wallet: Wallet
+  onDeposit: () => void
+  onWithdraw: () => void
+}) {
+  const color = CURRENCY_COLORS[wallet.currency] ?? "#00A3F6"
+  const symbol = CURRENCY_SYMBOLS[wallet.currency] ?? wallet.currency
+  const { data: history } = usePriceHistory(wallet.currency, true)
+
+  return (
+    <View className="rounded-xl bg-surface dark:bg-surface-dark p-4 mb-3 border border-border dark:border-border-dark">
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-2">
+          <View
+            className="h-10 w-10 rounded-full items-center justify-center"
+            style={{ backgroundColor: color + "20" }}
+          >
+            <Text className="text-base font-bold" style={{ color }}>{symbol}</Text>
+          </View>
+          <View>
+            <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
+              {wallet.currency}
+            </Text>
+            <Text className="text-xs text-muted dark:text-muted-dark capitalize">
+              {wallet.network}
+            </Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center gap-3">
+          {history?.prices && history.prices.length >= 2 ? (
+            <View className="items-end">
+              <MiniSparkline prices={history.prices} color={history.change24h >= 0 ? "#10B981" : "#EF4444"} />
+              <Text
+                className="text-xs font-medium"
+                style={{ color: history.change24h >= 0 ? "#10B981" : "#EF4444" }}
+              >
+                {history.change24h >= 0 ? "+" : ""}{history.change24h.toFixed(2)}%
+              </Text>
+            </View>
+          ) : null}
+          <View className="items-end">
+            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+              {parseFloat(wallet.availableBalance).toFixed(8).replace(/\.?0+$/, "")}
+            </Text>
+            {parseFloat(wallet.lockedBalance) > 0 ? (
+              <Text className="text-xs text-warning">
+                {wallet.lockedBalance} locked
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <View className="flex-row gap-2">
+        <TouchableOpacity
+          onPress={onDeposit}
+          className="flex-1 rounded-lg bg-brand-bg py-2.5 items-center"
+          activeOpacity={0.8}
+        >
+          <Text className="text-sm font-medium text-brand">Deposit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onWithdraw}
+          className="flex-1 rounded-lg border border-border dark:border-border-dark py-2.5 items-center"
+          activeOpacity={0.8}
+        >
+          <Text className="text-sm font-medium text-foreground dark:text-foreground-dark">
+            Withdraw
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}
+
+function QuickAction({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: typeof Coins
+  label: string
+  onPress?: () => void
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={!onPress}
+      className="flex-1 py-3 items-center"
+      activeOpacity={0.7}
+    >
+      <View className="w-10 h-10 rounded-full bg-brand/10 items-center justify-center mb-1">
+        <Icon size={18} color="#00A3F6" />
+      </View>
+      <Text className="text-xs font-medium text-foreground dark:text-foreground-dark">{label}</Text>
+    </TouchableOpacity>
+  )
+}
+
+/**
+ * Portfolio total value card.
+ *
+ * Parity note: the backend has no portfolio-history (value-over-time)
+ * endpoint and the web app has no such chart either — web derives a
+ * snapshot from balances x spot prices. We do the same here using
+ * GET /prices (the same source web's PriceCards use).
+ */
+function PortfolioChart({ wallets }: { wallets: Wallet[] }) {
+  const { data: prices, isLoading } = useQuery({
+    queryKey: ["spot-prices"],
+    queryFn: () =>
+      apiClient.get<Array<{ symbol: string; price: number; change24h: number }>>("/api/v1/prices"),
+    staleTime: 60_000,
+  })
+
+  if (isLoading) {
+    return (
+      <View className="h-36 items-center justify-center">
+        <ActivityIndicator color="#00A3F6" />
+      </View>
+    )
+  }
+
+  if (!prices?.length || !wallets.length) return null
+
+  const priceBySymbol = new Map(prices.map((p) => [p.symbol.toUpperCase(), p]))
+  const holdings = wallets.map((w) => {
+    const spot = priceBySymbol.get(w.currency.toUpperCase())
+    const value = spot ? parseFloat(w.balance) * spot.price : 0
+    return { value, change24h: spot?.change24h ?? 0 }
+  })
+  const totalUsd = holdings.reduce((sum, h) => sum + h.value, 0)
+  // Value-weighted 24h change across holdings
+  const change24h = totalUsd > 0
+    ? holdings.reduce((sum, h) => sum + h.change24h * h.value, 0) / totalUsd
+    : 0
+  const chartColor = change24h >= 0 ? "#10B981" : "#EF4444"
+
+  return (
+    <View className="rounded-xl bg-surface dark:bg-surface-dark border border-border dark:border-border-dark p-4 mb-4">
+      <View className="flex-row justify-between items-start">
+        <View>
+          <Text className="text-xs text-muted dark:text-muted-dark">Portfolio value</Text>
+          <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+            ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Text>
+        </View>
+        <View
+          className="px-2 py-1 rounded-full"
+          style={{ backgroundColor: chartColor + "20" }}
+        >
+          <Text className="text-xs font-semibold" style={{ color: chartColor }}>
+            {change24h >= 0 ? "+" : ""}{change24h.toFixed(2)}% 24h
+          </Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+export default function WalletScreen() {
+  const router = useRouter()
+  const { data: wallets, isLoading, error, refetch, isRefetching } = useWallets()
+
+  const firstWallet = wallets?.[0]
+
+  return (
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+      <View className="px-4 pt-2 pb-3 flex-row items-center justify-between">
+        <View>
+          <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">Wallet</Text>
+          <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+            Balances and transactions
+          </Text>
+        </View>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/fiat-balance")}
+            className="px-3 py-1.5 rounded-lg bg-brand-bg"
+            activeOpacity={0.85}
+          >
+            <Text className="text-xs font-medium text-brand">Fiat ≈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/transactions")}
+            className="w-10 h-10 rounded-full bg-surface dark:bg-card-dark border border-border dark:border-border-dark items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <History size={16} color="#64748B" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Quick actions row */}
+      <View className="px-4 mb-3">
+        <View className="flex-row gap-2 bg-surface dark:bg-card-dark rounded-2xl p-2 border border-border dark:border-border-dark">
+          <QuickAction
+            icon={ArrowDownToLine}
+            label="Deposit"
+            onPress={() =>
+              firstWallet
+                ? router.push({
+                    pathname: "/(app)/deposit",
+                    params: { currency: firstWallet.currency, network: firstWallet.network },
+                  })
+                : undefined
+            }
+          />
+          <QuickAction
+            icon={ArrowUpFromLine}
+            label="Withdraw"
+            onPress={() =>
+              firstWallet
+                ? router.push({
+                    pathname: "/(app)/withdraw",
+                    params: { currency: firstWallet.currency, network: firstWallet.network },
+                  })
+                : undefined
+            }
+          />
+          <QuickAction
+            icon={ArrowLeftRight}
+            label="Transfer"
+            onPress={() => router.push("/(app)/internal-transfer")}
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        className="flex-1 px-4"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00A3F6" />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {isLoading ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <ActivityIndicator color="#00A3F6" />
+          </View>
+        ) : error ? (
+          <View className="rounded-xl bg-error-bg p-4 mt-4">
+            <Text className="text-sm text-error text-center">
+              Failed to load wallets. Pull to retry.
+            </Text>
+          </View>
+        ) : !wallets?.length ? (
+          <View className="items-center justify-center py-20">
+            <View className="w-16 h-16 rounded-full bg-brand/10 items-center justify-center mb-4">
+              <Coins size={28} color="#00A3F6" />
+            </View>
+            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+              No wallets yet
+            </Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-1 text-center">
+              Wallets are created automatically on your first deposit.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <PortfolioChart wallets={wallets} />
+
+            {wallets.map((wallet) => (
+              <WalletCard
+                key={wallet.id}
+                wallet={wallet}
+                onDeposit={() =>
+                  router.push({
+                    pathname: "/(app)/deposit",
+                    params: { currency: wallet.currency, network: wallet.network },
+                  })
+                }
+                onWithdraw={() =>
+                  router.push({
+                    pathname: "/(app)/withdraw",
+                    params: { currency: wallet.currency, network: wallet.network },
+                  })
+                }
+              />
+            ))}
+            <View className="h-8" />
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}

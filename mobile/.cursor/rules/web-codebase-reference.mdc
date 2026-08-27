@@ -1,0 +1,105 @@
+---
+description: How to use the main Qictrader monorepo as a read-only reference for parity and contract correctness
+alwaysApply: true
+---
+
+# Web Codebase as Reference
+
+The main `Qictrader` monorepo at `/Users/jpvanzyl/Workspaces/Qictrader` is your **read-only reference** for:
+
+1. **API contracts** — exact field names, request/response shapes, validation rules
+2. **Business logic** — how a feature behaves on the canonical web implementation
+3. **Design intent** — visual identity, copy, error messages, edge cases
+4. **Backend reality** — the Rust source defines the truth; what the OpenAPI doc shows must be confirmed against the source
+
+You may **read** any file in there. You may **NOT modify** any file in there from this Cursor window. If a change is needed in the main monorepo, ask JP — they switch windows.
+
+## What to read for what
+
+### When implementing a new feature on mobile
+
+1. **Find the web equivalent first**:
+   ```bash
+   # Search for the feature name in the web codebase
+   rg -l "WithdrawForm\|withdraw" /Users/jpvanzyl/Workspaces/Qictrader/frontend/src/
+   ```
+2. **Read the web page/screen/component** — note state management, validation, navigation, error handling
+3. **Find the backend handler**:
+   ```bash
+   rg -l "fn (.*)withdraw" /Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/api/
+   ```
+4. **Read the backend handler** — note request struct, response struct, validation, authorization checks
+5. **Find the backend model**:
+   ```bash
+   rg -l "struct WithdrawRequest" /Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/
+   ```
+6. **Cross-reference** field names, types, optional/required flags
+
+### When questioning whether something is a bug or by design
+
+Read `qictrader-backend-rs/docs/intended-entity-state-machines.md` (design intent).
+Compare with `qictrader-backend-rs/docs/as-built-state-machines.md` (implementation reality).
+If web matches as-built but diverges from intent, **mobile should match intent and flag the divergence**.
+
+### When picking visual styling
+
+`/Users/jpvanzyl/Workspaces/Qictrader/DESIGN.md` is the source of truth. Synced to this repo as `DESIGN.md` via the sync script.
+
+### When checking analytics events
+
+Web's GA4 events live in `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/lib/analytics/` (or `gtag/`). Match event names + payload shapes exactly — analytics dashboards filter by web vs mobile via the `platform` parameter.
+
+### When implementing auth flows
+
+Read `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/store/auth-store.ts` — Zustand auth store with persistence rules, rehydration, 401 handling.
+
+Read `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/lib/api-client.ts` — Axios instance with auth interceptor, refresh logic, error mapping.
+
+Mirror the logic, replace storage layer with SecureStore (see `no-asyncstorage-for-secrets.mdc`).
+
+### When debugging an API call
+
+If a mobile API call is returning unexpected data:
+
+1. Make the same call from the web app via the browser dev tools network panel
+2. Compare the request payload (headers, body)
+3. Compare the response payload
+4. If web works and mobile doesn't, the bug is in mobile (likely a missed camelCase mapping or auth header)
+5. If both fail the same way, the bug is in backend — file a ticket on the backend board
+
+## What's safe to read
+
+| Path | Use |
+|---|---|
+| `Qictrader/frontend/src/**` | Reference implementation for every feature |
+| `Qictrader/qictrader-backend-rs/src/api/**` | Handler signatures, validation, auth checks |
+| `Qictrader/qictrader-backend-rs/src/types/enums.rs` | Domain enums (status, currency, network) |
+| `Qictrader/qictrader-backend-rs/src/models/**` | Database row structs (the "source of truth" shape) |
+| `Qictrader/qictrader-backend-rs/src/services/**` | Business logic patterns to mirror |
+| `Qictrader/qictrader-backend-rs/docs/**` | Design intent + as-built state machines + DB schema |
+| `Qictrader/architecture/**` | Pentest report, security carryforward, migration specs |
+| `Qictrader/ops/**` | Trello, deployment, Google entity accounts |
+| `Qictrader/DESIGN.md` | Visual identity |
+| `Qictrader/AGENTS.md` / `CLAUDE.md` | Project-wide rules |
+
+## What NOT to read
+
+These are large, low-signal, or actively changing in ways that aren't relevant to mobile:
+
+| Path | Why skip |
+|---|---|
+| `Qictrader/frontend/node_modules/` | Massive, irrelevant |
+| `Qictrader/qictrader-backend-rs/target/` | Massive, build artifacts |
+| `Qictrader/.playwright-mcp/` | Playwright session captures |
+| `Qictrader/frontend/.next/` | Build cache |
+| `Qictrader/architecture/vercel-archive-2026-04-29/` | Historical archive |
+
+## Forbidden: modifying the web repo
+
+This Cursor window's working directory is `/Users/jpvanzyl/Workspaces/qictrader-mobile`. Never run write operations targeting `/Users/jpvanzyl/Workspaces/Qictrader/...` from this window — that's JP's other window's territory.
+
+If you need a change in the web repo to land before mobile can proceed:
+
+1. Describe the needed change precisely
+2. Ask JP to switch windows and make it
+3. Wait for JP's confirmation before proceeding on the dependent mobile work

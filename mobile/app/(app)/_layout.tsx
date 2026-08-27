@@ -1,0 +1,36 @@
+import { Stack } from "expo-router"
+
+export default function AppLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="deposit" options={{ title: "Deposit", presentation: "modal" }} />
+      <Stack.Screen name="withdraw" options={{ title: "Withdraw", presentation: "modal" }} />
+      <Stack.Screen name="transactions" options={{ title: "Transaction History" }} />
+      <Stack.Screen name="offer/[id]" options={{ title: "Offer" }} />
+      <Stack.Screen name="create-offer" options={{ title: "Create Offer", presentation: "modal" }} />
+      <Stack.Screen name="trade/[id]" options={{ title: "Trade" }} />
+      <Stack.Screen name="trade-chat/[id]" options={{ title: "Chat" }} />
+      <Stack.Screen name="trade-history" options={{ title: "Trade History" }} />
+      <Stack.Screen name="kyc" options={{ title: "Verify Identity" }} />
+      <Stack.Screen name="notifications-settings" options={{ title: "Notification Settings" }} />
+      <Stack.Screen name="profile-edit" options={{ title: "Edit Profile" }} />
+      <Stack.Screen name="security-settings" options={{ title: "Security" }} />
+      <Stack.Screen name="payment-methods" options={{ title: "Payment Methods" }} />
+      <Stack.Screen name="2fa-setup" options={{ title: "Two-Factor Auth", presentation: "modal" }} />
+      <Stack.Screen name="affiliate" options={{ title: "Affiliate" }} />
+      <Stack.Screen name="affiliate-commissions" options={{ title: "Commission History" }} />
+      <Stack.Screen name="support" options={{ title: "Support" }} />
+      <Stack.Screen name="preferences" options={{ title: "Preferences" }} />
+      <Stack.Screen name="my-offers" options={{ title: "My Offers" }} />
+      <Stack.Screen name="internal-transfer" options={{ title: "Internal Transfer", presentation: "modal" }} />
+      <Stack.Screen name="marketplace-filters" options={{ title: "Browse Offers" }} />
+      <Stack.Screen name="proof-of-payment" options={{ title: "Proof of Payment", presentation: "modal" }} />
+      <Stack.Screen name="dispute/[id]" options={{ title: "Open Dispute", presentation: "modal" }} />
+      <Stack.Screen name="kyc-webview/[provider]" options={{ title: "Verification", headerShown: false }} />
+      <Stack.Screen name="edit-offer/[id]" options={{ title: "Edit Offer" }} />
+      <Stack.Screen name="create-resell/[offerId]" options={{ title: "Resell Offer", presentation: "modal" }} />
+      <Stack.Screen name="reseller-dashboard" options={{ title: "Reseller" }} />
+      <Stack.Screen name="fiat-balance" options={{ title: "Fiat Balances" }} />
+    </Stack>
+  )
+}
