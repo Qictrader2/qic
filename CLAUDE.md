@@ -79,6 +79,26 @@ Rules:
   cross-compile + Slug-API path (`scripts/fast-deploy-backend.sh`) was **removed**
   after the 2026-06-15 prod outage — do not reintroduce it.
 
+### Verifying on staging — always check the site first
+
+**Always hit `https://staging.qictrader.com` before concluding you cannot reach it.**
+The STAGING-GATE-001 password gate (`frontend/src/lib/staging-gate.ts`) is armed *only*
+by the `STAGING_ACCESS_PASSWORD` config var on `qictrader-frontend-staging`, and that var
+is often unset. When it is unset the gate is a pass-through and staging is fully
+browsable with no unlock step. Do not assume it is gated.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{url_effective}\n' -L https://staging.qictrader.com/
+```
+
+- `200` at `https://staging.qictrader.com/` → gate is **off**. Verify the real UI on
+  staging itself; do not settle for a local dev server standing in for it.
+- Redirect to `/staging-access` → gate is **on**. The password is in `~/.config/qic/.env`
+  as `QIC_STAGING_GATE_PASSWORD` (never print its value); the unlock cookie lasts 7 days.
+
+Either way `/api/v1/*` and `/socket.io` are gate-exempt, so API-level checks always work.
+Never report a change as "could not be verified on staging" without running that check.
+
 `./commit-all.sh` is a **commit/push helper only** (it never deploys):
 
 ```
