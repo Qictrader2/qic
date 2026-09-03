@@ -53,6 +53,34 @@ repo has its **own** Heroku pipeline with a staging app and a production app.
   configured by the `BACKEND_URL` and `NEXT_PUBLIC_*` Heroku Config Vars on each
   frontend app. WebSockets connect directly to the backend's `NEXT_PUBLIC_WS_URL`.
 
+### Why promoting the frontend slug is safe (ticket 717)
+
+Next.js inlines `NEXT_PUBLIC_*` values at **build** time, so a slug built on
+staging would normally carry staging's values into production when promoted —
+pointing production browsers at the staging websocket, for one.
+
+Environment-specific public vars are therefore **not** read from the bake. They
+are injected per request into `window.__QIC_RUNTIME_ENV__` by
+`RuntimeEnvScript` (mounted in `app/layout.tsx`) and also served from
+`/api/runtime-config` (`no-store`), so each dyno serves its own values from the
+one promoted slug.
+
+Which vars are runtime versus safely baked is declared in
+`NEXT_PUBLIC_ENV_REGISTRY` (`frontend/src/lib/runtime-env.ts`). Currently runtime:
+`NEXT_PUBLIC_WS_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ENABLE_MOCK_DATA`,
+`NEXT_PUBLIC_ENABLE_WEBSOCKET`, `NEXT_PUBLIC_MAINTENANCE_MODE`,
+`NEXT_PUBLIC_QUICKNODE_BTC_RPC`, `NEXT_PUBLIC_TRON_RPC`.
+
+**Adding a new `NEXT_PUBLIC_*` var means adding a registry row.** A test walks
+`src/` and fails the build if a var is used without one, so the classification
+cannot be skipped by accident. If the value differs between staging and
+production, classify it `runtime` — otherwise promote will carry the staging
+value to production and the failure will be silent.
+
+An **empty** value on the production dyno deliberately beats a non-empty baked
+one, so an unset Config Var surfaces as missing rather than silently falling
+back to staging's.
+
 **A change that only touches the frontend → one PR in `Qictrader2/Frontend`.**
 **A change that only touches the backend → one PR in `Qictrader2/qictrader-backend-rs`.**
 A change that touches both → one PR per repo (they deploy independently).
