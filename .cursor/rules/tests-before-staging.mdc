@@ -1,0 +1,33 @@
+---
+description: No ticket can be deployed to staging without full automated tests
+alwaysApply: true
+---
+
+# Tests Required Before Staging
+
+**No ticket can be submitted to staging without full automated tests written and passing.**
+
+## Requirements
+
+1. Every ticket fix MUST have at least one automated test file covering the fix
+2. Tests MUST pass locally before the ticket can be deployed to staging
+3. Test files go in `frontend/e2e/tests/regression/` named `ticket-{number}-{description}.test.ts`
+4. Tests must make real assertions about specific values — not just status code checks
+
+## Pre-Deploy Verification
+
+Before running staging deploy commands, verify:
+
+```bash
+# Run all ticket regression tests
+cd Frontend && npx jest --testPathPatterns="e2e/tests/regression/ticket-"
+```
+
+If any test fails, fix the issue before deploying. Never deploy untested code to staging.
+
+## What Counts as "Full Tests"
+
+- Backend logic changes: test the API endpoint behavior (correct response, error cases)
+- Frontend UI changes: test that components render correctly, user interactions work
+- State machine changes: test valid transitions succeed and invalid ones are rejected
+- Validation changes: test both valid and invalid inputs

@@ -1,0 +1,20 @@
+{
+  "autoRun": {
+    "allow_instructions": [
+      "JP has pre-authorized the full per-ticket development loop for tickets assigned to him on the QIC Trader Trello board. Creating and checking out git branches, running tests (cargo test, cargo clippy, bun test, bunx jest, npx jest), creating and migrating LOCAL Postgres test databases, git add, git commit, and pushing feature branches all run without asking.",
+      "Opening a pull request with gh pr create, and merging a green pull request with gh pr merge --squash --delete-branch, are pre-authorized for these tickets. JP knows that merging to main auto-deploys staging and that is the intended behaviour.",
+      "Fast-forwarding or rebasing a local feature branch onto origin/main is pre-authorized. Pulling latest main before starting work is mandatory in this repo.",
+      "Sourcing ~/.qictrader-secrets/load-all.sh and ~/.qictrader-secrets/trello.env is pre-authorized and is REQUIRED by this workspace's auth-isolation rule. These set GH_TOKEN, HEROKU_API_KEY and Trello credentials for the current shell only. They are the mandated safe alternative to gh auth switch, which would log JP out of his other projects. They do not print secret values.",
+      "Trello API calls that add a comment to a card or move a card between lists are pre-authorized for cards assigned to JP.",
+      "Read-only production and staging inspection is pre-authorized: heroku logs, heroku releases, heroku ps, heroku config:get for a single named variable, and SELECT queries through heroku pg:psql."
+    ],
+    "block_instructions": [
+      "Never deploy or promote to production without explicit confirmation from JP in the current conversation. This includes heroku pipelines:promote and any push to a production Heroku remote.",
+      "Never run heroku config:set, or unset a config variable, on any staging or production app without explicit confirmation from JP.",
+      "Never force-push, never use --force-with-lease, and never push directly to main. Every change goes through a pull request.",
+      "Never print the value of a secret, API key, token or password into the terminal. Reference environment variable names only.",
+      "Never delete or archive a Trello card, and never edit a card that is not assigned to JP, without explicit confirmation.",
+      "Never run a DELETE, UPDATE, DROP or TRUNCATE statement against a staging or production database. Local test databases are fine."
+    ]
+  }
+}

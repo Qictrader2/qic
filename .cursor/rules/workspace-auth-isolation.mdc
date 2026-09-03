@@ -1,0 +1,43 @@
+# Workspace Auth Isolation (QicTrader)
+
+This workspace must **never** change the Mac-global GitHub or Heroku CLI login.
+JP uses many other projects on the same machine; `gh auth switch` and
+`heroku login` log him out of those.
+
+## Forbidden (global identity changes)
+
+Do **not** run any of these in this workspace:
+
+- `gh auth switch`
+- `gh auth login`
+- `gh auth logout`
+- `heroku login`
+- `heroku auth:login`
+- `heroku auth:logout`
+- `heroku accounts:set`
+- `heroku accounts:add`
+
+## Required instead
+
+Before any `gh`, `git push`/`git pull` to GitHub, or `heroku` command:
+
+```bash
+source ~/.qictrader-secrets/load-all.sh
+```
+
+That sets `GH_TOKEN` and `HEROKU_API_KEY` for **this shell only**. Those env
+vars override the global CLI identity without touching the keyring or other
+workspaces.
+
+If `load-all.sh` or the token files are missing, **stop and tell JP** to
+complete `ops/workspace-auth.md` setup. Do not fall back to `gh auth switch`.
+
+## Trello
+
+Trello already follows this pattern via `~/.qictrader-secrets/trello.env`.
+Keep using that. Never paste key/token into commands or chat.
+
+## Why
+
+`GH_TOKEN` / `HEROKU_API_KEY` are process-scoped. `gh auth switch` is
+machine-scoped. Only the first is safe in a multi-project setup.
