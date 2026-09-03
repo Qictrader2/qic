@@ -1,0 +1,42 @@
+---
+description: Standing authorization for JP's autonomous ticket pipeline (branch, test, PR, merge, Trello)
+alwaysApply: true
+---
+
+# Ticket Pipeline — Standing Authorization
+
+JP has **pre-authorized** the full per-ticket loop below for every ticket assigned
+to him on the QIC Trader Trello board. Do not stop to ask for approval on any step
+in this list. He explicitly asked not to click approve for each one.
+
+## Authorized without asking
+
+For each ticket, in order:
+
+1. `git pull` / `git fetch` / fast-forward, and create a `jp/<card>-<slug>` branch.
+2. Write code and tests. Run `cargo test`, `cargo clippy`, `bun test`, `bunx jest`.
+3. Create / migrate a **local** Postgres test database and run migrations against it.
+4. `source ~/.qictrader-secrets/load-all.sh` (required by `workspace-auth-isolation`;
+   it is shell-scoped and is the safe alternative to `gh auth switch`).
+5. `git commit`, `git push` the feature branch, `gh pr create`.
+6. `gh pr merge --squash --delete-branch` once tests pass and the card's criteria
+   are met. **Merging to `main` auto-deploys staging — that is intended.**
+7. Trello API: comment on the card and move it to *Development Complete / Self Tested*.
+8. Read-only production inspection: `heroku logs`, `heroku releases`, `heroku pg:psql`
+   SELECT queries, `heroku config:get <NAME>`.
+
+## Still requires an explicit ask
+
+These are NOT covered by the standing authorization:
+
+- `heroku pipelines:promote` or anything else that ships to **production**.
+- `heroku config:set` / unsetting config vars on staging or production.
+- `git push --force`, force-with-lease, or any push directly to `main`.
+- Deleting or archiving Trello cards, or editing cards not assigned to JP.
+- Printing a secret value into the terminal (see `credential-hygiene`).
+- Any schema change to production data outside a reviewed migration.
+
+## Reporting
+
+Do not narrate each approval-free step. Report once per ticket: what was already
+done on `main` versus what actually changed, the test results, and the card link.
