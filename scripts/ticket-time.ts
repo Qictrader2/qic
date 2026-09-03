@@ -34,6 +34,8 @@ import { execFileSync } from "node:child_process"
 
 /** A Trello action, trimmed to what we consume. */
 export interface TrelloAction {
+  /** Needed as the `before` cursor when paging a card's history. */
+  id?: string
   type: string
   date: string // ISO 8601
   data: {
@@ -341,6 +343,57 @@ function knownIdsFromCards(cards: TrelloCard[]): Set<string> {
   return ids
 }
 
+/** Trello caps `limit` at 1000 actions per response. */
+export const TRELLO_ACTIONS_PAGE_LIMIT = 1000
+
+/**
+ * Fetch a card's full column history, following Trello's `before` cursor.
+ *
+ * A single `limit=1000` request silently truncates a busy card, and truncation
+ * here does not fail loudly — it drops the OLDEST actions, which includes
+ * `createCard`. The tool would then report a shorter cycle time with no
+ * indication anything was missing, which is worse than an error in a tool whose
+ * only job is to produce trustworthy numbers.
+ *
+ * Actions come back newest-first, so paging means asking for everything before
+ * the oldest one seen so far.
+ */
+export async function fetchAllCardActions(
+  cardId: string,
+  creds: { key: string; token: string },
+  // Injected so the paging logic can be tested without a network round trip.
+  getPage: (
+    path: string,
+    creds: { key: string; token: string },
+    params: Record<string, string>,
+  ) => Promise<TrelloAction[]> = trelloGet,
+): Promise<TrelloAction[]> {
+  const all: TrelloAction[] = []
+  let before: string | undefined
+
+  for (;;) {
+    const params: Record<string, string> = {
+      filter: "createCard,updateCard",
+      limit: String(TRELLO_ACTIONS_PAGE_LIMIT),
+    }
+    if (before) params.before = before
+
+    const page = await getPage(`/cards/${cardId}/actions`, creds, params)
+    all.push(...page)
+
+    // A short page is the last page.
+    if (page.length < TRELLO_ACTIONS_PAGE_LIMIT) break
+
+    const oldest = page[page.length - 1]
+    // Without an id there is no cursor to advance on, and repeating the same
+    // request would loop forever. Stop with what we have.
+    if (!oldest?.id) break
+    before = oldest.id
+  }
+
+  return all
+}
+
 async function main(): Promise<void> {
   const cli = parseArgs(process.argv.slice(2))
   const creds = requireTrelloCreds()
@@ -361,10 +414,7 @@ async function main(): Promise<void> {
   )
 
   for (const card of cards.sort((a, b) => a.idShort - b.idShort)) {
-    const actions = await trelloGet<TrelloAction[]>(`/cards/${card.id}/actions`, creds, {
-      filter: "createCard,updateCard",
-      limit: "1000",
-    })
+    const actions = await fetchAllCardActions(card.id, creds)
     const transitions = buildTransitions(actions)
     const dwell = computeDwell(transitions, nowMs)
 

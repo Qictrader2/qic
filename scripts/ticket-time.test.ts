@@ -19,6 +19,8 @@ import {
   groupCommitsByTicket,
   type Commit,
   type TrelloAction,
+  fetchAllCardActions,
+  TRELLO_ACTIONS_PAGE_LIMIT,
 } from "./ticket-time"
 
 const HOUR = 3600_000
@@ -239,5 +241,77 @@ describe("formatDuration", () => {
     expect(formatDuration(45 * 1000)).toBe("45s")
     expect(formatDuration(0)).toBe("0m")
     expect(formatDuration(2 * HOUR + 44 * MIN)).toBe("2h44m")
+  })
+})
+
+describe("fetchAllCardActions", () => {
+  const creds = { key: "k", token: "t" }
+
+  /** A page of `n` actions whose ids are unique and ordered newest-first. */
+  const page = (n: number, offset = 0): TrelloAction[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `a${offset + i}`,
+      type: "updateCard",
+      date: new Date(Date.UTC(2026, 0, 1)).toISOString(),
+      data: {},
+    }))
+
+  test("a single short page needs no second request", async () => {
+    const calls: Record<string, string>[] = []
+    const actions = await fetchAllCardActions("card1", creds, async (_p, _c, params) => {
+      calls.push(params)
+      return page(3)
+    })
+
+    expect(actions).toHaveLength(3)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.before).toBeUndefined()
+  })
+
+  test("follows the before cursor until a short page ends it", async () => {
+    // The bug this guards: one limit=1000 request silently drops the OLDEST
+    // actions, which is where createCard lives, so cycle time comes out short
+    // with no sign anything was missing.
+    const seen: (string | undefined)[] = []
+    let call = 0
+    const actions = await fetchAllCardActions("card1", creds, async (_p, _c, params) => {
+      seen.push(params.before)
+      call += 1
+      if (call === 1) return page(TRELLO_ACTIONS_PAGE_LIMIT, 0)
+      if (call === 2) return page(TRELLO_ACTIONS_PAGE_LIMIT, TRELLO_ACTIONS_PAGE_LIMIT)
+      return page(7, 2 * TRELLO_ACTIONS_PAGE_LIMIT)
+    })
+
+    expect(actions).toHaveLength(2 * TRELLO_ACTIONS_PAGE_LIMIT + 7)
+    expect(seen[0]).toBeUndefined()
+    // Each subsequent request asks for everything before the oldest seen so far.
+    expect(seen[1]).toBe(`a${TRELLO_ACTIONS_PAGE_LIMIT - 1}`)
+    expect(seen[2]).toBe(`a${2 * TRELLO_ACTIONS_PAGE_LIMIT - 1}`)
+  })
+
+  test("an empty first page yields nothing and stops", async () => {
+    let calls = 0
+    const actions = await fetchAllCardActions("card1", creds, async () => {
+      calls += 1
+      return []
+    })
+    expect(actions).toEqual([])
+    expect(calls).toBe(1)
+  })
+
+  test("a full page whose oldest action has no id stops instead of looping", async () => {
+    // Without this guard the same request would repeat forever, since there is
+    // no cursor to advance past.
+    let calls = 0
+    const actions = await fetchAllCardActions("card1", creds, async () => {
+      calls += 1
+      return Array.from({ length: TRELLO_ACTIONS_PAGE_LIMIT }, () => ({
+        type: "updateCard",
+        date: new Date(Date.UTC(2026, 0, 1)).toISOString(),
+        data: {},
+      }))
+    })
+    expect(calls).toBe(1)
+    expect(actions).toHaveLength(TRELLO_ACTIONS_PAGE_LIMIT)
   })
 })
