@@ -434,7 +434,11 @@ area of ~48px around the toggle.
 | `grid-cols-1 md:grid-cols-2` | Two-column layouts |
 | `grid-cols-2 gap-3` | Compact grids |
 
-### 9.4 Z-Index Scale
+### 9.4 Adjacent Card Sizing
+
+Cards that sit next to one another horizontally or vertically form an adjacent card group. Every card in that group must use the same width and height. Size the whole group to fit the card with the most content, including its required internal padding and the spacing between cards. Recalculate the shared size at each responsive breakpoint when the layout changes.
+
+### 9.5 Z-Index Scale
 
 | Value | Use |
 |-------|-----|
