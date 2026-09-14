@@ -47,3 +47,6 @@ ticket_summary*.md
 logs/
 parallel-runs/
 TEST-BATCHES.md
+
+# Claude Code machine-local settings (model-gateway wiring lives here)
+.claude/settings.local.json
