@@ -204,7 +204,12 @@ heroku config:set NAME=value -a qictrader-frontend-staging  # staging frontend
 ```
 
 - When you add a new env var, set it on **both** the staging and production app
-  for that piece, and document it (frontend: `.env.example`; backend: its config docs).
+  for that piece, and document it (frontend: `.env.example`; backend:
+  `qictrader-backend-rs/app.json` for review-app inheritance plus the matching
+  runbook under `qictrader-backend-rs/docs/runbooks/`).
+- File storage (S3 via the Heroku Bucketeer add-on, one add-on per app) is
+  documented in `qictrader-backend-rs/docs/runbooks/file-storage.md`, including
+  the `BUCKETEER_*` fallback and how to read the boot line.
 - **Never** print full config dumps into a saved terminal, screenshot, or chat.
   See the credential-hygiene rule. Reference variable **names**, not values.
 
