@@ -28,8 +28,8 @@ If this appears to be a resumed session (conversation summary present):
 
 1. Check for an existing plan file:
    ```bash
-   ls /home/marcello/git/qic/ticket-plans/ 2>/dev/null
-   cat /home/marcello/git/qic/.current-ticket 2>/dev/null
+   ls ./ticket-plans/ 2>/dev/null
+   cat ./.current-ticket 2>/dev/null
    ```
 2. If a plan file exists, read it — it contains the full confirmed implementation plan
 3. Run `git diff` in both submodules to see what has already been done
@@ -58,9 +58,15 @@ If this appears to be a resumed session (conversation summary present):
 
 ## STEP 1: FIND TICKET
 
-**Trello credentials (hardcoded — do not ask the user for these):**
-- API Key: `d0f2319aeb29e279616c592d79677692`
-- Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
+**Trello credentials:** load them from `$HOME/.config/qic/.env`; do not ask the user for them and do not print them.
+
+```bash
+set -a
+source "$HOME/.config/qic/.env"
+set +a
+: "${TRELLO_API_KEY:?Missing TRELLO_API_KEY}"
+: "${TRELLO_TOKEN:?Missing TRELLO_TOKEN}"
+```
 
 Arguments: `$ARGUMENTS`
 
@@ -74,12 +80,12 @@ Launch Agent with this prompt:
   Fetch the QIC Trello board and return the highest-priority card that needs work.
 
   Credentials:
-    API Key: d0f2319aeb29e279616c592d79677692
-    Token: ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
+    API Key: ${TRELLO_API_KEY}
+    Token: ${TRELLO_TOKEN}
 
   Steps:
   1. Fetch all boards for this account:
-     GET https://api.trello.com/1/members/me/boards?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=id,name
+     GET https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}&fields=id,name
 
   2. Find the QIC board (name contains "QIC").
 
@@ -114,13 +120,13 @@ Wait for the subagent to return. Use its result as the source of truth for the c
 
 Fetch directly:
 ```
-https://api.trello.com/1/cards/{id}?key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&fields=id,name,desc,labels,checklists,attachments&checklists=all
+https://api.trello.com/1/cards/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}&fields=id,name,desc,labels,checklists,attachments&checklists=all
 ```
 
 ### Path C — Search by name or keyword
 
 ```
-https://api.trello.com/1/search?query={ARGUMENTS}&key=d0f2319aeb29e279616c592d79677692&token=ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0&modelTypes=cards&cards_limit=5
+https://api.trello.com/1/search?query={ARGUMENTS}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}&modelTypes=cards&cards_limit=5
 ```
 
 - If multiple results: show the list and ask the user which card to implement
@@ -139,13 +145,13 @@ Tell the user: "Implementing ticket: **[card name]**"
 Write the Trello card ID to `.current-ticket` in the monorepo root:
 
 ```bash
-printf '%s\n' '69a5bb4b56b71b138fb3f2be' > /home/marcello/git/qic/.current-ticket
+printf '%s\n' '69a5bb4b56b71b138fb3f2be' > ./.current-ticket
 ```
 
 Also extract the ticket label (e.g. `ES-001`) from the card name if it starts with a ticket prefix pattern (`[A-Z]+-\d+`). If found, include it on a second line:
 
 ```bash
-printf '%s\n%s\n' '69a5bb4b56b71b138fb3f2be' 'ES-001' > /home/marcello/git/qic/.current-ticket
+printf '%s\n%s\n' '69a5bb4b56b71b138fb3f2be' 'ES-001' > ./.current-ticket
 ```
 
 Format:
@@ -170,8 +176,8 @@ Launch an Agent with this task (pass the card ID and description you already hav
 Fetch all remaining context for Trello card {card_id}.
 
 Credentials:
-  API Key: d0f2319aeb29e279616c592d79677692
-  Token: ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0
+  API Key: ${TRELLO_API_KEY}
+  Token: ${TRELLO_TOKEN}
 
 1. Fetch all comments (oldest first):
    GET https://api.trello.com/1/cards/{id}/actions?key=...&token=...&filter=commentCard&limit=1000
@@ -269,10 +275,10 @@ Apply these rules. Do NOT ask the user:
 Write the plan file immediately. Log any decisions you made under "Decisions made" (not "Questions"). Then proceed to Step 5 without stopping.
 
 ```bash
-mkdir -p /home/marcello/git/qic/ticket-plans
+mkdir -p ./ticket-plans
 ```
 
-Create `/home/marcello/git/qic/ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md` if no label):
+Create `./ticket-plans/{TICKET-LABEL}.md` (or `{CARD-ID}.md` if no label):
 
 ```markdown
 # {TICKET-LABEL}: {Card Name}

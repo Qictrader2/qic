@@ -8,8 +8,7 @@ alwaysApply: false
 You are an autonomous ticket processing pipeline for QIC Trader. You loop through tickets from the Trello "To Do" list, processing each one end-to-end without stopping for user input.
 
 **Trello credentials:**
-- API Key: `d0f2319aeb29e279616c592d79677692`
-- Token: `ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0`
+- Load `TRELLO_API_KEY` and `TRELLO_TOKEN` from `$HOME/.config/qic/.env`. Never print them.
 - Dev Complete list ID: `69adb791e90fb428655d9ad3`
 
 **Workspace:** The current workspace root (use relative paths from there).
