@@ -28,8 +28,11 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BATCH_RUNNER="$SCRIPT_DIR/run-batch-auto.sh"
 
-TRELLO_KEY="d0f2319aeb29e279616c592d79677692"
-TRELLO_TOKEN="ATTA36ac291783275f0d046d254f4d9810898716023569970be9464b6c6a363385fd0CAB02F0"
+set -a
+source "$HOME/.config/qic/.env"
+set +a
+TRELLO_KEY="${TRELLO_API_KEY:?Missing TRELLO_API_KEY in $HOME/.config/qic/.env}"
+TRELLO_TOKEN="${TRELLO_TOKEN:?Missing TRELLO_TOKEN in $HOME/.config/qic/.env}"
 TODO_LIST_ID="69adb7903d71375329df7382"
 
 export QIC_MACHINE="${QIC_MACHINE:-this-pc}"
