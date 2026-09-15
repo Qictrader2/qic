@@ -30,6 +30,7 @@
 | `--brand-green-dark` | `#059669` | Success pressed state |
 | `--brand-red` | `#EF4444` | Error, destructive actions |
 | `--brand-red-dark` | `#DC2626` | Error pressed state |
+| `--slider-thumb` | `#F2994A` | Legacy resell markup slider thumb (`bg-slider-thumb`); theme-independent, not for new UI |
 
 ### 2.2 Semantic Colors
 
