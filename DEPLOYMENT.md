@@ -65,6 +65,16 @@ are injected per request into `window.__QIC_RUNTIME_ENV__` by
 `/api/runtime-config` (`no-store`), so each dyno serves its own values from the
 one promoted slug.
 
+The overlay script has to opt the tree out of static generation. A plain
+Server Component in the root layout is still prerendered
+(`x-nextjs-prerender: 1`, `Cache-Control: s-maxage=31536000`), which bakes
+staging's websocket into the HTML and defeats the overlay. `RuntimeEnvScript`
+awaits `connection()` from `next/server` (it refuses to resolve during
+prerender) and the root layout exports `dynamic = "force-dynamic"` with
+`revalidate = 0`. A test builds once against a staging-shaped env, boots that
+same build with production-shaped env, and asserts the HTML overlay matches
+the boot-time value.
+
 Which vars are runtime versus safely baked is declared in
 `NEXT_PUBLIC_ENV_REGISTRY` (`frontend/src/lib/runtime-env.ts`). Currently runtime:
 `NEXT_PUBLIC_WS_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ENABLE_MOCK_DATA`,
@@ -204,12 +214,7 @@ heroku config:set NAME=value -a qictrader-frontend-staging  # staging frontend
 ```
 
 - When you add a new env var, set it on **both** the staging and production app
-  for that piece, and document it (frontend: `.env.example`; backend:
-  `qictrader-backend-rs/app.json` for review-app inheritance plus the matching
-  runbook under `qictrader-backend-rs/docs/runbooks/`).
-- File storage (S3 via the Heroku Bucketeer add-on, one add-on per app) is
-  documented in `qictrader-backend-rs/docs/runbooks/file-storage.md`, including
-  the `BUCKETEER_*` fallback and how to read the boot line.
+  for that piece, and document it (frontend: `.env.example`; backend: its config docs).
 - **Never** print full config dumps into a saved terminal, screenshot, or chat.
   See the credential-hygiene rule. Reference variable **names**, not values.
 
@@ -275,6 +280,18 @@ heroku rollback v123 -a <app>            # roll that app back
   Vercel dashboard. It's gone.
 - ❌ Do not push directly to `main`. Open a PR.
 - ❌ Do not force-push `main`.
+- ❌ Do not `git push heroku main --force` (or any direct push to a production
+  Heroku remote). On 2026-08-13 we force-pushed both apps to prod because
+  promote was believed to wipe production config vars. That is false:
+  `pipelines:promote` copies the slug only and leaves config vars alone
+  (devcenter.heroku.com/articles/pipelines). The real frontend footgun was
+  build-time baking of `NEXT_PUBLIC_WS_URL`, including when Next prerendered
+  the overlay into cached HTML. That value is now injected per request
+  (`connection()` + `force-dynamic`), so the standard path is again
+  `heroku pipelines:promote -a qictrader-frontend-staging` after staging
+  verification. Adding a new `NEXT_PUBLIC_*` var requires a row in
+  `frontend/src/lib/runtime-env.ts` (`NEXT_PUBLIC_ENV_REGISTRY`); the
+  ticket-717 classification test fails without it.
 - ❌ Do not deploy production from your laptop. Production is **promoted** from a
   verified staging release, with sign-off.
 - ❌ Do not run local cross-compiles or the Heroku Slug API for the backend (the
