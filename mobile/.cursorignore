@@ -1,0 +1,22 @@
+# Don't index large or generated content
+
+node_modules/
+.expo/
+.bun/
+ios/Pods/
+ios/build/
+android/build/
+android/.gradle/
+android/app/build/
+dist/
+web-build/
+coverage/
+.maestro-screenshots/
+*.tsbuildinfo
+
+# Don't index synced snapshot files — they're authoritatively in the main monorepo
+# (these still get read on-demand if needed, but excluded from background indexing)
+.qictrader-context/intended-state-machines.md
+.qictrader-context/as-built-state-machines.md
+.qictrader-context/database-schema.md
+.qictrader-context/security-carryforward.md

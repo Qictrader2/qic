@@ -1,0 +1,51 @@
+appId: com.qictrader.app
+name: TRADE-001 - Login → marketplace → initiate trade → mark paid
+
+---
+- launchApp:
+    clearState: true
+
+# Login
+- assertVisible: "Sign in to QicTrader"
+- tapOn:
+    id: "input-email"
+- typeText: "buyer@qictrader-e2e.com"
+- tapOn:
+    id: "input-password"
+- typeText: "TestPass123!"
+- tapOn: "Sign in"
+
+# Should be on wallet screen
+- assertVisible: "Wallet"
+
+# Go to marketplace
+- tapOn: "Marketplace"
+- assertVisible: "Marketplace"
+
+# Make sure Buy tab is selected
+- tapOn: "buy"
+
+# Tap first offer
+- tapOn:
+    index: 0
+    id: "offer-row"
+
+# Should see offer detail
+- assertVisible: "Start buying"
+
+# Enter amount
+- tapOn:
+    id: "input-amount"
+- typeText: "0.01"
+
+# Initiate trade
+- tapOn: "Start buying"
+
+# Should be on trade detail screen
+- assertVisible: "Funded"
+
+# Mark as paid
+- tapOn: "I have paid"
+
+# Should show payment sent status
+- assertVisible: "Payment sent"

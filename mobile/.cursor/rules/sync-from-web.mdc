@@ -1,0 +1,111 @@
+---
+description: How and when to sync shared files (types, tokens, validators) from the main monorepo
+alwaysApply: true
+---
+
+# Sync from Web
+
+The mobile repo is **separate** from the main monorepo, but a small set of files are shared between web and mobile to prevent drift. We use a file-level sync script instead of a monorepo / npm packages / git submodules.
+
+## What gets synced
+
+Run `./scripts/sync-from-web.sh` to refresh these files from the web repo at `/Users/jpvanzyl/Workspaces/Qictrader/frontend/`:
+
+| Mobile path | Source (in main monorepo) | What |
+|---|---|---|
+| `src/types/api.ts` | `frontend/src/types/api.ts` (or generated from backend OpenAPI) | Backend API request/response types |
+| `src/types/domain.ts` | `frontend/src/types/` | Domain enums (TradeStatus, Currency, Network, etc.) |
+| `src/constants/*.ts` | `frontend/src/constants/*.ts` | Currency codes, network names, payment methods |
+| `src/schemas/*.ts` | `frontend/src/schemas/*.ts` | Zod validators matching backend validation |
+| `src/lib/format.ts` | `frontend/src/lib/format.ts` | Currency, date, address formatters |
+| `src/lib/fees.ts` | `frontend/src/lib/fees.ts` | Fee calculation pure functions |
+| `src/lib/state-machines/*.ts` | `frontend/src/lib/state-machines/` | Trade/escrow state machine helpers |
+| `src/design-tokens.json` | `frontend/src/design-tokens.json` (or `globals.css` parsed) | Brand colors, spacing, radii, shadows, type scale |
+| `DESIGN.md` | `Qictrader/DESIGN.md` | Visual identity reference (source of truth) |
+| `.qictrader-context/intended-state-machines.md` | `qictrader-backend-rs/docs/intended-entity-state-machines.md` | Design intent reference |
+| `.qictrader-context/as-built-state-machines.md` | `qictrader-backend-rs/docs/as-built-state-machines.md` | Implementation reality reference |
+| `.qictrader-context/security-carryforward.md` | `Qictrader/architecture/SECURITY-CARRYFORWARD-FOR-NEW-APPS.md` | Security patterns to follow |
+
+## What does NOT get synced
+
+These are mobile-specific and live only in this repo:
+
+- React Native components (`src/components/`)
+- Hooks (`src/hooks/`)
+- Screens / navigation (`src/screens/`, `src/navigation/`)
+- Native module wrappers (`src/native/`)
+- Mobile config (`app.json`, `eas.json`, `metro.config.js`)
+- Mobile package.json + lockfile
+
+## When to run the sync
+
+**Always** before:
+
+- Starting a new ticket
+- Implementing any API call (to make sure types are fresh)
+- Pushing to remote
+
+**Periodically** otherwise:
+
+- At least once per work session
+- Whenever JP mentions the web frontend has changed
+- After a major web release
+
+## Workflow
+
+```bash
+cd /Users/jpvanzyl/Workspaces/qictrader-mobile
+
+# 1. Make sure web repo is up to date
+(cd /Users/jpvanzyl/Workspaces/Qictrader/frontend && git pull --rebase origin main)
+
+# 2. Run sync
+./scripts/sync-from-web.sh
+
+# 3. Review what changed
+git status
+git diff src/ .qictrader-context/
+
+# 4. Run typecheck — drifts surface as type errors
+bun run typecheck
+
+# 5. Fix any type errors caused by upstream changes (these are real contract changes you need to handle)
+
+# 6. Run affected tests
+bun test
+
+# 7. Commit if changes are clean
+git add src/ .qictrader-context/ DESIGN.md
+git commit -m "chore: sync from web @ $(cd /Users/jpvanzyl/Workspaces/Qictrader/frontend && git rev-parse --short HEAD)"
+```
+
+## Drift detection in CI
+
+CI runs `./scripts/sync-from-web.sh --check` on every PR. If the synced files in the PR don't match the web's `main` branch, the PR fails with a message:
+
+```
+ERROR: src/types/api.ts is out of sync with frontend/src/types/api.ts
+Run ./scripts/sync-from-web.sh and commit the result.
+```
+
+This catches PRs that forgot to sync before adding new logic against stale types.
+
+## When you can't sync (web hasn't shipped yet)
+
+If you're implementing a feature where the web side hasn't been built (rare):
+
+1. Define the types/schemas/constants in mobile first
+2. Create a Trello card to mirror those into web's `frontend/src/...` so a future sync can pull them
+3. Add a comment in the file: `// LOCAL FIRST — needs to be mirrored to web/frontend/src/... per ticket MOBILE-XXX-NNN`
+
+## Conflicts during sync
+
+If `./scripts/sync-from-web.sh` produces a conflict (mobile has local-only changes to a synced file):
+
+1. **Stop.** Don't auto-resolve.
+2. Read both versions
+3. Decide whether to:
+   - Move the mobile-only change into a non-synced file
+   - Push the mobile change up to web
+   - Ask JP
+4. Never lose the web version's intent — it's the source of truth

@@ -1,0 +1,100 @@
+---
+description: Feature parity with the web frontend is non-negotiable. Diverging requires explicit JP approval via Trello.
+alwaysApply: true
+---
+
+# Feature Parity with Web
+
+The mobile app must behave **identically** to the web frontend for every feature. If web does X, mobile does X. If mobile does Y when web does X, that's a bug, not a "mobile-native improvement".
+
+## Why this rule exists
+
+- Users will switch between web and mobile and expect the same experience
+- Support burden multiplies if behaviour diverges ("on web my withdraw worked, why not on mobile?")
+- Bugs become asymmetric and impossible to reproduce
+- The web frontend has months of production hardening — diverging means re-learning those lessons
+
+## What "parity" means concretely
+
+- **Same validation rules** (same regex, same min/max, same required fields)
+- **Same error messages** (same wording, English-for-now)
+- **Same edge cases handled** (same "what if balance changes mid-flow" behaviour)
+- **Same state machine transitions** (same buttons enabled in same states)
+- **Same fee calculations** (cents-perfect match, no rounding drift)
+- **Same auth requirements** (same KYC tier gates, same 2FA prompts)
+- **Same field names sent to backend** (same camelCase mapping)
+- **Same analytics events** (same GA4 event names + payloads)
+
+## Workflow before implementing any feature
+
+1. **Find the web equivalent**. Search `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/` for the corresponding page, hook, service file
+2. **Read the backend handler**. Find the relevant `*.rs` file in `/Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/api/` to know exact request/response shapes
+3. **Read the backend types**. Cross-reference `/Users/jpvanzyl/Workspaces/Qictrader/qictrader-backend-rs/src/types/enums.rs` and `src/models/` for status enums, payload structs, validation
+4. **Read the design intent**. `qictrader-backend-rs/docs/intended-entity-state-machines.md` (snapshot in `.qictrader-context/`)
+5. **Mirror** the logic. Adapt only the rendering layer for RN primitives.
+
+## What divergence IS allowed (specifically)
+
+These are the only acceptable divergences. Anything else requires a Trello card with JP's approval.
+
+| Allowed divergence | Why |
+|---|---|
+| Native components (Touchable instead of click) | Platform primitives differ |
+| Native navigation transitions | UX expectation on mobile |
+| Bottom sheets instead of modal dialogs | Mobile pattern |
+| Pull-to-refresh on lists | Mobile pattern; web uses refresh button |
+| Native splash screen + status bar styling | Required for native shell |
+| Biometric prompt before sensitive actions | Mobile capability not on web |
+| Push notifications (vs email/in-app on web) | Different channel |
+| Camera-first photo capture (vs file picker on web) | Mobile primary input method |
+| App-state lifecycle handling (pause Socket.IO when backgrounded) | Mobile-only concern |
+| Deep linking entry points | Mobile-only |
+
+## What divergence is NEVER allowed
+
+- Different validation rules
+- Different error messages
+- Different fee calculations
+- Different state machine transitions
+- Different KYC gates
+- Different field names sent to backend
+- Different copy wording (apart from mobile-specific affordance copy like "Tap to scan")
+- "Cleaner" or "simpler" UI that omits a feature web has
+- "Faster" UX that skips a confirmation step web requires
+
+## How to verify parity
+
+Before declaring a feature done:
+
+1. Open the web version side-by-side in a browser
+2. Walk through the user flow on both, step by step
+3. Compare: form fields, validation, button labels, error messages, success states, time-stamped events
+4. Submit identical inputs to backend on both, compare responses
+5. Match analytics events fired (use GA4 DebugView)
+
+## When you spot a parity bug on web
+
+If you find a bug or weird behaviour on web while researching for a mobile feature:
+
+1. Don't replicate the bug on mobile
+2. File a Trello card on the **web** board describing it
+3. Ask JP: "Web has X, intended behaviour is Y — should mobile match X or Y?"
+4. Document the answer in the mobile ticket and proceed
+
+## When web hasn't implemented a feature yet
+
+If a mobile ticket references a feature that doesn't exist on web yet (rare, but possible if mobile leapfrogs):
+
+1. Flag to JP — propose either deferring the mobile work or doing web first
+2. If JP approves mobile-first, implement to spec from the backend contract and design intent docs
+3. Add a follow-up ticket to bring web in line
+
+## Reference shortcuts
+
+- Web auth flow: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/store/auth-store.ts`, `frontend/src/app/(auth)/`
+- Web API client: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/lib/api-client.ts`, `frontend/src/services/`
+- Web wallet: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/app/(dashboard)/wallet/`
+- Web marketplace: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/app/(dashboard)/marketplace/`
+- Web trade: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/app/(dashboard)/trades/`
+- Web KYC: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/app/(dashboard)/kyc/`
+- Web design tokens: `/Users/jpvanzyl/Workspaces/Qictrader/frontend/src/app/globals.css`, `frontend/tailwind.config.ts`

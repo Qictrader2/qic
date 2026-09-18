@@ -1,0 +1,112 @@
+---
+description: Trello workflow specifics for the 66 mobile tickets
+alwaysApply: true
+---
+
+# Trello — Mobile Tickets
+
+All 66 initial mobile tickets live on the **Project One** board with the `mobile` label. See `.qictrader-context/trello-board.md` for board / list / label IDs.
+
+Full ticket bodies are cached in `.qictrader-context/tickets-export.json` for offline reference. The Trello API is the source of truth for status — always refetch when starting a ticket.
+
+## Workflow per ticket
+
+```
+Acknowledged → Development (In Progress) → Testing (In Progress) →
+Testing (Ready) → Deployment → Done
+              ↓
+        QA (Failed) → back to Development
+```
+
+### Starting a ticket
+
+1. Source Trello creds: `source ~/.qictrader-secrets/trello.env`
+2. Fetch card detail:
+   ```bash
+   curl -s "https://api.trello.com/1/cards/{cardId}?key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}&fields=id,name,desc,labels"
+   ```
+3. Read description carefully — scope, out-of-scope, acceptance criteria, dependencies
+4. Move card to **Development (In Progress)** (`69d535af1db0250e2a011e05`):
+   ```bash
+   curl -X PUT "https://api.trello.com/1/cards/{cardId}?idList=69d535af1db0250e2a011e05&key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}"
+   ```
+5. Add a comment: 'Started work — branch: `feat/{ticket-id}`'
+
+### During implementation
+
+- One feature branch per ticket: `feat/MOBILE-{phase}-{num}`
+- Commit messages reference ticket: `MOBILE-{phase}-{num}: short summary`
+- Follow `feature-parity-with-web.mdc` — read web equivalent first
+
+### Submitting for testing
+
+After local tests pass and an EAS preview build is available:
+
+1. Move card to **Testing (In Progress)** (`69d535c8a9b1ec9d314c40b6`)
+2. Add a comment with:
+   - Branch name
+   - Latest commit SHA
+   - EAS build URL (TestFlight / Play internal link)
+   - Notes on what to test
+
+### Completion
+
+- JP tests on device, moves to **Testing (Ready)** (`69d535d2149a252f13a4cb18`) when passing
+- After production release: card moves to **Deployment** (`69d535dbae639401ec44fed2`)
+- After confirmed live + no rollback: **Done** (`69d535dd08fdd769815caa2f`)
+
+## Ticket naming
+
+`MOBILE-{PHASE}-{NUM}` where:
+
+| Phase | Meaning |
+|---|---|
+| INIT | Project foundation (scaffolding, design system, CI/CD) |
+| AUTH | Authentication + session management |
+| KYC | Know-your-customer verification |
+| WALLET | Cryptocurrency wallets + deposit/withdraw |
+| MARKET | Marketplace / offers |
+| TRADE | P2P trade flow + escrow + chat |
+| NOTIF | Push notifications |
+| PROFILE | User profile + settings |
+| AFF | Affiliate program |
+| SUPPORT | Help center + ticket submission |
+| SEC | Security hardening |
+| PERF | Performance optimization |
+| TEST | Test infrastructure |
+| LAUNCH | App Store + Play Store release pipeline |
+
+## Dependencies
+
+Many tickets depend on others (e.g. `MOBILE-WALLET-003` depends on `MOBILE-AUTH-005` for biometric). Don't start a ticket whose dependencies aren't done — read the ticket's "Dependencies" section.
+
+Suggested first-sprint order (foundational):
+
+1. `MOBILE-INIT-001` → `MOBILE-INIT-002` → `MOBILE-INIT-003`
+2. `MOBILE-INIT-005` (assets) in parallel with `MOBILE-INIT-004` (EAS CI/CD)
+3. `MOBILE-AUTH-001` → `MOBILE-AUTH-005` (biometric + session lifecycle)
+4. `MOBILE-WALLET-001` (overview)
+5. `MOBILE-MARKET-001` (list)
+6. `MOBILE-TRADE-001` (active trades)
+7. From here, expand outward per JP's prioritization
+
+## Creating new mobile tickets
+
+If you discover work that wasn't in the initial 66, create a new ticket:
+
+- Use prefix `MOBILE-{PHASE}-XXX` (next available number in that phase)
+- Place in **Acknowledged** column
+- Assign to JP (member ID `69b122ea7b958c6d8b3019dc`)
+- Apply labels: `mobile` + `feature`/`infra`/`bug`/`cleanup`
+- Description follows the same shape as the original 66: Scope / Out of scope / Acceptance criteria / Dependencies / Tech notes
+
+## Bulk operations
+
+When you need to act on many cards at once (e.g. add a comment to all mobile tickets), use a Python or shell script that:
+
+1. Sources `~/.qictrader-secrets/trello.env`
+2. Filters by `mobile` label
+3. Iterates with `time.sleep(0.15)` between requests (Trello rate limit: ~100 req/10s)
+4. Logs each result to stdout for review
+
+Pattern lives in `/tmp/mobile-tickets/create.py` from the bootstrap session if it's still around — otherwise replicate the structure.
