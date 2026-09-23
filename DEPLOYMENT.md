@@ -154,6 +154,10 @@ Opening the PR **automatically creates a Heroku Review App**:
 Demo the change on the review-app URL. Get approval. Iterate by pushing more
 commits to the same branch — the review app redeploys automatically.
 
+> If review apps are not enabled for that pipeline (check with
+> `heroku pipelines:info <pipeline>` or the Heroku dashboard), skip this step
+> and merge to `main` to test the change on staging instead.
+
 ### Step 7 — Merge to `main` → auto-deploy to staging
 
 When the PR is approved and green, **merge it**. Merging to `main` triggers an
