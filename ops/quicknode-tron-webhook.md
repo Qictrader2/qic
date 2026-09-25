@@ -34,7 +34,7 @@ never in Trello, source control, chat, or logs.
 | --- | --- | --- | --- |
 | `QUICKNODE_WEBHOOK_SECRET` | Webhook destination **security token** (dashboard, Webhooks, destination) | Yes, it is the on/off switch | Endpoint answers 503, nothing else changes |
 | `QUICKNODE_API_KEY` | QuickNode **platform API key** (dashboard, API keys). Can modify account resources, treat as the more dangerous credential | Strongly recommended | Watched-address list is not synced; new custodial addresses are invisible to the webhook until added by hand (the scanners still find them) |
-| `QUICKNODE_TRON_ADDRESS_LIST` | Name of the Key-Value Store list the webhook template filters on | Only if the list is not named `qic_tron_custodial_addresses` | Defaults to `qic_tron_custodial_addresses` |
+| `QUICKNODE_TRON_ADDRESS_LIST` | Name of the Key-Value Store list the backend syncs and the filter reads | Only if the list is not named `qic_tron_custodial_addresses` | Defaults to `qic_tron_custodial_addresses` |
 | `TRON_BLOCK_SCAN_ENABLED` | Our own switch, no credential | Independent of QuickNode | Finalized-block scan is off; the webhook and the wallet-rotation scan still run |
 
 Order: create the KV list, create the webhook pointing at it, set
@@ -90,16 +90,33 @@ TRON_BLOCK_SCAN_ENABLED`; the watermark is kept and resumes on re-enable.
 1. QuickNode dashboard → **Webhooks** → Create Webhook.
 2. Network: **Tron Mainnet**. See the Nile note below before planning a staging
    test.
-3. Template: the Tron **Wallet Activity Monitor**.
+3. Filter: choose **write your own filter** (not the Wallet Activity Monitor
+   template), dataset `block_with_receipts`, and paste
+   `ops/quicknode/tron-usdt-deposit-filter.js`. The template's payload is not
+   documented and is not the shape the backend parses; a delivery in the wrong
+   shape is answered 200 and logged as unparseable, so the webhook would look
+   healthy while doing nothing. The filter emits exactly the shape under
+   "Required payload shape", converts QuickNode's hex addresses to base58, keeps
+   only successful USDT transfers, and checks the recipient against the KV list
+   itself (`qnLib.qnContainsListItem`). Use the dashboard's filter test on a
+   recent block containing a USDT transfer to one of our addresses before
+   saving. Its tests: `node --test ops/quicknode/`.
 4. Destination URL: `https://<app-host>/webhooks/quicknode`.
 5. Security token: generate a high-entropy value, set it here **and** as
    `QUICKNODE_WEBHOOK_SECRET`. Do not let QuickNode auto-generate it unless you
    are going to copy it straight into Heroku config.
 6. Compression: `none` is preferred. `gzip` also works (we inflate before
    verifying), but `none` keeps the failure modes simpler.
-7. Watched addresses: point the template at a **Key-Value Store list** named to
-   match `QUICKNODE_TRON_ADDRESS_LIST` (default
-   `qic_tron_custodial_addresses`). Do not paste addresses inline — see below.
+7. Watched addresses: the filter reads the **Key-Value Store list**
+   `qic_tron_custodial_addresses`. If `QUICKNODE_TRON_ADDRESS_LIST` is set to a
+   different name, change `WATCH_LIST` in the filter to match. The backend
+   creates and fills the list at boot once `QUICKNODE_API_KEY` is set, so set
+   that key and let one boot finish before saving the webhook.
+8. Before pointing it at production, send the dashboard's test delivery to
+   staging (which holds its own `QUICKNODE_WEBHOOK_SECRET`). The log line
+   `claim does not match a confirmed TRC-20 transfer` means the shape parsed and
+   only the chain check refused it (the mainnet tx does not exist on Nile).
+   `unparseable` means the shape is wrong.
 
 ### Nile testnet is not available on Webhooks
 
@@ -218,7 +235,7 @@ diverged — check the payload shape first.
 
 ### Required payload shape
 
-The template must emit a JSON **array** of objects with these fields. Pinned by
+The filter must emit a JSON **array** of objects with these fields. Pinned by
 `a_stream_payload_deserialises_from_the_documented_shape` in
 `src/services/quicknode_webhook.rs`; change one, change the other, or deposits
 stop silently.
@@ -321,6 +338,12 @@ signs exactly as QuickNode does and never prints the token.
 
 A fresh Nile deposit to a staging custodial address, replayed before the
 scanners reach it, additionally proves the first-arrival path end to end.
+
+Last run 2026-09-25 against tx `40e74e47…` (11 USDT, 1 row, 3 ledger rows):
+wrong signature 401; signed 200 and chain check passed; same delivery again
+200; wrong amount 200 with the mismatch warning. Afterwards still 1 row and 3
+ledger rows. The staging secret was left set so the dashboard test delivery in
+step 8 of the setup can be checked.
 4. Watch for a week alongside the scanner. Deposits found by both paths must
    still show one row and one credit.
 5. Production is a separate webhook with its own security token and API key.
