@@ -24,6 +24,26 @@ money-moving path). Unsetting it does not — rollback should never need a meeti
 The value must equal the **destination's security token** in the QuickNode
 dashboard, character for character. It is the HMAC key, not a password.
 
+## Credentials and config checklist
+
+One set per environment. Never reuse the staging values in production. Store
+the values in Enpass under the `developers@qictrader.com` QuickNode account,
+never in Trello, source control, chat, or logs.
+
+| Config var | Where it comes from | Required? | Effect when unset |
+| --- | --- | --- | --- |
+| `QUICKNODE_WEBHOOK_SECRET` | Webhook destination **security token** (dashboard, Webhooks, destination) | Yes, it is the on/off switch | Endpoint answers 503, nothing else changes |
+| `QUICKNODE_API_KEY` | QuickNode **platform API key** (dashboard, API keys). Can modify account resources, treat as the more dangerous credential | Strongly recommended | Watched-address list is not synced; new custodial addresses are invisible to the webhook until added by hand (the scanners still find them) |
+| `QUICKNODE_TRON_ADDRESS_LIST` | Name of the Key-Value Store list the webhook template filters on | Only if the list is not named `qic_tron_custodial_addresses` | Defaults to `qic_tron_custodial_addresses` |
+| `TRON_BLOCK_SCAN_ENABLED` | Our own switch, no credential | Independent of QuickNode | Finalized-block scan is off; the webhook and the wallet-rotation scan still run |
+
+Order: create the KV list, create the webhook pointing at it, set
+`QUICKNODE_API_KEY` (boot syncs every custodial address into the list), then
+set `QUICKNODE_WEBHOOK_SECRET`.
+
+Current state (2026-09-25): none of the three QuickNode vars is set on staging
+or production. `TRON_BLOCK_SCAN_ENABLED=true` on staging, unset on production.
+
 ## The scanner keeps running
 
 Enabling the webhook no longer changes how deposits are discovered. Both the
@@ -43,6 +63,27 @@ used to require turning the scanner's Tron detection off. That coupling is gone.
 Proven by `tests/quicknode_tron_webhook_xbizvcc3.rs`:
 `the_scanner_and_the_webhook_converge_on_a_single_deposit` and
 `the_order_the_two_paths_arrive_in_does_not_change_the_outcome`.
+
+## Three discovery paths, all live
+
+| Path | Switch | Latency | Cost scales with |
+| --- | --- | --- | --- |
+| QuickNode webhook | `QUICKNODE_WEBHOOK_SECRET` | seconds | chain activity matching the KV list |
+| Finalized-block scan (#821) | `TRON_BLOCK_SCAN_ENABLED` | about a minute | blocks produced, not wallet count |
+| Wallet-rotation scan (deposit monitor) | always on | one lap of every Tron wallet per tick | number of wallets |
+
+All three record under the real transaction id and converge on one credit. The
+wallet-rotation scan is the permanent backstop: it reads a balance rather than a
+feed, so it is the only path that finds money that arrived while every feed was
+broken. It is not a fallback to retire once something faster ships.
+
+The block scan reads from the `walletsolidity` node, so every block it sees is
+already final. Its watermark (`chain_scan_cursors`) is durable and advances one
+block at a time after that block's transfers are recorded, so a crash resumes
+rather than skips, and a failed read holds the watermark instead of leaving a
+hole. Transfers are read from event logs, so contract-routed transfers are seen,
+and only `SUCCESS` receipts count. Rollback is `heroku config:unset
+TRON_BLOCK_SCAN_ENABLED`; the watermark is kept and resumes on re-enable.
 
 ## Webhook setup
 
@@ -241,6 +282,45 @@ WHERE tx_type = 'deposit'
 2. Create the webhook and the KV list. Set `QUICKNODE_API_KEY` first so the
    address sync populates the list at boot.
 3. Set `QUICKNODE_WEBHOOK_SECRET`. Confirm a delivery is accepted, not 401'd.
+
+### Staging proof without a live webhook
+
+QuickNode cannot deliver Nile transactions, so staging is proven by replaying
+a correctly signed delivery with `ops/scripts/quicknode_tron_replay.py`. It
+signs exactly as QuickNode does and never prints the token.
+
+1. Set a staging-only security token (sign-off required):
+   `heroku config:set QUICKNODE_WEBHOOK_SECRET=<random 32+ chars> -a qictrader-backend-staging`.
+2. Load it into the shell without echoing:
+   `export QUICKNODE_WEBHOOK_SECRET="$(heroku config:get QUICKNODE_WEBHOOK_SECRET -a qictrader-backend-staging)"`.
+3. Pick a real Nile USDT deposit already recorded on staging. Staging stores
+   Nile deposits under the `tron_mainnet` enum value; `amount` is in minor
+   units and goes straight into `--value`:
+   ```sql
+   SELECT wt.tx_hash, cw.address, wt.amount
+   FROM wallet_transactions wt
+   JOIN custodial_wallets cw ON cw.user_id = wt.user_id AND cw.network = wt.network
+   WHERE wt.tx_type = 'deposit' AND wt.network = 'tron_mainnet'
+     AND wt.tx_hash NOT LIKE 'auto_deposit_%'
+   ORDER BY wt.created_at DESC LIMIT 1;
+   ```
+   Record the ledger row count before replaying:
+   `SELECT count(*) FROM ledger_entries WHERE reference = '<tx>';`
+4. Replay it with a **wrong** signature: expect `401`.
+5. Replay it correctly signed: expect `200` and the log line `duplicate
+   delivery`. Then confirm the transaction still has exactly one row and the
+   ledger count is unchanged from step 3:
+   ```sql
+   SELECT count(*) FROM wallet_transactions WHERE tx_hash = '<tx>' AND tx_type = 'deposit';
+   SELECT count(*) FROM ledger_entries WHERE reference = '<tx>';
+   ```
+6. Replay a claim whose amount differs from the chain: expect `200` and the
+   warning `QuickNode claim does not match a confirmed TRC-20 transfer`, with no
+   new row.
+7. Unset the staging secret afterwards unless the week-long watch is running.
+
+A fresh Nile deposit to a staging custodial address, replayed before the
+scanners reach it, additionally proves the first-arrival path end to end.
 4. Watch for a week alongside the scanner. Deposits found by both paths must
    still show one row and one credit.
 5. Production is a separate webhook with its own security token and API key.
