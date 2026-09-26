@@ -3,9 +3,10 @@
 Runbook for the webhook that makes Tron deposits land in seconds instead of
 waiting for the deposit scanner to come round to the address again.
 
-**Status: built, shipped dark.** `QUICKNODE_WEBHOOK_SECRET` is unset on every
-environment, so `POST /webhooks/quicknode` answers 503. Deposit handling is
-exactly what it was before, on every environment.
+**Status (2026-09-26): live on staging (Tron Nile), not enabled on production.**
+Staging has its own webhook, KV list and config. Production still answers 503
+on `POST /webhooks/quicknode` until JP approves the staging evidence and the
+production webhook is created with its own key and token.
 
 > This runbook was rewritten for the **Webhooks** product (not Streams). The
 > two differ in ways that matter here: authentication, the address-list
@@ -33,16 +34,24 @@ never in Trello, source control, chat, or logs.
 | Config var | Where it comes from | Required? | Effect when unset |
 | --- | --- | --- | --- |
 | `QUICKNODE_WEBHOOK_SECRET` | Webhook destination **security token** (dashboard, Webhooks, destination) | Yes, it is the on/off switch | Endpoint answers 503, nothing else changes |
-| `QUICKNODE_API_KEY` | QuickNode **platform API key** (dashboard, API keys). Can modify account resources, treat as the more dangerous credential | Strongly recommended | Watched-address list is not synced; new custodial addresses are invisible to the webhook until added by hand (the scanners still find them) |
-| `QUICKNODE_TRON_ADDRESS_LIST` | Name of the Key-Value Store list the backend syncs and the filter reads | Only if the list is not named `qic_tron_custodial_addresses` | Defaults to `qic_tron_custodial_addresses` |
+| `QUICKNODE_API_KEY` | QuickNode **platform API key** (dashboard, API keys). It must include the **Key-Value Store** and **Webhooks** applications with the **Admin** role. Permissions cannot be edited after a key is created, so a key missing Key-Value Store has to be replaced (the KV calls answer 403). Can modify account resources, treat as the more dangerous credential | Strongly recommended | Watched-address list is not synced; new custodial addresses are invisible to the webhook until added by hand (the scanners still find them) |
+| `QUICKNODE_TRON_ADDRESS_LIST` | Name of the Key-Value Store list the backend syncs and the webhook reads | Yes on staging (`qic_tron_custodial_addresses_staging`); production uses the default | Defaults to `qic_tron_custodial_addresses` |
 | `TRON_BLOCK_SCAN_ENABLED` | Our own switch, no credential | Independent of QuickNode | Finalized-block scan is off; the webhook and the wallet-rotation scan still run |
 
-Order: create the KV list, create the webhook pointing at it, set
-`QUICKNODE_API_KEY` (boot syncs every custodial address into the list), then
-set `QUICKNODE_WEBHOOK_SECRET`.
+Order: set `QUICKNODE_API_KEY` and `QUICKNODE_TRON_ADDRESS_LIST` (boot creates
+the KV list and syncs every custodial address into it), create the webhook
+pointing at the list, then set `QUICKNODE_WEBHOOK_SECRET`. The setup script
+below does all of it in that order.
 
-Current state (2026-09-25): none of the three QuickNode vars is set on staging
-or production. `TRON_BLOCK_SCAN_ENABLED=true` on staging, unset on production.
+Current state (2026-09-26):
+
+| Environment | Webhook | Network | KV list | Config |
+| --- | --- | --- | --- | --- |
+| Staging (`qictrader-backend-staging`) | `qictrader-staging-tron-nile`, active | `tron-nile` | `qic_tron_custodial_addresses_staging` | all three QuickNode vars set; `TRON_BLOCK_SCAN_ENABLED=true` |
+| Production (`qictrader-backend-rs`) | not created | `tron-mainnet` (planned) | `qic_tron_custodial_addresses` (planned) | no QuickNode vars; `TRON_BLOCK_SCAN_ENABLED` unset (off) |
+
+Production needs a new API key with Key-Value Store + Webhooks (Admin). The
+existing `qictrader-production-webhooks` key has Webhooks only.
 
 ## The scanner keeps running
 
@@ -68,7 +77,7 @@ Proven by `tests/quicknode_tron_webhook_xbizvcc3.rs`:
 
 | Path | Switch | Latency | Cost scales with |
 | --- | --- | --- | --- |
-| QuickNode webhook | `QUICKNODE_WEBHOOK_SECRET` | seconds | chain activity matching the KV list |
+| QuickNode webhook | `QUICKNODE_WEBHOOK_SECRET` | delivered in seconds, recorded once the block is solid (about a minute) | chain activity matching the KV list |
 | Finalized-block scan (#821) | `TRON_BLOCK_SCAN_ENABLED` | about a minute | blocks produced, not wallet count |
 | Wallet-rotation scan (deposit monitor) | always on | one lap of every Tron wallet per tick | number of wallets |
 
@@ -87,60 +96,60 @@ TRON_BLOCK_SCAN_ENABLED`; the watermark is kept and resumes on re-enable.
 
 ## Webhook setup
 
-1. QuickNode dashboard → **Webhooks** → Create Webhook.
-2. Network: **Tron Mainnet**. See the Nile note below before planning a staging
-   test.
-3. Filter: choose **write your own filter** (not the Wallet Activity Monitor
-   template), dataset `block_with_receipts`, and paste
-   `ops/quicknode/tron-usdt-deposit-filter.js`. The template's payload is not
-   documented and is not the shape the backend parses; a delivery in the wrong
-   shape is answered 200 and logged as unparseable, so the webhook would look
-   healthy while doing nothing. The filter emits exactly the shape under
-   "Required payload shape", converts QuickNode's hex addresses to base58, keeps
-   only successful USDT transfers, and checks the recipient against the KV list
-   itself (`qnLib.qnContainsListItem`). Use the dashboard's filter test on a
-   recent block containing a USDT transfer to one of our addresses before
-   saving. Its tests: `node --test ops/quicknode/`.
-4. Destination URL: `https://<app-host>/webhooks/quicknode`.
-5. Security token: generate a high-entropy value, set it here **and** as
-   `QUICKNODE_WEBHOOK_SECRET`. Do not let QuickNode auto-generate it unless you
-   are going to copy it straight into Heroku config.
-6. Compression: `none` is preferred. `gzip` also works (we inflate before
-   verifying), but `none` keeps the failure modes simpler.
-7. Watched addresses: the filter reads the **Key-Value Store list**
-   `qic_tron_custodial_addresses`. If `QUICKNODE_TRON_ADDRESS_LIST` is set to a
-   different name, change `WATCH_LIST` in the filter to match. The backend
-   creates and fills the list at boot once `QUICKNODE_API_KEY` is set, so set
-   that key and let one boot finish before saving the webhook.
-8. Before pointing it at production, send the dashboard's test delivery to
-   staging (which holds its own `QUICKNODE_WEBHOOK_SECRET`). The log line
-   `claim does not match a confirmed TRC-20 transfer` means the shape parsed and
-   only the chain check refused it (the mainnet tx does not exist on Nile).
-   `unparseable` means the shape is wrong.
+Use `ops/scripts/quicknode_tron_webhook_setup.py`. It is idempotent: run it
+again to repair drift, and it only changes what differs.
 
-### Nile testnet is not available on Webhooks
+```bash
+source ~/.qictrader-secrets/load-all.sh
+# The API key is read from a 0600 file holding just the key, never from argv:
+#   ~/.qictrader-secrets/quicknode_api_key_staging
+#   ~/.qictrader-secrets/quicknode_api_key_production
+python3 ops/scripts/quicknode_tron_webhook_setup.py --env staging status
+python3 ops/scripts/quicknode_tron_webhook_setup.py --env staging apply
+```
 
-QuickNode's Webhooks supported-network table lists Tron with **no testnet**.
-Nile is available for RPC only. Every other chain that has a testnet lists it
-(Solana: Devnet, Testnet; Stellar: Testnet), so the omission is real rather than
-a documentation gap.
+`apply` does this, in order, and never prints a secret:
 
-Consequences for the rollout plan:
+1. Reads the custodial Tron addresses from the app's database and adds them to
+   the environment's KV list (creating it if needed).
+2. Sets `QUICKNODE_API_KEY` and `QUICKNODE_TRON_ADDRESS_LIST` on the app if
+   they differ, then waits for `/health` after the restart. Boot re-syncs the
+   list.
+3. Reuses the app's `QUICKNODE_WEBHOOK_SECRET` as the security token, so a
+   rerun never rotates it. Otherwise it generates one, keeps a copy in
+   `~/.qictrader-secrets/quicknode_webhook_secret_<env>` (0600) and sets it.
+   Then it requires an unsigned probe to answer `401`, which proves the
+   endpoint is armed.
+4. Creates the webhook (or updates the existing one's template) with template
+   `evmWalletFilter` and `{"walletsListName": "<list>"}`, activates it with
+   `startFrom: latest`, and verifies it is active and its token matches the
+   app's.
 
-- A Nile webhook for staging **cannot be created**. The plan of "test on Nile,
-  then promote" does not work as written.
-- Staging's `TRON_RPC_URL` points at Nile, so a mainnet webhook's deliveries
-  would reference transactions staging's RPC cannot confirm — and the receipt
-  check would (correctly) refuse them.
-- What can be verified without mainnet money: everything except a real
-  delivery. The signature contract, the payload contract, deduplication,
-  ordering, restart behaviour and forgery rejection are all covered by the
-  automated tests, which run against real Postgres.
-- What genuinely needs a live delivery: point a webhook at **production** with
-  a small real deposit, or ask QuickNode support to enable a Tron testnet (the
-  docs invite template and network requests).
+| Environment | App | Webhook name | Network id | KV list | Destination |
+| --- | --- | --- | --- | --- | --- |
+| `staging` | `qictrader-backend-staging` | `qictrader-staging-tron-nile` | `tron-nile` | `qic_tron_custodial_addresses_staging` | `https://staging-api.qictrader.com/webhooks/quicknode` |
+| `production` | `qictrader-backend-rs` | `qictrader-production-tron-mainnet` | `tron-mainnet` | `qic_tron_custodial_addresses` | `https://api.qictrader.com/webhooks/quicknode` |
 
-Flag this to whoever owns the QuickNode account before the free trial is spent.
+The script refuses to proceed when more than one webhook matches the name, or
+when the existing webhook is on a different network (a template update cannot
+move networks). `delete-webhook --id <id>` removes a stray one.
+
+Setting config on production needs JP's explicit go-ahead, and production must
+never be configured in the same step as staging.
+
+Notes from setting it up:
+
+- **Nile is available on Webhooks** as network id `tron-nile`, even though the
+  public supported-network table lists Tron without a testnet. The REST API's
+  network list (returned in the 400 for an invalid network) includes it.
+- The template delivers blocks with receipts. The backend keeps successful
+  receipts (`status` `0x1`) and USDT `Transfer` logs, and converts the 20- or
+  32-byte hex addresses to base58 itself. See "Required payload shape".
+- Cloudflare in front of `api.quicknode.com` rejects Python urllib's default
+  User-Agent (error 1010). The script sends its own.
+- The custom filter in `ops/quicknode/tron-usdt-deposit-filter.js` is not used
+  by the current webhooks. It stays as a fallback if the template is ever
+  withdrawn.
 
 ## Watched addresses sync themselves
 
@@ -157,8 +166,13 @@ It writes to the **KV Store list**, never to the webhook:
 
 ```
 PATCH https://api.quicknode.com/kv/rest/v1/lists/<QUICKNODE_TRON_ADDRESS_LIST>
-{ "addItems": ["T…", "T…"] }
+{ "addItems": ["0x0c31bf48…", "0x…"] }
 ```
+
+Items are the **20-byte EVM form** of each Tron address: lowercase `0x` plus
+40 hex characters, with the `41` prefix dropped. That is what the
+`evmWalletFilter` template matches against. The backend converts from base58
+(`TB5ghrgm…` becomes `0x0c31bf48…`), and re-adding an existing item is a no-op.
 
 Two reasons it works this way:
 
@@ -180,8 +194,14 @@ filtered block. Addresses upstream that we do not own are logged and left alone.
 Check what is watched:
 
 ```bash
-curl -sS https://api.quicknode.com/kv/rest/v1/lists/qic_tron_custodial_addresses \
-  -H "x-api-key: $QUICKNODE_API_KEY" | jq 'length'
+python3 ops/scripts/quicknode_tron_webhook_setup.py --env staging status
+```
+
+or by hand (the response is `{"code", "msg", "data": {"items": [...]}, "cursor"}`):
+
+```bash
+curl -sS https://api.quicknode.com/kv/rest/v1/lists/qic_tron_custodial_addresses_staging \
+  -H "x-api-key: $QUICKNODE_API_KEY" | jq '.data.items | length'
 ```
 
 Compare against the database:
@@ -223,22 +243,53 @@ A valid signature proves QuickNode sent the bytes unaltered. It does not prove
 the chain agrees — a provider bug, a bad filter, or a stale address list can all
 deliver a claim with no confirmed transfer behind it.
 
-So before recording, the handler reads the recipient's confirmed TRC-20
-transfers from TronGrid and requires the claimed transaction id, contract,
-recipient and **amount** to match. Amounts are summed across transfers sharing a
-transaction id. A claim that does not match is logged and dropped; if it turns
-out to be real, the scanner records it later.
+So before recording, the handler reads the recipient's TRC-20 transfers from
+TronGrid **with `only_confirmed=true`** and requires the claimed transaction
+id, contract, recipient and **amount** to match. Amounts are summed across
+transfers sharing a transaction id. Webhook rows are tagged
+`sighted_unconfirmed: false` and skip the 821 solidity hold, so only a solid
+block may satisfy the check. TronGrid's default listing also returns transfers
+from blocks that are not solid yet, which is why the flag is explicit.
 
-Log line to look for: `QuickNode claim does not match a confirmed TRC-20
-transfer`. A burst of these means the webhook's filter and our contract have
-diverged — check the payload shape first.
+QuickNode delivers at block inclusion, but TronGrid lists the transfer as
+confirmed only once the block is solid, about 19 blocks (roughly a minute)
+later. The check at delivery time therefore normally misses. The handler
+answers 200 at once and re-checks in the background at 15, 30, 45, 60, 80, 110,
+170 and 290 seconds (`CLAIM_RECHECK_DELAYS`, one TronGrid call per step). Once
+it matches, the deposit is recorded, swept and credited as usual. If the
+scanner records it first, the webhook stands down. After the last step, or if
+the dyno restarts mid-schedule, the scanners are the backstop.
+
+Transfers to an address we do not custody (every sweep out of a custodial
+wallet goes to the hot wallet, and the wallet filter fires for those too) are
+settled from the database without calling TronGrid.
+
+Log lines:
+
+| Line | Meaning |
+| --- | --- |
+| `QuickNode claim is not confirmed on chain yet — re-checking in the background` | Normal for every new deposit |
+| `QuickNode claim confirmed on chain and recorded` | The webhook recorded it; sweep and credit follow |
+| `QuickNode claim confirmed on chain; already recorded by another path` | The block scan or poller got there first |
+| `QuickNode claim never matched a confirmed TRC-20 transfer` | Nothing confirmed within about five minutes. A burst means the payload and the chain disagree; check the payload shape first |
 
 ### Required payload shape
 
-The filter must emit a JSON **array** of objects with these fields. Pinned by
-`a_stream_payload_deserialises_from_the_documented_shape` in
-`src/services/quicknode_webhook.rs`; change one, change the other, or deposits
-stop silently.
+The backend accepts two shapes:
+
+1. **The `evmWalletFilter` template's delivery** (what both webhooks send):
+   blocks with transaction receipts. Only receipts with `status` `0x1` count,
+   only logs whose first topic is the ERC-20 `Transfer` signature, and the
+   recipient and contract are converted from hex to base58. Pinned by
+   `the_wallet_template_payload_yields_the_real_nile_deposit` (a captured Nile
+   delivery) and `a_reverted_receipt_produces_no_transfer` in
+   `src/services/quicknode_webhook.rs`.
+2. **A flat JSON array**, which is what the custom filter emits:
+
+The flat shape is an array of objects with these fields. Pinned by
+`a_stream_payload_deserialises_from_the_documented_shape` and
+`the_flat_transfer_list_still_parses`; change one, change the other, or
+deposits stop silently.
 
 ```json
 [
@@ -268,7 +319,8 @@ non-2xx, and retrying a body we can never parse just burns credits.
 | Declared `gzip` but not inflatable | 400 |
 | Authenticated, unparseable body | 200, logged as an error |
 | Non-USDT token, zero/negative/oversized amount, unknown address | 200, skipped |
-| Claim with no matching confirmed transfer | 200, skipped and warned |
+| Claim not confirmed on chain yet | 200, re-checked in the background for about five minutes |
+| Transfer to an address we do not custody (for example a sweep) | 200, settled without calling TronGrid |
 | Duplicate delivery of a recorded tx | 200, no-op via `ON CONFLICT (tx_hash, tx_type)` |
 
 ## Cost model
@@ -300,11 +352,30 @@ WHERE tx_type = 'deposit'
    address sync populates the list at boot.
 3. Set `QUICKNODE_WEBHOOK_SECRET`. Confirm a delivery is accepted, not 401'd.
 
-### Staging proof without a live webhook
+### Live staging proof (2026-09-26)
 
-QuickNode cannot deliver Nile transactions, so staging is proven by replaying
-a correctly signed delivery with `ops/scripts/quicknode_tron_replay.py`. It
-signs exactly as QuickNode does and never prints the token.
+Real Nile USDT transfers from `testusera` (sent through the staging withdraw
+API) to `testuserb`'s custodial address `TB5ghrgmttWbWZkh72mx6uQmFVdk1kCjNs`.
+The signup sync had added that address to the watch list 74 ms after the wallet
+was created.
+
+| Run | Setup | Transfer | What happened | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Before #249, block scan on | `8c2d51f5…`, 5 USDT | QuickNode delivered within a second and the signature and payload were fine, but the single chain check ran before TronGrid had indexed the block and dropped the claim. The block scan recorded it 4 s later. Held below the 10 USDT minimum | Found the bug fixed in backend #249 |
+| 2 | After #249, `TRON_BLOCK_SCAN_ENABLED=false` (as on production) | `eebe2897…`, 10 USDT | Delivered 08:21:18 UTC, not confirmed yet, re-check started. Confirmed and recorded by the webhook at 08:22:19 (61 s). 15 USDT swept at 08:22:32 (`8dd442bf…`), both deposits credited net of the sweep fee (3.314565 + 6.629130 USDT) | 1 row each; this one tagged `quicknode_webhook` with `sighted_unconfirmed=false`; 3 ledger rows each |
+| 3 | After #249, block scan on | `7be1caf8…`, 10 USDT | Block scan recorded it at head in 6 s. The webhook re-check confirmed it at 61 s and stood down ("already recorded by another path"). Swept and credited at 08:24:58 | 1 row, one credit |
+
+`testuserb`'s USDT balance went 2013.611111, then 2023.554806, then
+2033.554806. With the block scan off, a deposit went from broadcast to credited
+in about 75 seconds through the webhook alone.
+
+### Replaying a signed delivery
+
+The live staging webhook is the main proof (see "Live staging proof" below).
+Replaying a correctly signed delivery with `ops/scripts/quicknode_tron_replay.py`
+still covers the cases a live delivery cannot stage on demand: a forged
+signature, a redelivery and a wrong amount. It signs exactly as QuickNode does
+and never prints the token.
 
 1. Set a staging-only security token (sign-off required):
    `heroku config:set QUICKNODE_WEBHOOK_SECRET=<random 32+ chars> -a qictrader-backend-staging`.
@@ -355,9 +426,13 @@ step 8 of the setup can be checked.
 heroku logs -a <app> -n 500 | grep -iE 'QUICKNODE'
 ```
 
-Expect `recorded pending TRC-20 USDT deposit` on new deposits, `duplicate
-delivery` on redeliveries, and `QUICKNODE_MGMT` lines at boot. A double credit
-would show as two rows for one transaction id:
+Expect, for each new deposit, `processing QuickNode TRC-20 transfers`, then
+`not confirmed on chain yet — re-checking in the background`, then about a
+minute later either `confirmed on chain and recorded` (followed by the sweep
+and `credited deferred USDT deposit`) or `already recorded by another path`.
+Expect `duplicate delivery` on redeliveries and `QUICKNODE_MGMT` lines at boot
+and when a custodial Tron wallet is created. A double credit would show as two
+rows for one transaction id:
 
 ```sql
 SELECT tx_hash, count(*)
