@@ -1,0 +1,335 @@
+{
+  "created": [
+    {
+      "id": "MOBILE-INIT-001",
+      "card_id": "6a1022c35d25aded7051424f",
+      "short": "xAWvNaBO"
+    },
+    {
+      "id": "MOBILE-INIT-002",
+      "card_id": "6a1022c412304b09d7e1c093",
+      "short": "bDggybzX"
+    },
+    {
+      "id": "MOBILE-INIT-003",
+      "card_id": "6a1022c58ba5598996f3e3fa",
+      "short": "5qT7volX"
+    },
+    {
+      "id": "MOBILE-INIT-004",
+      "card_id": "6a1022c6ae34a1988f4da35d",
+      "short": "TP5NTPBA"
+    },
+    {
+      "id": "MOBILE-INIT-005",
+      "card_id": "6a1022c71d0249b76c59985a",
+      "short": "pzJWS4tf"
+    },
+    {
+      "id": "MOBILE-AUTH-001",
+      "card_id": "6a1022c80f341e8c0d41cd86",
+      "short": "7nM3ZRhI"
+    },
+    {
+      "id": "MOBILE-AUTH-002",
+      "card_id": "6a1022c9e29965f75268aa92",
+      "short": "3uWZKQ0L"
+    },
+    {
+      "id": "MOBILE-AUTH-003",
+      "card_id": "6a1022ca0833bd84339f49eb",
+      "short": "8ljGWPlD"
+    },
+    {
+      "id": "MOBILE-AUTH-004",
+      "card_id": "6a1022cbbc317497ee5302d2",
+      "short": "RaP4642H"
+    },
+    {
+      "id": "MOBILE-AUTH-005",
+      "card_id": "6a1022cc27c69fc1218dcb8c",
+      "short": "c3TS3CQk"
+    },
+    {
+      "id": "MOBILE-AUTH-006",
+      "card_id": "6a1022cd242b4afae21ff7a1",
+      "short": "8BqvCpVI"
+    },
+    {
+      "id": "MOBILE-KYC-001",
+      "card_id": "6a1022cf3133f7e44f3ac1ea",
+      "short": "rEi9SP1f"
+    },
+    {
+      "id": "MOBILE-KYC-002",
+      "card_id": "6a1022d027c69fc1218dd4bc",
+      "short": "xDqxnzVw"
+    },
+    {
+      "id": "MOBILE-KYC-003",
+      "card_id": "6a1022d122c3181b7c05131d",
+      "short": "pj38Hzlz"
+    },
+    {
+      "id": "MOBILE-KYC-004",
+      "card_id": "6a1022d2c6a7c16b5a44040c",
+      "short": "4hGHqen9"
+    },
+    {
+      "id": "MOBILE-WALLET-001",
+      "card_id": "6a1022d3144873b8b8d52095",
+      "short": "xk2MxNVq"
+    },
+    {
+      "id": "MOBILE-WALLET-002",
+      "card_id": "6a1022d4c27a8ceef08d207c",
+      "short": "kFw9lTov"
+    },
+    {
+      "id": "MOBILE-WALLET-003",
+      "card_id": "6a1022d579d4dd1ca4a7332c",
+      "short": "NDZyJxBy"
+    },
+    {
+      "id": "MOBILE-WALLET-004",
+      "card_id": "6a1022d61072ac3c3ea63f99",
+      "short": "qNTLoccT"
+    },
+    {
+      "id": "MOBILE-WALLET-005",
+      "card_id": "6a1022d7550a7b7b21da38ef",
+      "short": "w8nu6AoJ"
+    },
+    {
+      "id": "MOBILE-WALLET-006",
+      "card_id": "6a1022d9d19cb0b6c4bb2c3d",
+      "short": "uuFwLBTZ"
+    },
+    {
+      "id": "MOBILE-WALLET-007",
+      "card_id": "6a1022dac25d8d498e4b6ee1",
+      "short": "d8ARSK0K"
+    },
+    {
+      "id": "MOBILE-WALLET-008",
+      "card_id": "6a1022db8e9077413391218e",
+      "short": "Xr3cgZMn"
+    },
+    {
+      "id": "MOBILE-MARKET-001",
+      "card_id": "6a1022dc21ea7296a0151546",
+      "short": "miNFMCxo"
+    },
+    {
+      "id": "MOBILE-MARKET-002",
+      "card_id": "6a1022dd2b1d9b959e2f84ab",
+      "short": "WiurTQ0U"
+    },
+    {
+      "id": "MOBILE-MARKET-003",
+      "card_id": "6a1022df613772cc13f2e86c",
+      "short": "YJXcZPYd"
+    },
+    {
+      "id": "MOBILE-MARKET-004",
+      "card_id": "6a1022e09b765eb520f031d3",
+      "short": "Q4QN9Kka"
+    },
+    {
+      "id": "MOBILE-MARKET-005",
+      "card_id": "6a1022e1c8448b09cd07017a",
+      "short": "yxRmnkR9"
+    },
+    {
+      "id": "MOBILE-MARKET-006",
+      "card_id": "6a1022e2cb4dbb2d57b40fef",
+      "short": "dPqB6yqy"
+    },
+    {
+      "id": "MOBILE-TRADE-001",
+      "card_id": "6a1022e3a644bd570add4d3e",
+      "short": "RF1FpLxe"
+    },
+    {
+      "id": "MOBILE-TRADE-002",
+      "card_id": "6a1022e4264956db0ac91abd",
+      "short": "knKCuYoU"
+    },
+    {
+      "id": "MOBILE-TRADE-003",
+      "card_id": "6a1022e552075040287dc445",
+      "short": "TTczatFX"
+    },
+    {
+      "id": "MOBILE-TRADE-004",
+      "card_id": "6a1022e62951c8ccc637b7a1",
+      "short": "zVwVJdXr"
+    },
+    {
+      "id": "MOBILE-TRADE-005",
+      "card_id": "6a1022e75568bf33c4398bdf",
+      "short": "tgE4Jw1b"
+    },
+    {
+      "id": "MOBILE-TRADE-006",
+      "card_id": "6a1022e810dd522617dfaa26",
+      "short": "VCMncvmy"
+    },
+    {
+      "id": "MOBILE-TRADE-007",
+      "card_id": "6a1022e9c90823fb7ba9ba06",
+      "short": "G7tdRmCx"
+    },
+    {
+      "id": "MOBILE-TRADE-008",
+      "card_id": "6a1022ea3f246bbcd5952a38",
+      "short": "jegPKfeG"
+    },
+    {
+      "id": "MOBILE-NOTIF-001",
+      "card_id": "6a1022eb15d899ce59b48b2f",
+      "short": "pUIF1bw5"
+    },
+    {
+      "id": "MOBILE-NOTIF-002",
+      "card_id": "6a1022eca487801f98d6e221",
+      "short": "jB9pQjVb"
+    },
+    {
+      "id": "MOBILE-NOTIF-003",
+      "card_id": "6a1022eec946a3969496afa5",
+      "short": "xvrXn2NH"
+    },
+    {
+      "id": "MOBILE-PROFILE-001",
+      "card_id": "6a1022efa2baa99ed5221131",
+      "short": "7aTRx1kd"
+    },
+    {
+      "id": "MOBILE-PROFILE-002",
+      "card_id": "6a1022f01da0f18dcfa08060",
+      "short": "AJ283wyI"
+    },
+    {
+      "id": "MOBILE-PROFILE-003",
+      "card_id": "6a1022f1455e196f4c541760",
+      "short": "Sw6C2UVM"
+    },
+    {
+      "id": "MOBILE-PROFILE-004",
+      "card_id": "6a1022f2084f0e57314eea9f",
+      "short": "4JE1w4m3"
+    },
+    {
+      "id": "MOBILE-PROFILE-005",
+      "card_id": "6a1022f39c0617f097549d24",
+      "short": "KHsLSuYY"
+    },
+    {
+      "id": "MOBILE-AFF-001",
+      "card_id": "6a1022f4bee1517537679d42",
+      "short": "SfhfLrEY"
+    },
+    {
+      "id": "MOBILE-AFF-002",
+      "card_id": "6a1022f5da21d0e9eba9bb2c",
+      "short": "6EDhsy2N"
+    },
+    {
+      "id": "MOBILE-SUPPORT-001",
+      "card_id": "6a1022f7bb23858e5e4d4c74",
+      "short": "MGO3ylC8"
+    },
+    {
+      "id": "MOBILE-SUPPORT-002",
+      "card_id": "6a1022f89cde19a958bd48f0",
+      "short": "ghXQ9wHj"
+    },
+    {
+      "id": "MOBILE-SEC-001",
+      "card_id": "6a1022f95f7650f32cdefbc7",
+      "short": "53fpTmpt"
+    },
+    {
+      "id": "MOBILE-SEC-002",
+      "card_id": "6a1022fa43051e2e2ad788dd",
+      "short": "3z0tHAkI"
+    },
+    {
+      "id": "MOBILE-SEC-003",
+      "card_id": "6a1022fb59a74cb976874c3a",
+      "short": "EXgeLTCO"
+    },
+    {
+      "id": "MOBILE-SEC-004",
+      "card_id": "6a1022fc15a525ff711757b5",
+      "short": "9js3ATRq"
+    },
+    {
+      "id": "MOBILE-PERF-001",
+      "card_id": "6a1022fd8956383c8d5b588a",
+      "short": "yEoXKs0g"
+    },
+    {
+      "id": "MOBILE-PERF-002",
+      "card_id": "6a1022fe8e9077413391b4f9",
+      "short": "5ySwJrdR"
+    },
+    {
+      "id": "MOBILE-PERF-003",
+      "card_id": "6a1022ff4a1061af221768fd",
+      "short": "hPo0pp12"
+    },
+    {
+      "id": "MOBILE-TEST-001",
+      "card_id": "6a102300847b532541478730",
+      "short": "t2L6HOna"
+    },
+    {
+      "id": "MOBILE-TEST-002",
+      "card_id": "6a10230182e3f3a02a3b71fd",
+      "short": "Js0SFKOn"
+    },
+    {
+      "id": "MOBILE-TEST-003",
+      "card_id": "6a102302a236ba5511fd4a61",
+      "short": "tp54oftC"
+    },
+    {
+      "id": "MOBILE-LAUNCH-001",
+      "card_id": "6a102303eff69d8fceffe09e",
+      "short": "tOfUNFJl"
+    },
+    {
+      "id": "MOBILE-LAUNCH-002",
+      "card_id": "6a102304e098be2762819cc3",
+      "short": "VxmPSaTt"
+    },
+    {
+      "id": "MOBILE-LAUNCH-003",
+      "card_id": "6a102305187049c440403222",
+      "short": "HG9OzEiS"
+    },
+    {
+      "id": "MOBILE-LAUNCH-004",
+      "card_id": "6a102306fbc1875e9162082a",
+      "short": "RFgythuz"
+    },
+    {
+      "id": "MOBILE-LAUNCH-005",
+      "card_id": "6a102307dd24ab40140381bb",
+      "short": "xLsIqjJx"
+    },
+    {
+      "id": "MOBILE-LAUNCH-006",
+      "card_id": "6a10230852075040287e27d6",
+      "short": "9nnR4tNu"
+    },
+    {
+      "id": "MOBILE-LAUNCH-007",
+      "card_id": "6a102309ca66887518ff9ce6",
+      "short": "0SMViEy1"
+    }
+  ],
+  "failed": []
+}

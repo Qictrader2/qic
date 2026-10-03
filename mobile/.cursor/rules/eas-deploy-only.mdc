@@ -1,0 +1,105 @@
+---
+description: Builds and releases go through EAS — never hand-built archives, never local Xcode/Gradle uploads
+alwaysApply: true
+---
+
+# EAS Deploy Only
+
+All builds for distribution go through **EAS Build** (Expo Application Services). All store submissions go through **EAS Submit**. Local Xcode archive + manual Transporter / Play Console upload is forbidden in production paths.
+
+## Why
+
+- Reproducible builds (consistent Node, bun, Expo SDK, Xcode versions)
+- Source-mapped Sentry uploads happen as part of the build pipeline
+- Provisioning + signing managed centrally (no "works on my machine")
+- Audit trail per build in EAS dashboard
+- Versioning + build numbers auto-incremented consistently
+
+## Build profiles (`eas.json`)
+
+| Profile | Distribution | Used for |
+|---|---|---|
+| `development` | Internal | Day-to-day dev on physical devices with Expo Dev Client |
+| `preview` | Internal (TestFlight internal, Play internal track) | Internal beta + ticket QA |
+| `staging` | Internal (TestFlight internal) | Pointed at staging backend for E2E checks |
+| `production` | Store | App Store + Play Store production submissions |
+
+## Commands
+
+```bash
+# Day-to-day dev build (one-time per device)
+eas build --profile development --platform ios
+eas build --profile development --platform android
+
+# Internal beta after merging a feature
+eas build --profile preview --platform all
+
+# Production build (only after staging is verified + JP confirms)
+eas build --profile production --platform all
+
+# Submit to stores
+eas submit --profile production --platform ios
+eas submit --profile production --platform android
+
+# Hotfix without store re-review (JS-only changes)
+eas update --branch production --message "MOBILE-XXX: hotfix description"
+```
+
+## Pull-before-build rule
+
+Before EVERY production build:
+
+```bash
+git pull --rebase origin main
+bun install
+bun run typecheck
+bun run lint
+bun test
+./scripts/sync-from-web.sh --check  # ensure no drift
+```
+
+If anything fails, fix it before building. Never push a build with red tests.
+
+## Versioning
+
+- `app.json`: `version` is the human version shown in stores (e.g. `1.4.2`)
+- iOS `buildNumber` + Android `versionCode` auto-incremented by EAS via `cli.appVersionSource: remote`
+- Tag every production build in git: `git tag mobile-v1.4.2 && git push --tags`
+
+## Forbidden practices
+
+- Manual Xcode `Archive` for App Store submission (use `eas submit`)
+- Manual `./gradlew bundleRelease` for Play upload (use `eas submit`)
+- Bumping `version` without a corresponding git tag
+- Shipping `eas update` to production without first verifying on `staging` branch
+- Hardcoded env values in `app.json` — always via EAS Secrets
+
+## EAS Update (OTA) rules
+
+EAS Update can ship JS-only fixes without a store review. **It cannot ship native code changes** (new native modules, native config changes).
+
+Use cases for OTA:
+- Bug fix in a screen / hook / business logic
+- Copy / wording change
+- Small UI tweak
+
+DO NOT use OTA for:
+- Anything touching `app.json` `plugins` or native config
+- Adding a new native module (`expo-*` with native side)
+- Changing SDK version
+- Security-critical fixes (push the native build instead so OTA isn't bypassed by users on old binaries)
+
+Always tag OTA updates: `eas update --branch production --message "MOBILE-XXX-NNN: ..."` so the audit trail shows what shipped.
+
+## Staged rollout
+
+iOS App Store has phased release (Apple-managed 7-day rollout).
+Play Store: use staged rollout per release (10% → 25% → 50% → 100%) — pause if Sentry crash rate spikes.
+
+## Rollback
+
+- **OTA:** `eas update --branch production --republish [previous-update-id]`
+- **Native iOS:** "Expedited review" request + ship previous version. Apple usually approves within hours for critical bugs.
+- **Native Android:** Pause rollout in Play Console; promote previous version from internal track.
+
+Full release runbook lives in `MOBILE-LAUNCH-007` Trello ticket.

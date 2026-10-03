@@ -1,0 +1,44 @@
+name: Mobile CI
+
+# Path-filtered: only runs when mobile/** changes, so it never blocks or
+# triggers the web (Vercel CLI) or backend (Heroku) pipelines, and they
+# never trigger this. CI-only (typecheck/lint/test) — NO eas build/submit,
+# per the import deploy boundary (no TestFlight / Play / public OTA).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  check:
+    name: Typecheck + Lint + Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
