@@ -22,6 +22,10 @@ You are a senior code reviewer for QIC Trader — a crypto P2P trading platform.
 
 ---
 
+## Shared verification and host
+
+Read `/Users/starbird/Workspace/Code/qic/.claude/commands/references/qic-verification.md`. Under qic-ship, use its resolved model map, capacity queue and reviewer/fixer separation. Standalone Claude Code uses a fresh available Opus reviewer on HIGH effort; Codex uses a fresh gpt-6.1-sol reviewer on HIGH effort. Keep fixes with a separate worker and resume the same reviewer to verify them.
+
 ## STEP 1: DIFF
 
 Capture all uncommitted changes across the monorepo and both submodules:
@@ -44,15 +48,17 @@ List the changed files so the user can see what's in scope.
 Read both design intent documents before evaluating anything:
 
 - `qictrader-backend-rs/docs/intended-entity-state-machines.md` — what we are building
-- `qictrader-backend-rs/docs/as-built-state-machines.md` — how it is currently implemented
+- `qictrader-backend-rs/docs/as-built/as-built-state-machines.md` — how it is currently implemented
 
-Also read the full content of every changed file (not just the diff) to understand context.
+Also read full changed files, accepted owner decisions and the acceptance map. Verify every named
+consumer and exact expected result. A missing required UI consumer is a substantive finding even
+when the API and tests pass. Account for staging-only tasks without calling them already complete.
 
 ---
 
 ## STEP 3: EVALUATE
 
-Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
+Spawn the host-selected independent HIGH reviewer with the following task:
 
 > You are a senior security and quality reviewer for QIC Trader — a crypto P2P trading platform. Analyse the provided git diff and code for the following dimensions. Return a structured report with every finding classified as HIGH, MEDIUM, or LOW.
 >
@@ -136,7 +142,7 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > - A value computed one way in one place and a different way in another (e.g. escrow amount calculated differently across two call sites)
 > - A type or field that is defined one way but used as if it were another
 > - Config or constants that are set to conflicting values
-> - Comments that describe behaviour opposite to the code
+> - Accepted behavior that conflicts with actual behavior, with the decisive executable evidence
 > - Any two parts of the diff that, if both shipped, would produce contradictory runtime behaviour
 >
 > If ANY self-contradiction or internal conflict is found, list it clearly and mark the whole report as **NEEDS_CLARIFICATION**. Do not attempt to resolve it — that requires human intent.
@@ -172,7 +178,10 @@ Spawn an Opus 4.6 subagent (`model: opus`) with the following task:
 > - bullet points
 > ```
 
-Pass the full diff output and relevant file contents to the subagent as context.
+Pass the diff location, source pins, design pointers, acceptance map and compact gate summary.
+The reviewer reads needed files directly. Keep complete logs and manifests on disk and provide
+receipt paths. Use existing deterministic lint/type/check results for mechanical patterns; review
+judgment covers business consistency and actual consumers.
 
 ---
 
@@ -195,7 +204,8 @@ Wait for the user's answers before continuing to Step 4.
 
 ## STEP 4: FIX
 
-Fix every **HIGH** and **MEDIUM** issue from the subagent's report.
+Hand every **HIGH** and **MEDIUM** issue to a separate fix worker. The reviewer remains read-only
+and rechecks the fixes and source-bound gates before giving its final verdict.
 
 For each fix:
 1. Edit the file
@@ -207,7 +217,8 @@ Do NOT fix LOW issues — note them in the final report and move on.
 
 ## STEP 5: VERIFY
 
-Run all applicable checks after fixes:
+Run applicable checks after fixes using the shared verification contract's exact toolchain and
+resource recipe. Preserve real command exit status; never let a log tail hide a build failure:
 
 ```bash
 # If Rust was touched:
@@ -217,7 +228,7 @@ cd qictrader-backend-rs && cargo test 2>&1
 cd qictrader-backend-rs && grep -rn 'let _ =' src/ | grep -v '#\[cfg(test)\]'
 
 # If TypeScript was touched:
-cd frontend && bun run build 2>&1 | tail -30
+cd frontend && bun run typecheck && bun run lint && bun run build
 ```
 
 **Tests must pass.** If any test fails:
