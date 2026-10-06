@@ -1,0 +1,78 @@
+---
+description: No ticket goes to TestFlight / Play internal track without passing tests
+alwaysApply: true
+---
+
+# Tests Required Before Store Submission
+
+**No ticket can be submitted to TestFlight / Play internal track without full automated tests written and passing.**
+
+## Requirements
+
+1. Every ticket fix MUST have at least one automated test file covering the fix
+2. Tests MUST pass locally before the ticket can be submitted
+3. Test files go in:
+   - **Unit / component:** `src/__tests__/` or `src/**/__tests__/` (mirrors source structure)
+   - **E2E (Maestro):** `.maestro/{phase}/{ticket-id}-{slug}.yaml`
+4. Tests must make real assertions about specific values — not just "did not crash"
+
+## Pre-submit verification
+
+Before running `eas build --profile preview` for ticket QA:
+
+```bash
+# Unit + component tests
+bun test
+
+# E2E suite (requires simulator/emulator running)
+maestro test .maestro/
+
+# Typecheck (catches contract drift after sync-from-web)
+bun run typecheck
+
+# Lint
+bun run lint
+```
+
+If any of these fail, fix the issue before building. **Never submit untested code to internal testers — JP and beta users have no time to play your bug-of-the-week.**
+
+## What counts as "full tests"
+
+- **Hook / business logic changes:** unit test the hook's behaviour, mock the API client
+- **Screen changes:** component test that the screen renders, interactions work, error states render correctly
+- **Auth / navigation flow:** E2E test in Maestro that walks the full flow
+- **State machine changes:** test valid transitions succeed, invalid ones are rejected
+- **API client changes:** test request shape + response handling for both success + error paths
+- **Native plugin integration:** at minimum, an integration test that exercises the plugin in a debug build on a physical device — Maestro covers most cases
+
+## Test assertion rules
+
+These mirror the web rules — apply them on mobile too:
+
+- NEVER `not.toBe(404)` — assert actual expected status: `toBe(200)`, `toBe(201)`
+- NEVER `toBeDefined()` alone — assert the expected value: `toBe('USDT')`
+- NEVER `if (!res.ok) { console.warn(); return }` — that's a silent pass; fail the test instead
+- NEVER empty `catch {}` or `.catch(() => {})` — swallowed errors are invisible bugs
+- Use `test.skip('reason')` if setup might fail — a silent pass is worse than no test
+- Each test independent — no shared mutable state between `it()` blocks
+- Descriptive test names: "buyer cannot release escrow they don't own" not "test escrow release"
+
+## Maestro critical paths (per `MOBILE-TEST-002`)
+
+These are the mandatory E2E flows that gate every release:
+
+1. **Signup → email verify → KYC start → first wallet deposit address**
+2. **Login → marketplace → initiate trade → mark paid (mock seller side)**
+3. **Withdraw flow with biometric mock**
+
+If any of these fail, the build does not ship.
+
+## Where to learn from
+
+Reference test templates exist in the web monorepo:
+
+- `Qictrader/frontend/e2e/tests/security/idor.test.ts` — two-user auth fixture
+- `Qictrader/frontend/e2e/tests/regression/api-contracts.test.ts` — response shape validation
+- `Qictrader/frontend/e2e/tests/phase1a/auth-001-signup.test.ts` — UI flow with form interaction
+
+Mobile equivalents go in `src/__tests__/` and `.maestro/` respectively.

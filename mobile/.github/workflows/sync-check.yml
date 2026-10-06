@@ -1,0 +1,23 @@
+name: Sync Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/types/**'
+      - 'src/lib/format.ts'
+      - 'src/lib/fees.ts'
+      - 'src/schemas/**'
+      - 'src/constants/**'
+
+jobs:
+  sync-check:
+    name: Check web sync is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run sync check
+        run: |
+          echo "Sync check would run ./scripts/sync-from-web.sh --check"
+          echo "Skipped in CI — requires access to web repo on same machine"
+          echo "Run locally before pushing: bun run sync:check"

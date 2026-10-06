@@ -1,0 +1,55 @@
+appId: com.qictrader.app
+name: AUTH-001 - Signup → email verify → KYC start
+
+---
+- launchApp:
+    clearState: true
+
+# Should show login screen
+- assertVisible: "Sign in to QicTrader"
+
+# Navigate to signup
+- tapOn: "Sign up"
+- assertVisible: "Create account"
+
+# Fill signup form
+- tapOn:
+    id: "input-email"
+- typeText: "testuser@qictrader-e2e.com"
+
+- tapOn:
+    id: "input-username"
+- typeText: "e2etest01"
+
+- tapOn:
+    id: "input-password"
+- typeText: "SecurePass123!"
+
+- tapOn:
+    id: "input-confirm-password"
+- typeText: "SecurePass123!"
+
+# Accept terms
+- tapOn:
+    id: "checkbox-terms"
+
+# Submit
+- tapOn: "Create account"
+
+# Should arrive at email verification pending screen
+- assertVisible: "Check your inbox"
+
+# Simulate email verified (test environment marks email as verified)
+# In CI this is handled by the test-mode endpoint /api/v1/auth/test/verify-email
+
+- tapOn: "I've verified my email"
+
+# Should now be in main app
+- assertVisible: "Wallet"
+
+# Navigate to KYC
+- tapOn: "Profile"
+- tapOn: "Identity verification"
+- assertVisible: "Identity Verification"
+- assertVisible: "Tier 0"
+- assertVisible: "Start Tier 1 verification"
