@@ -25,4 +25,6 @@ Publishable manifests contain HTML, PNG/PDF, CSS, JSON and Markdown. Python gene
 
 The evidence allowlist in `evidence-sources.json` points workers to current local maps and baseline indexes. Markdown sources are copied into the assigned output directory with hashes. This configuration grants no publication permission for unrelated files or credentials.
 
+The same evidence hashes are bound to plans, blocked receipts and preparation identities. A changed map or a newly available baseline index invalidates the old result even when nobody edits the Trello card. Retained pre-upgrade evidence indexes can prove unchanged documents during migration, preserving completed planning and designs.
+
 A missing proposed design is preparation work. A human-approved implementation gate remains attached to a `proposal-ready` plan. `preflight` and `start` report `awaiting-approval`, and `start` cannot move that card. Financial and security questions remain blockers until the owner resolves them; preparation never substitutes a preferred rule for an unapproved policy.

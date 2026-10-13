@@ -11,6 +11,36 @@ spec.loader.exec_module(q)
 
 
 class RecoveryTests(unittest.TestCase):
+    def evidence_card(self):
+        return {"id": "abc", "idShort": 10, "name": "Proposal", "desc": "Owner-approved scope",
+                "labels": [], "comments": [], "attachments": [],
+                "checklists": [{"name": "Acceptance Criteria", "checkItems": []}]}
+
+    def test_local_map_change_invalidates_cached_plan_or_blocker_without_a_card_edit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            q.atomic_json(root / "ops/ticket-preparation/evidence-sources.json", {"10": [".scratch/map.md"]})
+            path = root / ".scratch/map.md"
+            path.parent.mkdir(exist_ok=True)
+            path.write_text("27 redesigned pages")
+            c = self.evidence_card()
+            inputs = q.local_evidence(c, root)
+            meta = {"card_id": "abc", "ticket_hash": q.digest(q.ticket_input(c)),
+                    "watches": [], "local_evidence": inputs}
+            self.assertEqual(q.current(meta, c, {}, local_inputs=inputs), (True, "current"))
+            path.write_text("27 redesigned pages and complete baseline")
+            changed = q.local_evidence(c, root)
+            self.assertFalse(q.current(meta, c, {}, local_inputs=changed)[0])
+
+    def test_newly_available_evidence_invalidates_the_missing_evidence_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            q.atomic_json(root / "ops/ticket-preparation/evidence-sources.json", {"10": ["map.md"]})
+            before = q.local_evidence(self.evidence_card(), root)
+            self.assertEqual(before, [{"path": "map.md", "sha256": None}])
+            (root / "map.md").write_text("Baseline exists")
+            self.assertNotEqual(q.local_evidence(self.evidence_card(), root), before)
+
     def design(self, root):
         (root / "design").mkdir()
         (root / "design/page.html").write_text("<html>Proposed design</html>")

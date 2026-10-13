@@ -300,6 +300,18 @@ def implementation_gates(plan):
     return gates
 
 
+def local_evidence(card, root=ROOT):
+    config = read_json(root / "ops/ticket-preparation/evidence-sources.json", {})
+    inputs = []
+    for relative in config.get(str(card["idShort"]), []):
+        safe_relative(relative)
+        path = root / relative
+        if not path.resolve().is_relative_to(root.resolve()):
+            raise PrepError("Evidence source leaves the repository")
+        inputs.append({"path": relative, "sha256": digest(path.read_bytes()) if path.is_file() else None})
+    return inputs
+
+
 def write_evidence_index(directory, card):
     config = read_json(ROOT / "ops/ticket-preparation/evidence-sources.json", {})
     entries = []
@@ -347,9 +359,12 @@ def watches_for(spec, pins, repos=REPOS):
     return watches
 
 
-def current(meta, card, pins, repos=REPOS):
+def current(meta, card, pins, repos=REPOS, local_inputs=None):
     if meta.get("card_id") != card["id"] or meta.get("ticket_hash") != digest(ticket_input(card)):
         return False, "ticket requirements, decisions or input attachments changed"
+    inputs = local_evidence(card) if local_inputs is None else local_inputs
+    if inputs and meta.get("local_evidence") != inputs:
+        return False, "local preparation evidence changed or is not bound to this plan"
     for w in meta["watches"]:
         try:
             same = w["repo"] in repos and watch_hash(repos[w["repo"]], pins[w["repo"]], w["path"]) == w["sha256"]
@@ -590,7 +605,14 @@ def resume_draft(directory, card, base, repos=REPOS):
             if "DESIGN.md" not in p["watch"]["root"]:
                 p["watch"]["root"].append("DESIGN.md")
             watches = watches_for(p["watch"], context["pins"], repos)
-            unchanged, _ = current({"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches}, card, base, repos)
+            old_inputs = context.get("local_evidence")
+            if old_inputs is None:
+                # Retained pre-upgrade indexes already prove the same document bytes.
+                index = read_json(prior / "evidence-index.json", {})
+                old_inputs = [{"path": str(Path(x["path"]).relative_to(ROOT)), "sha256": x.get("sha256")}
+                              for x in index.get("local_sources", [])]
+            unchanged, _ = current({"card_id": card["id"], "ticket_hash": digest(ticket_input(card)),
+                                    "watches": watches, "local_evidence": old_inputs}, card, base, repos)
         except (PrepError, ValueError, KeyError, TypeError):
             continue
         # Copy only preparation artifacts, never credentials, process state, or old inspection tiles.
@@ -846,7 +868,9 @@ def prepare(api, card, base, timeout=1800):
     blocked = read_json(blocked_path)
     if blocked and blocked.get("preparation_revision") == PREPARATION_REVISION and current(blocked, card, base)[0]:
         return {"ticket": card["idShort"], "status": "blocked", "reason": blocked["reason"]}
-    key = digest({"ticket": ticket_input(card), "pins": base, "version": VERSION})
+    inputs = local_evidence(card)
+    key = digest({"ticket": ticket_input(card), "pins": base, "version": VERSION,
+                  **({"local_evidence": inputs} if inputs else {})})
     directory = STATE / "cards" / card["id"] / key[:20]
     directory.mkdir(parents=True, exist_ok=True)
     os.chmod(directory, 0o700)
@@ -867,7 +891,7 @@ def prepare(api, card, base, timeout=1800):
     source = snapshots(base)
     atomic_json(directory / "ticket.json", {**ticket_input(card), "idShort": card["idShort"], "url": card["url"]})
     atomic_json(directory / "context.json", {"source": str(source), "pins": base, "root": str(ROOT),
-                 "contract": str(ROOT / "ops/ticket-preparation/contract.md")})
+                 "contract": str(ROOT / "ops/ticket-preparation/contract.md"), "local_evidence": inputs})
     write_evidence_index(directory, card)
     state.update(status="running", attempts=state["attempts"] + 1)
     atomic_json(state_path, state)
@@ -899,7 +923,7 @@ def prepare(api, card, base, timeout=1800):
         if p["questions"]:
             state.update(status="blocked", reason="; ".join(p["questions"]))
             atomic_json(state_path, state)
-            atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "reason": state["reason"], "preparation_revision": PREPARATION_REVISION})
+            atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "local_evidence": inputs, "reason": state["reason"], "preparation_revision": PREPARATION_REVISION})
             return {"ticket": card["idShort"], "status": "blocked", "reason": state["reason"]}
         design_paths = []
         if p["frontend"]:
@@ -911,7 +935,7 @@ def prepare(api, card, base, timeout=1800):
                 reason = "; ".join(design["questions"])
                 state.update(status="blocked", reason=reason)
                 atomic_json(state_path, state)
-                atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "reason": reason, "preparation_revision": PREPARATION_REVISION})
+                atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "local_evidence": inputs, "reason": reason, "preparation_revision": PREPARATION_REVISION})
                 return {"ticket": card["idShort"], "status": "blocked", "reason": reason}
             try:
                 design_paths = validated_design(directory, source, max(0, design_deadline - time.monotonic()))
@@ -926,7 +950,7 @@ def prepare(api, card, base, timeout=1800):
         fresh = api.card(card["id"])
         if fresh.get("closed") or fresh["idList"] != card["idList"] or digest(ticket_input(fresh)) != digest(ticket_input(card)):
             raise PrepError("Ticket changed or left its list during preparation; artifacts kept, no ready plan published")
-        if not current({"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches}, card, pins())[0]:
+        if not current({"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "local_evidence": inputs}, card, pins())[0]:
             raise PrepError("Source changed during preparation")
         designs = []
         for path in design_paths:
@@ -942,6 +966,7 @@ def prepare(api, card, base, timeout=1800):
             body = render_body(card, p, designs)
         meta = {"version": VERSION, "status": "proposal-ready" if gates else "ready", "implementation_gates": gates,
                 "card_id": card["id"], "ticket_hash": digest(ticket_input(card)),
+                "local_evidence": inputs,
                 "created_at": datetime.now(timezone.utc).isoformat(), "source": base, "watches": watches,
                 "frontend": p["frontend"], "severity": p["severity"], "track": p["track"], "designs": designs,
                 "body_sha256": digest(body.encode())}
@@ -949,7 +974,7 @@ def prepare(api, card, base, timeout=1800):
         existing = saved.read_bytes() if saved.exists() else None
         old_meta = parse_plan(existing)[0] if existing else {}
         data = existing if existing and all(old_meta.get(k) == meta.get(k) for k in
-               ("designs", "ticket_hash", "body_sha256", "status", "implementation_gates")) else plan_bytes(meta, body)
+               ("designs", "ticket_hash", "body_sha256", "status", "implementation_gates", "local_evidence")) else plan_bytes(meta, body)
         saved.write_bytes(data)
         staged_name = f'{MANAGED}{card["idShort"]}-{digest(data)[:16]}-PLAN.md'
         a = api.upload(card["id"], staged_name, data)
