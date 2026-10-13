@@ -599,12 +599,14 @@ def resume_draft(directory, card, base, repos=REPOS):
             if (not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(prior.resolve())
                     or "_inspect" in relative.parts or path.stat().st_size > MAX_FILE):
                 continue
-            if relative.parts[0] == "design" or str(relative) in {"design.json", "design-notes.md"}:
+            if (relative.parts[0] == "design" or str(relative) in {"design.json", "design-notes.md"}
+                    or (len(relative.parts) == 1 and relative.name.startswith("design-rejected-"))):
                 dest = directory / relative
                 if not dest.resolve().is_relative_to(directory.resolve()):
                     raise PrepError("Resumed artifact destination leaves its output directory")
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, dest)
+        repair_design_manifest(directory)
         if unchanged:
             shutil.copy2(prior / "investigation.json", directory / "investigation.json")
             for role in ("ticket-planner", "design-expert"):

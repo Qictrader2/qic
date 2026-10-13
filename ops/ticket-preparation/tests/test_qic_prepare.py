@@ -267,6 +267,25 @@ class GitFreshnessTests(unittest.TestCase):
         q.resume_draft(directory, c, {"root": "HEAD", "backend": "HEAD"}, repos)
         self.assertFalse((directory / "resumed-from.json").exists())
 
+    def test_rejected_manifest_resumes_across_unrelated_source_commit_without_redesign(self):
+        directory, c, repos = self.draft_fixture()
+        prior = directory.parent / "prior"
+        (prior / "design/board.png").write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+        (prior / "design/build.py").write_text("# retained generator")
+        q.atomic_json(prior / "design-rejected-2.json", {
+            "status": "ready", "review_state": "proposed", "inspected": True, "questions": [],
+            "states": ["Desktop"], "motion": ["Static"],
+            "files": ["design/example.html", "design/board.png", "design/build.py"]})
+        q.atomic_json(prior / "design-expert-result.json", {"type": "result", "subtype": "success",
+            "is_error": False, "modelUsage": {q.MODEL: {}}})
+        (self.repo / "other.txt").write_text("unrelated change")
+        self.commit()
+        q.resume_draft(directory, c, {"root": "HEAD", "backend": "HEAD"}, repos)
+        self.assertTrue(q.worker_finished("design-expert", directory))
+        self.assertEqual([p.name for p in q.validate_design(directory)], ["example.html", "board.png"])
+        self.assertTrue((prior / "design-rejected-2.json").exists())
+        self.assertTrue((directory / "design/build.py").exists())
+
     def test_unrelated_commit_keeps_plan_current(self):
         (self.repo / "other.txt").write_text("changed\n"); self.commit()
         self.assertEqual(q.current(self.meta, card(), {"backend": "HEAD"}, self.repos), (True, "current"))
