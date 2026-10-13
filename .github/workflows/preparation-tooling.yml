@@ -1,0 +1,19 @@
+name: Ticket preparation tooling
+on:
+  pull_request:
+    paths: ['ops/ticket-preparation/**', '.github/workflows/preparation-tooling.yml']
+  push:
+    branches: [main]
+    paths: ['ops/ticket-preparation/**', '.github/workflows/preparation-tooling.yml']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and test preparation tooling
+        run: |
+          python3 -m py_compile ops/ticket-preparation/qic_prepare.py
+          python3 -m unittest discover -s ops/ticket-preparation/tests -p 'test_*.py' -v
