@@ -9,15 +9,19 @@
 import { describe, expect, test } from "bun:test"
 import {
   buildTransitions,
+  cardInWindow,
   clusterSessions,
   computeDwell,
   DEFAULT_SESSION_GAP_MS,
   estimateActiveMs,
   extractTicketId,
   firstEntryInto,
+  formatColumnBreakdown,
   formatDuration,
   groupCommitsByTicket,
+  segmentOverlapsWindow,
   type Commit,
+  type DwellSegment,
   type TrelloAction,
   fetchAllCardActions,
   TRELLO_ACTIONS_PAGE_LIMIT,
@@ -241,6 +245,131 @@ describe("formatDuration", () => {
     expect(formatDuration(45 * 1000)).toBe("45s")
     expect(formatDuration(0)).toBe("0m")
     expect(formatDuration(2 * HOUR + 44 * MIN)).toBe("2h44m")
+  })
+})
+
+// Ticket HLA34bp7 — AC1 was marked UNMET on 2026-10-08: the CLI printed only
+// the single busiest ("Top") column instead of every column's duration, and
+// the date-filter branch was a no-op comment that never excluded cards
+// outside the chosen date range.
+describe("formatColumnBreakdown", () => {
+  test("lists every column's own duration, longest first, not just the top one", () => {
+    const breakdown = formatColumnBreakdown({
+      "Sprint Ready": 30 * MIN,
+      "Development (In Progress)": 68 * MIN,
+      "QA / Testing (In Progress)": 6 * MIN,
+    })
+    expect(breakdown).toBe(
+      "Development (In Progress)=1h08m; Sprint Ready=30m; QA / Testing (In Progress)=6m",
+    )
+  })
+
+  test("a card with no dwell history renders as an em dash, not a crash", () => {
+    expect(formatColumnBreakdown({})).toBe("—")
+  })
+})
+
+describe("segmentOverlapsWindow", () => {
+  const NOW = Date.UTC(2026, 9, 15, 12, 0, 0)
+  const seg = (enteredIso: string, leftIso: string | null): DwellSegment => ({
+    list: "Dev",
+    enteredAt: new Date(enteredIso),
+    leftAt: leftIso ? new Date(leftIso) : null,
+    dwellMs: 0,
+  })
+
+  test("a segment entirely before the window does not overlap it", () => {
+    const s = seg("2026-09-01T00:00:00Z", "2026-09-02T00:00:00Z")
+    expect(
+      segmentOverlapsWindow(s, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(false)
+  })
+
+  test("a segment entirely after the window does not overlap it", () => {
+    const s = seg("2026-11-01T00:00:00Z", null)
+    expect(
+      segmentOverlapsWindow(
+        s,
+        new Date("2026-10-01T00:00:00Z"),
+        new Date("2026-10-10T00:00:00Z"),
+        NOW,
+      ),
+    ).toBe(false)
+  })
+
+  test("a segment that straddles the window boundary overlaps it", () => {
+    const s = seg("2026-09-28T00:00:00Z", "2026-10-05T00:00:00Z")
+    expect(
+      segmentOverlapsWindow(s, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(true)
+  })
+
+  test("an open (current) segment overlaps a window that includes now", () => {
+    const s = seg("2026-10-14T00:00:00Z", null)
+    expect(
+      segmentOverlapsWindow(s, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(true)
+  })
+
+  test("no bounds at all means every segment overlaps", () => {
+    const s = seg("2020-01-01T00:00:00Z", "2020-01-02T00:00:00Z")
+    expect(segmentOverlapsWindow(s, null, null, NOW)).toBe(true)
+  })
+})
+
+describe("cardInWindow", () => {
+  const NOW = Date.UTC(2026, 9, 15, 12, 0, 0)
+  const dwellWith = (segments: DwellSegment[]) => ({
+    createdAt: segments[0]?.enteredAt ?? null,
+    segments,
+    byList: {},
+    totalMs: null,
+  })
+
+  test("with no window set, every card is in scope regardless of history", () => {
+    expect(cardInWindow(dwellWith([]), 0, null, null, NOW)).toBe(true)
+  })
+
+  test("REGRESSION (AC1): a card whose entire life sits outside the window is excluded", () => {
+    const outOfWindow = dwellWith([
+      {
+        list: "Done",
+        enteredAt: new Date("2026-01-01T00:00:00Z"),
+        leftAt: new Date("2026-01-02T00:00:00Z"),
+        dwellMs: 0,
+      },
+    ])
+    expect(
+      cardInWindow(outOfWindow, 0, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(false)
+  })
+
+  test("a card is included when its dwell overlaps the window", () => {
+    const overlapping = dwellWith([
+      {
+        list: "Dev",
+        enteredAt: new Date("2026-10-05T00:00:00Z"),
+        leftAt: null,
+        dwellMs: 0,
+      },
+    ])
+    expect(
+      cardInWindow(overlapping, 0, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(true)
+  })
+
+  test("a card with no overlapping dwell is still included if it has an in-window commit", () => {
+    const outOfWindowDwell = dwellWith([
+      {
+        list: "Done",
+        enteredAt: new Date("2026-01-01T00:00:00Z"),
+        leftAt: new Date("2026-01-02T00:00:00Z"),
+        dwellMs: 0,
+      },
+    ])
+    expect(
+      cardInWindow(outOfWindowDwell, 1, new Date("2026-10-01T00:00:00Z"), null, NOW),
+    ).toBe(true)
   })
 })
 

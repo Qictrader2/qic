@@ -239,6 +239,56 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(ms / 1000)}s`
 }
 
+/**
+ * AC1 ("For a chosen date range, show every column's duration..."): render
+ * every column the card occupied with its own duration, longest first, not
+ * just the single busiest column. `—` when the card has no dwell history.
+ */
+export function formatColumnBreakdown(byList: Record<string, number>): string {
+  const entries = Object.entries(byList).sort((a, b) => b[1] - a[1])
+  if (entries.length === 0) return "—"
+  return entries.map(([list, ms]) => `${list}=${formatDuration(ms)}`).join("; ")
+}
+
+/**
+ * AC1 ("...the date-filter branch does not exclude out-of-window cards"):
+ * true when any part of the segment's occupancy falls inside [since, until].
+ * An open segment (still in its current column) runs to `nowMs`. A missing
+ * bound on either side of the window is unbounded in that direction.
+ */
+export function segmentOverlapsWindow(
+  segment: DwellSegment,
+  since: Date | null,
+  until: Date | null,
+  nowMs: number,
+): boolean {
+  const segStart = segment.enteredAt.getTime()
+  const segEnd = (segment.leftAt ?? new Date(nowMs)).getTime()
+  const winStart = since ? since.getTime() : -Infinity
+  const winEnd = until ? until.getTime() : Infinity
+  return segStart <= winEnd && segEnd >= winStart
+}
+
+/**
+ * AC1: a card belongs in a date-filtered report only if some part of its
+ * life intersects the window — either a dwell segment overlaps it, or it has
+ * at least one commit inside it (commits are already date-filtered by the
+ * `git log --since/--until` call that produced them, so a non-empty list
+ * here is itself proof of in-window activity). With no window set at all,
+ * every card is in scope (today's unfiltered behaviour).
+ */
+export function cardInWindow(
+  dwell: DwellReport,
+  commitCount: number,
+  since: Date | null,
+  until: Date | null,
+  nowMs: number,
+): boolean {
+  if (!since && !until) return true
+  if (commitCount > 0) return true
+  return dwell.segments.some((s) => segmentOverlapsWindow(s, since, until, nowMs))
+}
+
 export const DEFAULT_SESSION_GAP_MS = 2 * 60 * 60 * 1000 // 2h
 export const DEFAULT_BOARD = "R7WQRSJ9" // Project One (shortlink)
 const TRELLO_BASE = "https://api.trello.com/1"
@@ -410,7 +460,7 @@ async function main(): Promise<void> {
   const nowMs = Date.now()
   const rows: string[] = []
   rows.push(
-    ["Ticket", "Cycle", "Active(est)", "Commits", "Top column"].join("\t"),
+    ["Ticket", "Cycle", "Active(est)", "Commits", "Columns"].join("\t"),
   )
 
   for (const card of cards.sort((a, b) => a.idShort - b.idShort)) {
@@ -418,21 +468,20 @@ async function main(): Promise<void> {
     const transitions = buildTransitions(actions)
     const dwell = computeDwell(transitions, nowMs)
 
-    // Skip cards created entirely outside the window when a window is set.
-    if (cli.since && dwell.createdAt && dwell.createdAt < cli.since) {
-      // still include if it saw commits in-window
-    }
-
     const idShort = String(card.idShort)
     const idFromName = extractTicketId(card.name)
     const commits = [
       ...(byTicket.get(idShort) ?? []),
       ...(idFromName ? (byTicket.get(idFromName) ?? []) : []),
     ]
-    const activeMs = estimateActiveMs(commits, cli.gapMs)
 
-    const topColumn =
-      Object.entries(dwell.byList).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—"
+    // AC1: a date-filtered report must actually exclude cards whose whole
+    // life sits outside the window, not just the in-window-filtered commits.
+    if (!cardInWindow(dwell, commits.length, cli.since, cli.until, nowMs)) {
+      continue
+    }
+
+    const activeMs = estimateActiveMs(commits, cli.gapMs)
 
     rows.push(
       [
@@ -440,7 +489,7 @@ async function main(): Promise<void> {
         dwell.totalMs !== null ? formatDuration(dwell.totalMs) : "—",
         `${formatDuration(activeMs)}${commits.length ? "" : " (no commits)"}`,
         String(commits.length),
-        topColumn,
+        formatColumnBreakdown(dwell.byList),
       ].join("\t"),
     )
   }
