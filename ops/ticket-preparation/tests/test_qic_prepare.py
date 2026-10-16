@@ -164,6 +164,129 @@ class ContractTests(unittest.TestCase):
     def test_small_low_risk_scope_uses_light_track(self):
         self.assertEqual(q.validate_investigation(investigation(), card())["track"], "LIGHT")
 
+    def sized(self, **changes):
+        p = {**investigation(), **changes}
+        c = card()
+        if "criteria" in changes:
+            n = changes.pop("criteria")
+            c["checklists"][0]["checkItems"] = [{"id": f"ac{i}", "name": f"Criterion {i}", "pos": i} for i in range(1, n + 1)]
+            p["acceptance"] = [{"criterion_id": f"ac{i}", "cases": investigation()["acceptance"][0]["cases"]} for i in range(1, n + 1)]
+            del p["criteria"]
+        return q.validate_investigation(p, c)
+
+    def test_size_boundaries_follow_the_table(self):
+        self.assertEqual(self.sized(estimated_lines=150, estimated_files=5, criteria=4)["size"], "S")
+        self.assertEqual(self.sized(estimated_lines=151, estimated_files=5)["size"], "M")
+        self.assertEqual(self.sized(estimated_lines=150, estimated_files=6)["size"], "M")
+        self.assertEqual(self.sized(estimated_lines=150, estimated_files=5, criteria=5)["size"], "M")
+        self.assertEqual(self.sized(estimated_lines=500, estimated_files=12, criteria=8)["size"], "M")
+        self.assertEqual(self.sized(estimated_lines=501, estimated_files=12)["size"], "L")
+        self.assertEqual(self.sized(estimated_lines=500, estimated_files=13)["size"], "L")
+        self.assertEqual(self.sized(estimated_lines=500, estimated_files=12, criteria=9)["size"], "L")
+        self.assertEqual(self.sized(estimated_lines=3000, estimated_files=50, criteria=12)["size"], "L")
+
+    def test_risk_or_two_submodules_or_high_severity_is_at_least_l(self):
+        self.assertEqual(self.sized(risks=["ledger"])["size"], "L")
+        self.assertEqual(self.sized(severity="financial")["size"], "L")
+        self.assertEqual(self.sized(watch={"backend": ["reader.txt"], "frontend": ["src"]})["size"], "L")
+        self.assertEqual(self.sized(severity="security", estimated_lines=3001)["size"], "XL")
+
+    def test_missing_estimate_is_l_never_s(self):
+        p = investigation(); del p["estimated_lines"]
+        result = q.validate_investigation(p, card())
+        self.assertEqual((result["size"], result["track"]), ("L", "FULL"))
+        self.assertEqual(self.sized(estimated_lines=True)["size"], "L")
+
+    def test_xl_names_every_exceeded_limit_and_proposes_a_split(self):
+        p = self.sized(estimated_lines=3001, estimated_files=51, criteria=13)
+        self.assertEqual(p["size"], "XL")
+        self.assertEqual(p["size_limit_exceeded"], "lines 3001 > 3000; files 51 > 50; criteria 13 > 12")
+        self.assertIsNone(p["budget_minutes"])
+        c = card(); c["checklists"][0]["checkItems"] = [{"id": f"ac{i}", "name": f"Criterion {i}", "pos": i} for i in range(1, 14)]
+        text = q.split_proposal(c, p)
+        self.assertIn("never ships as one card", text)
+        self.assertIn("- Criterion 13", text)
+        p["segments"] = [{"name": "Reader", "criteria": ["ac1", "ac2"], "files": ["reader.rs"], "estimated_lines": 300, "estimated_files": 4, "depends_on": []}]
+        text = q.split_proposal(c, p)
+        self.assertIn("## Segment 1: Reader", text)
+        self.assertIn("Criteria: Criterion 1, Criterion 2", text)
+
+    def test_budget_and_size_reach_plan_body_and_metadata(self):
+        p = self.sized(estimated_lines=200, estimated_files=6)
+        self.assertEqual((p["size"], p["budget_minutes"], p["ci_allowance_minutes"]), ("M", 180, 45))
+        body = q.render_body(card(), p, [])
+        self.assertIn("Size: M\nBudget: 180 min\nCI allowance: 45 min\nSize table: 2026-10-16\nRisk areas: not recorded", body)
+        tagged = self.sized(estimated_lines=200, estimated_files=6, risk_areas=["money", "migration"])
+        self.assertIn("Risk areas: money, migration", q.render_body(card(), tagged, []))
+        self.assertIn("Risk areas: none", q.render_body(card(), self.sized(risk_areas=[]), []))
+
+    def test_two_repo_logic_ticket_with_no_tagged_risk_area_is_m(self):
+        two_repos = {"backend": ["reader.txt"], "frontend": ["src"]}
+        listed = ["Old rows keep the dead link and rely on the frontend fallback"]
+        p = self.sized(watch=two_repos, risks=listed, risk_areas=[], estimated_lines=260, estimated_files=12, criteria=8)
+        self.assertEqual((p["size"], p["track"], p["budget_minutes"]), ("M", "FULL", 180))
+        self.assertEqual(self.sized(watch=two_repos, risk_areas=[], severity="cosmetic", estimated_lines=500)["size"], "M")
+        self.assertEqual(self.sized(watch=two_repos, risk_areas=[], estimated_lines=501)["size"], "L")
+        self.assertEqual(self.sized(watch=two_repos, risk_areas=[], estimated_files=13)["size"], "L")
+        self.assertEqual(self.sized(watch=two_repos, risk_areas=[], criteria=9)["size"], "L")
+
+    def test_two_repo_small_ticket_is_never_s(self):
+        p = self.sized(watch={"backend": ["reader.txt"], "frontend": ["src"]}, risk_areas=[], estimated_lines=20, estimated_files=2)
+        self.assertEqual((p["size"], p["track"]), ("M", "FULL"))
+        p = self.sized(risks=["Copy changes on one screen"], risk_areas=[], estimated_lines=20, estimated_files=2)
+        self.assertEqual((p["size"], p["track"]), ("M", "FULL"))
+
+    def test_any_tagged_risk_area_keeps_l(self):
+        for area in q.RISK_AREAS:
+            p = self.sized(watch={"backend": ["reader.txt"], "frontend": ["src"]}, risk_areas=[area], estimated_lines=100, estimated_files=3)
+            self.assertEqual(p["size"], "L", area)
+        p = self.sized(risk_areas=["background-job"], estimated_lines=20, estimated_files=1)
+        self.assertEqual(p["size"], "L")
+
+    def test_severity_above_logic_keeps_l_even_with_no_tagged_risk_area(self):
+        for severity in ("financial", "security", "state-machine"):
+            self.assertEqual(self.sized(severity=severity, risk_areas=[], estimated_lines=20, estimated_files=1)["size"], "L", severity)
+
+    def test_a_plan_without_risk_areas_keeps_the_old_rule(self):
+        p = self.sized(watch={"backend": ["reader.txt"], "frontend": ["src"]}, estimated_lines=170, estimated_files=10)
+        self.assertNotIn("risk_areas", p)
+        self.assertEqual(p["size"], "L")
+        self.assertEqual(self.sized(risks=["anything listed"], estimated_lines=20, estimated_files=1)["size"], "L")
+
+    def test_invalid_risk_areas_are_refused(self):
+        for bad in ("money", ["money", "money"], ["ledger"], [None], {"money": True}):
+            with self.assertRaises(q.PrepError, msg=repr(bad)):
+                self.sized(risk_areas=bad)
+
+    def test_old_plan_without_size_is_read_from_its_track(self):
+        with tempfile.TemporaryDirectory() as empty:
+            state = Path(empty)
+            self.assertEqual(q.sizing_from_meta({"track": "LIGHT", "card_id": "abc"}, state),
+                             {"size": "S", "budget_minutes": 90, "ci_allowance_minutes": 45, "size_source": "derived-from-track"})
+            self.assertEqual(q.sizing_from_meta({"track": "FULL", "card_id": "abc"}, state)["size"], "L")
+            self.assertEqual(q.sizing_from_meta({}, state)["size"], "L")
+
+    def test_old_plan_with_a_local_investigation_is_sized_from_its_newest_numbers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            state = Path(temp)
+            older = state / "cards/abc/aaaa"; older.mkdir(parents=True)
+            newer = state / "cards/abc/bbbb"; newer.mkdir(parents=True)
+            q.atomic_json(older / "investigation.json", {**investigation(), "estimated_lines": 4000, "estimated_files": 60})
+            q.atomic_json(newer / "investigation.json", {**investigation(), "estimated_lines": 400, "estimated_files": 9})
+            import os, time
+            os.utime(older / "investigation.json", (1, 1))
+            result = q.sizing_from_meta({"track": "FULL", "card_id": "abc"}, state)
+            self.assertEqual((result["size"], result["size_source"], result["budget_minutes"]), ("M", "derived-from-local-investigation", 180))
+            os.utime(newer / "investigation.json", (0, 0))
+            result = q.sizing_from_meta({"track": "FULL", "card_id": "abc"}, state)
+            self.assertEqual(result["size"], "XL")
+            self.assertIn("split before shipping", result["warning"])
+            self.assertIsNone(result["budget_minutes"])
+            (state / "cards/abc/aaaa/investigation.json").write_text("{not json")
+            self.assertEqual(q.sizing_from_meta({"track": "FULL", "card_id": "abc"}, state)["size"], "M")
+        self.assertEqual(q.sizing_from_meta({"size": "M", "budget_minutes": 180, "ci_allowance_minutes": 45, "track": "FULL"}),
+                         {"size": "M", "budget_minutes": 180, "ci_allowance_minutes": 45, "size_source": "plan"})
+
     def test_frontend_label_cannot_skip_design(self):
         c = card(); c["labels"] = [{"name": "frontend"}]
         self.assertTrue(q.validate_investigation(investigation(), c)["frontend"])
