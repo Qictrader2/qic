@@ -10,6 +10,15 @@ Run `python3 -m unittest discover -s ops/ticket-preparation/tests -p 'test_*.py'
 
 Run `python3 ops/ticket-preparation/install.py`. Existing local files are retained in a dated `.scratch` backup before compatibility links change. The installer preserves the launchd job's environment and logs, points it to the canonical runner and enables a 15-minute wakeup. The runner performs at most three transient-error attempts per Dubai day, separated by at least 15 minutes. A completed scan containing owner blockers does not dispatch models again that day.
 
+## Claude sign-in for workers
+
+Claude workers need a CLI sign-in the runner can reach without a browser or the macOS keychain (launchd and SSH sessions cannot always open it). Use a long-lived token on every machine that runs preparation:
+
+1. Run `claude setup-token` and complete the browser sign-in. It prints a token valid for about a year.
+2. Run `bash ops/ticket-preparation/store-claude-token.sh` and paste the token when asked. Input is hidden; the token is written to `~/.config/qic/claude-token.env`, readable only by you (owner-only ACL on Windows), with its creation date, and checked with one CLI call.
+
+The runner loads that file when `CLAUDE_CODE_OAUTH_TOKEN` is not already set, passes the token only to Claude workers and its usage check, and never prints it. `status` reports `claude-token` with its source and days left, and every command warns on stderr from 30 days before the year is up. Revoke a leaked token from the claude.ai account settings, then repeat both steps.
+
 ## Run and verify
 
 - `python3 ops/ticket-preparation/qic_prepare.py status` reads compact local receipts without account access.

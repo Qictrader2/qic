@@ -21,7 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,6 +35,9 @@ PREPARATION_REVISION = 2
 DESIGN_SUFFIXES = {".png", ".pdf", ".html", ".css", ".json", ".md"}
 MAX_FILE = 9 * 1024 * 1024
 STATE = ROOT / ".scratch/ticket-preparation/runtime"
+TOKEN_FILE = Path.home() / ".config/qic/claude-token.env"
+TOKEN_LIFETIME_DAYS = 365
+TOKEN_WARNING_DAYS = 30
 MANAGED = "qic-prep-"
 SEVERITIES = {"cosmetic", "logic", "financial", "security", "state-machine"}
 try:
@@ -75,6 +78,54 @@ def route_for_worker(usage, capacity, now):
     if route["provider"] == "claude" and capacity.get("retry_at") and now < datetime.fromisoformat(capacity["retry_at"]):
         raise WorkerCapacityError(capacity["reason"])
     return route
+
+
+def parse_token_file(text):
+    values = {}
+    for line in text.splitlines():
+        match = re.match(r"(?:export\s+)?(CLAUDE_CODE_OAUTH_TOKEN(?:_CREATED)?)=(.*)", line.strip())
+        if match:
+            parts = shlex.split(match[2], comments=True)
+            values[match[1]] = parts[0] if parts else ""
+    return values.get("CLAUDE_CODE_OAUTH_TOKEN", ""), values.get("CLAUDE_CODE_OAUTH_TOKEN_CREATED", "")
+
+
+def long_lived_token(env, file_text, today):
+    """Pick the long-lived token source. An explicit environment token always wins over the file."""
+    if env.get("CLAUDE_CODE_OAUTH_TOKEN"):
+        return {"source": "environment", "token": None, "days_left": None}
+    token, created = parse_token_file(file_text) if file_text is not None else ("", "")
+    if not token:
+        return {"source": "none", "token": None, "days_left": None}
+    try:
+        days_left = TOKEN_LIFETIME_DAYS - (today - date.fromisoformat(created)).days
+    except ValueError:
+        days_left = None
+    return {"source": "file", "token": token, "days_left": days_left}
+
+
+def token_warning(status):
+    days_left = status["days_left"]
+    if status["source"] == "file" and days_left is None:
+        return "Long-lived Claude token has no creation date; rerun the token helper to record it"
+    if days_left is not None and days_left <= TOKEN_WARNING_DAYS:
+        return (f"Long-lived Claude token expires in about {max(days_left, 0)} days; "
+                "run `claude setup-token` and the token helper again")
+    return None
+
+
+def apply_long_lived_token():
+    try:
+        file_text = TOKEN_FILE.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        file_text = None
+    status = long_lived_token(os.environ, file_text, datetime.now(DUBAI).date())
+    if status["token"]:
+        os.environ["CLAUDE_CODE_OAUTH_TOKEN"] = status["token"]
+    warning = token_warning(status)
+    if warning:
+        print(json.dumps({"warning": warning}), file=sys.stderr, flush=True)
+    return {"source": status["source"], "days_left": status["days_left"]}
 
 
 def claude_usage():
@@ -1089,7 +1140,9 @@ def main(argv=None):
     os.umask(0o077)
     report = None
     try:
+        token = apply_long_lived_token()
         if args.command == "status":
+            print(json.dumps({"receipt": "claude-token", **token}))
             recent = sorted((STATE / "runs").glob("*.json"))[-20:]
             for path in recent:
                 active = read_json(path, {})

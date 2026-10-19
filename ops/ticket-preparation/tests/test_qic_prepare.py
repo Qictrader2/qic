@@ -315,5 +315,57 @@ class GitFreshnessTests(unittest.TestCase):
         self.assertFalse(q.current(self.meta, card(), {"backend": "HEAD"}, self.repos)[0])
 
 
+class LongLivedTokenTests(unittest.TestCase):
+    TODAY = datetime(2026, 10, 20).date()
+
+    def test_token_file_parses_quoted_export_and_plain_lines(self):
+        text = "export CLAUDE_CODE_OAUTH_TOKEN='sk-ant-oat01-abc_DEF-1'\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2026-10-20\nOTHER=x\n"
+        self.assertEqual(q.parse_token_file(text), ("sk-ant-oat01-abc_DEF-1", "2026-10-20"))
+
+    def test_file_token_is_used_and_counts_days_left_from_its_creation_date(self):
+        text = "CLAUDE_CODE_OAUTH_TOKEN=tok\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2026-10-10\n"
+        self.assertEqual(q.long_lived_token({}, text, self.TODAY), {"source": "file", "token": "tok", "days_left": 355})
+
+    def test_environment_token_wins_and_the_file_token_is_not_returned(self):
+        status = q.long_lived_token({"CLAUDE_CODE_OAUTH_TOKEN": "env"}, "CLAUDE_CODE_OAUTH_TOKEN=file\n", self.TODAY)
+        self.assertEqual(status, {"source": "environment", "token": None, "days_left": None})
+
+    def test_missing_or_empty_file_means_no_long_lived_token(self):
+        for text in (None, "", "CLAUDE_CODE_OAUTH_TOKEN=\n", "# nothing here\n"):
+            self.assertEqual(q.long_lived_token({}, text, self.TODAY), {"source": "none", "token": None, "days_left": None})
+
+    def test_expiry_warning_starts_thirty_days_before_a_year_and_names_the_fix(self):
+        fresh = q.long_lived_token({}, "CLAUDE_CODE_OAUTH_TOKEN=t\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2025-11-20\n", self.TODAY)
+        due = q.long_lived_token({}, "CLAUDE_CODE_OAUTH_TOKEN=t\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2025-11-19\n", self.TODAY)
+        expired = q.long_lived_token({}, "CLAUDE_CODE_OAUTH_TOKEN=t\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2025-01-01\n", self.TODAY)
+        self.assertEqual((fresh["days_left"], due["days_left"]), (31, 30))
+        self.assertIsNone(q.token_warning(fresh))
+        self.assertIn("expires in about 30 days", q.token_warning(due))
+        self.assertIn("claude setup-token", q.token_warning(due))
+        self.assertIn("expires in about 0 days", q.token_warning(expired))
+
+    def test_file_token_without_a_creation_date_warns_instead_of_guessing(self):
+        status = q.long_lived_token({}, "CLAUDE_CODE_OAUTH_TOKEN=t\n", self.TODAY)
+        self.assertEqual((status["source"], status["days_left"]), ("file", None))
+        self.assertIn("no creation date", q.token_warning(status))
+
+    def test_status_receipt_never_contains_the_token(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "claude-token.env"
+            path.write_text("CLAUDE_CODE_OAUTH_TOKEN=secret-value\nCLAUDE_CODE_OAUTH_TOKEN_CREATED=2026-10-20\n", encoding="utf-8")
+            original_file, original_env = q.TOKEN_FILE, q.os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            q.TOKEN_FILE = path
+            try:
+                receipt = q.apply_long_lived_token()
+                self.assertEqual(q.os.environ["CLAUDE_CODE_OAUTH_TOKEN"], "secret-value")
+            finally:
+                q.TOKEN_FILE = original_file
+                q.os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+                if original_env is not None:
+                    q.os.environ["CLAUDE_CODE_OAUTH_TOKEN"] = original_env
+        self.assertEqual(receipt["source"], "file")
+        self.assertNotIn("secret-value", json.dumps(receipt))
+
+
 if __name__ == "__main__":
     unittest.main()
