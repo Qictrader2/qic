@@ -118,6 +118,7 @@ Read these from the sweep receipt's metadata:
 | `sweep_rent_token_account_lamports` | Token-account (165-byte) rent used, when the treasury token account was missing |
 | `sweep_rent_observed_at` | When the rent was observed |
 | `sweep_rent_fallback_reason` | Why the fallback applied: timeout, malformed, zero reading, RPC error and similar |
+| `sweep_rent_cluster` | `genesis:<hash>` from the endpoint's `getGenesisHash`, or `unverified` when that read failed. Never assumed mainnet |
 
 ### Outage and fallback bound
 
@@ -244,6 +245,17 @@ signer policy status. Signer policy is always reported unverified: the deployed
 policy is not checked and no signature is requested.
 
 An Unknown input never counts as zero cost or as eligible.
+
+Instruction support. The candidate is `WithdrawExcessLamports` (data `[38]`,
+accounts source, destination, authority), with the treasury as fee payer and
+destination. `inventory` never simulates, so rows that would otherwise qualify
+show `Unknown(instruction_support_unverified)`. `dry-run` simulates each
+candidate unsigned (`sigVerify=false`). A row is eligible only when the
+simulation succeeds, the account stays open at its rent floor with the same
+USDT, and the treasury gains gross minus fee. A rejected instruction is
+`Excluded(instruction_unsupported_on_cluster)`. The report records the token
+program id and genesis hash for which support was shown. A simulation is dry-run
+evidence only, never a recovery.
 
 ## Apply refusal
 
