@@ -160,8 +160,9 @@ Internal steps stay inside components. Layout spacing uses the scale only.
 ## 6. Hit areas
 
 Every pointer target is at least 44 x 44 px. The global rule in globals.css gives `button`, `a` and
-`[role=button]` a 44 px minimum; a control that is smaller on purpose opts out with `no-min-touch` and extends its
-hit area around its centre instead (`.hit44`, or the same `::after` or `::before` extender in the component).
+`[role=button]` a 44 px minimum; a control that is smaller on purpose opts out (`no-min-touch`, or
+`customer:min-h-0 customer:min-w-0` inside a component) and extends its hit area around its centre instead
+(`.hit44`, or the same `::after` or `::before` extender in the component).
 
 | Target | Visual | Hit area | How |
 |--------|--------|----------|-----|
@@ -169,7 +170,7 @@ hit area around its centre instead (`.hit44`, or the same `::after` or `::before
 | Button, large | 52 | 52 | Its own height |
 | Button, small | 36 | 44 | Centred ::after extender |
 | Icon button | 44 | 44 | Its own size |
-| Checkbox | 22 | 44 | no-min-touch and a centred ::before extender |
+| Checkbox | 22 | 44 | customer:min-h-0 and customer:min-w-0, and a centred ::before extender |
 | Radio | 22 | 44 | The wrapping label row |
 | Glass menu row | 44 | 44 | min-height on .gl-mi |
 | Section pill | 40 | 44 | .hit44 |
