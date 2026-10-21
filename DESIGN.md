@@ -1,503 +1,316 @@
-# QICTRADER Design System
+# QicTrader Design System: Daylight
 
-> Source of truth for the QICTRADER visual identity. All UI work must reference this document.
-> Generated from codebase extraction — April 2026.
+Source of truth for the customer look of QicTrader. Daylight is the single light theme of design pack v5.2
+(qt-v5.css v5.2 and glass v3.2.1, 21 Oct 2026). Every value below is the value shipped in
+`frontend/src/app/globals.css`. `frontend/src/__tests__/design/design-md-tokens.test.ts` compares this file
+with that CSS in both directions, so change both together.
 
----
+## 1. Scope
 
-## 1. Brand Identity
+1. Daylight applies only on the customer surface: `html[data-surface='customer']`. The head script in
+   `app/layout.tsx` and `ThemeProvider` set that attribute and the class `light` before first paint.
+2. Which routes are customer routes is decided by `CUSTOMER_SURFACE_RULES` and `isCustomerSurface()` in
+   `frontend/src/config/routes.ts`. That list is the only definition. Do not repeat it elsewhere.
+3. On the customer surface there is no dark theme and no theme toggle. A stored dark preference stays in
+   `ui-storage` for the pages that honour it.
+4. Staff, admin, moderator, public, landing, auth and KYC pages still use the April system (`:root` and `.dark` in
+   globals.css, their stored theme and their toggle) until they are redesigned. Nothing here changes them. The
+   April document stays on root `main` until the 906 release.
+5. Shared components keep their default class strings byte for byte and add `customer:` variant classes. The variant
+   is `@custom-variant customer (&:where([data-surface=customer] *))`, with zero added specificity.
 
-- **Brand Name:** QICTRADER (one word, all caps in marketing; "QicTrader" in code/UI)
-- **Tagline:** South Africa's P2P Crypto Marketplace
-- **Primary Brand Color:** `#00A3F6` (Cyan Blue)
-- **PWA Theme Color:** `#00A3F6`
-- **Default Theme:** System preference (dark/light)
-- **Personality:** Trustworthy, modern, accessible, crypto-native
+## 2. Colour tokens
 
----
+Use the Tailwind keys (`bg-action`, `text-money-in`, `outline-focus` and so on). No raw hex in components.
 
-## 2. Color System
-
-### 2.1 Brand Colors
-
-| Token | Hex | Role |
-|-------|-----|------|
-| `--brand-blue` | `#00A3F6` | Primary action, CTAs, links, focus rings |
-| `--brand-blue-light` | `#38BDF8` | Hover accents, highlighted text |
-| `--brand-blue-dark` | `#0284C7` | Pressed/active states |
-| `--brand-blue-bg` | `rgba(0,163,246,0.1)` | Subtle brand backgrounds |
-| `--brand-green` | `#10B981` | Success, positive indicators |
-| `--brand-green-dark` | `#059669` | Success pressed state |
-| `--brand-red` | `#EF4444` | Error, destructive actions |
-| `--brand-red-dark` | `#DC2626` | Error pressed state |
-| `--slider-thumb` | `#F2994A` | Legacy resell markup slider thumb (`bg-slider-thumb`); theme-independent, not for new UI |
-
-### 2.2 Semantic Colors
-
-| Token | Light | Dark | Role |
-|-------|-------|------|------|
-| `--success` | `#10B981` | `#34D399` | Positive outcomes |
-| `--success-bg` | `rgba(16,185,129,0.1)` | `rgba(52,211,153,0.15)` | Success backgrounds |
-| `--warning` | `#F59E0B` | `#FBBF24` | Caution states |
-| `--warning-bg` | `rgba(245,158,11,0.1)` | `rgba(251,191,36,0.15)` | Warning backgrounds |
-| `--error` | `#EF4444` | `#F87171` | Error states |
-| `--error-bg` | `rgba(239,68,68,0.1)` | `rgba(248,113,113,0.15)` | Error backgrounds |
-| `--info` | `#3B82F6` | `#60A5FA` | Informational |
-| `--info-bg` | `rgba(59,130,246,0.1)` | `rgba(96,165,250,0.15)` | Info backgrounds |
-
-### 2.3 Surface Colors
-
-| Token | Light | Dark |
+| Token | Value | Role |
 |-------|-------|------|
-| `--background` | `#FFFFFF` | `#000000` |
-| `--background-secondary` | `#FFFFFF` | `#111111` |
-| `--background-gray` | `#F6F6F6` | `#040607` |
-| `--foreground` | `#0F172A` | `#F8FAFC` |
-| `--card` | `#FFFFFF` | `#191F2A` |
-| `--card-elevated` | `#FFFFFF` | `#334155` |
-| `--surface` | `#F8FAFC` | `#1E293B` |
-| `--surface-hover` | `#F1F5F9` | `#334155` |
-| `--surface-dark` | `#E2E8F0` | `#0F172A` |
-| `--popover` | `#FFFFFF` | `#1E293B` |
+| --background | #F8FAFC | Page ground. |
+| --card | #FFFFFF | Content cards and opaque panels; glass plates for QR codes, addresses and amounts. |
+| --popover | #FFFFFF | Menus and popovers on paper; any layer opened from inside glass. |
+| --surface | #F1F5F9 | Wells, tracks, static skeletons and disabled fills; the neutral Cancelled chip. |
+| --surface-hover | #E2E8F0 | Row and pill hover on paper. |
+| --border | #E2E8F0 | Decorative dividers and card outlines only. Never a control edge. |
+| --input-border | #7B8A9C | Edges of inputs, checkboxes, radios, outline buttons and selects (3:1). |
+| --ink-surface | #0F172A | Navy navigation layer and active pills. |
+| --ink-surface-raised | #1E293B | Hover and pressed on navy. |
+| --scrim | rgba(15,23,42,.48) | Backdrop behind dialogs and sheets. |
+| --foreground | #0F172A | Headings, body text and figures; links, focus rings and active icons on the glass frost. |
+| --muted-foreground | #475569 | Labels, units beside figures and fiat estimates. |
+| --text-secondary | #556274 | Captions, timestamps, help text and upcoming step labels. |
+| --text-placeholder | #5F6D80 | Input placeholders. |
+| --text-on-ink | #FFFFFF | Active labels on navy. |
+| --text-on-ink-muted | #A3B1C2 | Inactive labels on navy. |
+| --brand-blue | #00A3F6 | Logo and active navigation marker only. Decorative, never text, never the only cue. |
+| --brand-blue-light | #38BDF8 | Light cyan brand accent, the same value as --focus-on-ink. |
+| --action | #00A3F6 | Primary button fill only, with a white label. Never text. |
+| --action-hover | #0284C7 | Primary button hover fill. |
+| --action-pressed | #0073AD | Pressed primary; links and outline labels; ticked checkbox, selected radio and current step fills. |
+| --action-foreground | #FFFFFF | Label on primary and danger fills; ticks and dots. |
+| --action-subtle | #E6F6FF | Selected rows, tertiary hover, action chip and avatars; the glass stain. |
+| --success | #047857 | Completed and credited; done steps. |
+| --success-bg | #ECFDF5 | Success message and chip background. |
+| --warning | #92400E | Time running out and pending checks. |
+| --warning-bg | #FFFBEB | Warning message and chip background. |
+| --error | #B91C1C | Errors, invalid field edges and danger buttons. |
+| --error-hover | #991B1B | Danger button hover. |
+| --error-pressed | #7F1D1D | Danger button pressed; destructive rows on the glass frost. |
+| --error-bg | #FEF2F2 | Error message and chip background; danger-quiet hover. |
+| --destructive | #B91C1C | The --error value under its shadcn name. |
+| --info | #0073AD | Neutral facts and network notes; held and Payment sent chips. |
+| --info-bg | #E6F6FF | Information message and chip background. |
+| --attention | #F59E0B | Your turn chip and count badges only, with navy text. Never text on paper. |
+| --attention-foreground | #0F172A | Text and counts on --attention. |
+| --money-in | #047857 | Confirmed incoming amounts, always with a plus sign. |
+| --money-out | #0F172A | Outgoing amounts, navy with a minus sign. Never red. |
+| --usdt | #26A17B | The USDT token mark only. Never text, never status. |
+| --focus | #0369A1 | Focus ring and focused field edge on opaque light surfaces, opaque commit steps and plates. |
+| --focus-on-ink | #38BDF8 | Focus ring on navy navigation. |
 
-### 2.4 Text Colors
+Legacy shadcn and April aliases (`--primary`, `--ring`, `--input`, `--muted`, `--secondary`, `--brand-blue-bg` and
+the rest) are remapped to these roles inside the customer block so older components pick up Daylight. New customer
+code uses the tokens above, never the aliases.
 
-| Token | Light | Dark |
-|-------|-------|------|
-| `--foreground` | `#0F172A` | `#F8FAFC` |
-| `--muted-foreground` | `#475569` | `#94A3B8` |
-| `--text-secondary` | `#64748B` | `#94A3B8` |
-| `--text-tertiary` | `#94A3B8` | `#64748B` |
-| `--text-placeholder` | `#9CA3AF` | `#64748B` |
+## 3. Type
 
-### 2.5 Border Colors
-
-| Token | Light | Dark |
-|-------|-------|------|
-| `--border` | `#E2E8F0` | `rgba(255,255,255,0.1)` |
-| `--border-subtle` | `rgba(0,0,0,0.08)` | `rgba(255,255,255,0.1)` |
-| `--input` | `#E2E8F0` | `rgba(255,255,255,0.15)` |
-| `--ring` | `#94A3B8` | `#64748B` |
-
-### 2.6 Chart Colors
-
-| Token | Light | Dark | Use |
-|-------|-------|------|-----|
-| `--chart-1` | `#3B82F6` | `#60A5FA` | Primary series |
-| `--chart-2` | `#10B981` | `#34D399` | Secondary series |
-| `--chart-3` | `#F59E0B` | `#FBBF24` | Tertiary series |
-| `--chart-4` | `#8B5CF6` | `#A78BFA` | Quaternary series |
-| `--chart-5` | `#EC4899` | `#F472B6` | Quinary series |
-
-### 2.7 Cryptocurrency Colors
-
-| Coin | Color | Hex |
-|------|-------|-----|
-| BTC | Orange | `#F7931A` |
-| ETH | Indigo | `#627EEA` |
-| SOL | Violet | `#9945FF` |
-| USDT | Teal | `#26A17B` |
-
-### 2.8 Affiliate Tier Colors
-
-| Tier | Primary | Accent | Glow |
-|------|---------|--------|------|
-| Novice | `#6B7280` | `#9CA3AF` | None |
-| Bronze | `#CD7F32` | `#E8A858` | `rgba(205,127,50,0.3)` |
-| Silver | `#C0C0C0` | `#E0E0E0` | `rgba(192,192,192,0.3)` |
-| Gold | `#C9A84C` | `#F0D070` | `rgba(201,168,76,0.35)` |
-| Diamond | `#B9F2FF` | `#7DF3FF` | `rgba(185,242,255,0.4)` |
-
----
-
-## 3. Typography
-
-### 3.1 Font Family
-
-| Role | Font | Fallback |
-|------|------|----------|
-| Sans (primary) | **Poppins** | system-ui, sans-serif |
-| Mono | Poppins | (no dedicated monospace font) |
-
-**Loaded weights:** 400 (Regular), 500 (Medium), 600 (SemiBold), 700 (Bold)
-
-CSS variable: `--font-poppins` → `--font-sans`
-
-### 3.2 Type Scale
-
-| Name | Size | Tailwind | Primary Use |
-|------|------|----------|-------------|
-| Micro | 8–9px | `text-[8px]` / `text-[9px]` | Badges, micro labels |
-| Tiny | 10–11px | `text-[10px]` / `text-[11px]` | Payment labels, premium badges |
-| XS | 12px | `text-xs` | Table headers, helper text, badges |
-| SM | 14px | `text-sm` | **Default body text**, labels, buttons |
-| Base | 16px | `text-base` | Inputs, field legends |
-| LG | 18px | `text-lg` | Dialog titles, subheadings |
-| XL | 20px | `text-xl` | Section headings |
-| 2XL | 24px | `text-2xl` | Card titles, page headings |
-| 3XL | 30px | `text-3xl` | Page headings (desktop) |
-| 4XL | 36px | `text-4xl` | Hero heading (tablet) |
-| 5XL | 48px | `text-5xl` | Hero heading (desktop) |
-
-### 3.3 Font Weight Usage
-
-| Weight | Tailwind | Frequency | Use |
-|--------|----------|-----------|-----|
-| 400 | `font-normal` | Low | Body text, descriptions |
-| **500** | **`font-medium`** | **Highest** | Labels, buttons, form fields |
-| 600 | `font-semibold` | High | Card titles, headings, emphasis |
-| 700 | `font-bold` | Medium | Hero headings, strong emphasis |
-
-### 3.4 Heading Hierarchy
-
-| Level | Mobile | Desktop | Weight | Line Height |
-|-------|--------|---------|--------|-------------|
-| H1 (Hero) | `text-3xl` | `text-5xl` | `font-medium` | `leading-tight` |
-| H1 (Page) | `text-2xl` | `text-3xl` | `font-semibold` | `leading-none` |
-| H2 | `text-xl` | `text-2xl` | `font-bold` | `leading-none` |
-| H3 | `text-base` | `text-lg` | `font-semibold` | `leading-none` |
-| H4 | `text-sm` | `text-base` | `font-semibold` | `leading-none` |
-
-### 3.5 Line Height
+Poppins is the face for all text: headings, body, labels, buttons and the units beside figures. Figtree is used only
+for the figures inside the shared Amount component (`ui/amount.tsx`, utility `font-num`), with tabular lining
+numerals (`tabular-nums lining-nums`). The QicTrader name and logo are unchanged.
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `leading-none` | 1.0 | Headings, card titles, badges |
-| `leading-tight` | 1.25 | Compact heading text |
-| `leading-snug` | 1.375 | Form labels |
-| `leading-normal` | 1.5 | Standard body |
-| `leading-relaxed` | 1.625 | Readable paragraphs |
+| --font-sans | var(--font-poppins), sans-serif | All text. |
+| --font-num | var(--font-figtree), var(--font-poppins), sans-serif | Figures inside the Amount component only. |
 
-### 3.6 Letter Spacing
+qt-v5.css names the faces directly: `'Poppins',sans-serif`, and `'Figtree','Poppins',sans-serif` for Amount figures.
+The app loads both through next/font, so the shipped values point at the `--font-poppins` and `--font-figtree`
+variables of the same faces in the same order, and Figtree stays limited to Amount figures.
+
+| Class | Size / line | Weight | Use |
+|-------|-------------|--------|-----|
+| t-display | 32/40, tracking -.02em | 600 | Page hero, desktop |
+| t-h1d | 28/36, tracking -.015em | 600 | Page title, desktop |
+| t-h1 | 24/30, tracking -.01em | 600 | Page title, phone |
+| t-h2 | 20/28 | 600 | Section heading |
+| t-h3 | 16/24 | 600 | Card and state titles |
+| t-body | 16/24 | 400 | Body text; inputs are 16 px |
+| t-body-sm | 14/20 | 400 | Supporting text |
+| t-label | 14/20 | 500 | Field labels |
+| t-caption | 13/18, --text-secondary | 400 | Help text and step labels |
+| t-over | 12/16, uppercase, tracking .06em, --text-secondary | 600 | Overlines and table headers |
+
+| Amount size | Figures | Weight | Unit |
+|-------------|---------|--------|------|
+| amt-xl | 40/44, tracking -.02em | 600 | 18 px |
+| amt-lg | 28/34, tracking -.015em | 600 | 15 px |
+| amt-md | 20/26 | 600 | 13 px |
+| amt-sm | 16/22 | 600 | 12 px |
+| amt-xs | 14/20 | 500 | 12 px |
+
+The unit is Poppins 500 in --muted-foreground.
+
+## 4. Radius and elevation
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `tracking-tight` | -0.025em | Card/dialog titles |
-| `tracking-normal` | 0 | Body text (default) |
-| `tracking-wider` | 0.05em | Table headers, uppercase labels |
-| `tracking-widest` | 0.1em | Crypto addresses |
+| --radius-control | 12px | Buttons, inputs, selects and plates (`rounded-control`). |
+| --radius-card | 16px | Cards, panels, popovers, menus and toasts (`rounded-card`). |
+| --radius-sheet | 20px | Dialogs and phone sheets (`rounded-sheet`). |
+| --radius-pill | 9999px | Chips, pills, the dock and the island (`rounded-full`). |
+| --radius | 0.625rem | Legacy 10 px base behind rounded-sm to rounded-xl and glass menu rows. |
 
----
-
-## 4. Spacing
-
-### 4.1 Spacing Scale (by frequency of use)
+Component-internal radii: checkbox 6 px, skeleton blocks 8 px.
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `gap-1` | 4px | Tight inline spacing |
-| `gap-2` | 8px | **Default gap** — flex/grid items |
-| `gap-3` | 12px | Secondary gap |
-| `gap-4` | 16px | Larger section gaps |
-| `gap-6` | 24px | Section-level gaps |
-| `p-3` | 12px | Medium padding |
-| `p-4` | 16px | **Default padding** — cards, containers |
-| `p-6` | 24px | Card header/content padding |
-| `p-8` | 32px | Large container padding |
-| `px-3` | 12px | Horizontal padding — inputs, badges |
-| `px-4` | 16px | Horizontal padding — buttons |
-| `px-6` | 24px | Horizontal padding — CTAs |
-| `py-1` | 4px | Tight vertical padding |
-| `py-2` | 8px | Button vertical padding |
-| `py-3` | 12px | Header vertical padding |
-
-### 4.2 Component-Specific Spacing
-
-| Component | Padding | Gap |
-|-----------|---------|-----|
-| Card Header | `p-6` | `space-y-1.5` |
-| Card Content | `p-6 pt-0` | — |
-| Modal (mobile) | `p-4` | — |
-| Modal (desktop) | `p-6` | — |
-| Button (default) | `px-4 py-2` | — |
-| Button (lg) | `px-6 py-4` or `px-8 py-4` | — |
-| Input | `px-3 py-2` | — |
-| Badge | `px-2.5 py-0.5` | — |
-| Header (desktop) | `px-24 py-3` | `gap-2` |
-| Header (mobile) | `px-3 py-2.5` | `gap-1.5` |
-| Field Group | — | `gap-7` |
-
----
-
-## 5. Border Radius
-
-| Token | Value | Use | Frequency |
-|-------|-------|-----|-----------|
-| `--radius` | `0.625rem` (10px) | Base radius | — |
-| `rounded-sm` | 4px | Small elements | Low |
-| `rounded-md` | 6px | Buttons, inputs | Medium |
-| `rounded-lg` | 8px | **Cards, containers** | **Highest** |
-| `rounded-xl` | 12px | Prominent elements, modals | High |
-| `rounded-2xl` | 16px | Mobile modal tops | Low |
-| `rounded-full` | 9999px | Avatars, badges, pills | High |
-
----
-
-## 6. Elevation & Shadows
-
-| Level | Shadow | Use |
-|-------|--------|-----|
-| 0 | None | Flat elements |
-| 1 | `shadow-sm` | Inputs, subtle elevation |
-| 2 | `shadow-md` | Dropdowns, menus |
-| 3 | `shadow-lg` | Hover cards, dropdown content |
-| 4 | `shadow-xl` | Modals |
-| 5 | `shadow-2xl` | Large emphasized modals |
-| Glow | `shadow-[0_0_10px_rgba(0,163,246,0.7)]` | Brand blue glow effect |
-| Dark | `shadow-black/20` to `shadow-black/40` | Dark overlays |
-
-### Backdrop
-
-- Modal backdrop: `bg-black/60 backdrop-blur-sm`
-- Overlay: `rgba(0,0,0,0.5)` (light) / `rgba(0,0,0,0.75)` (dark)
-
----
-
-## 7. Component Patterns
-
-### 7.1 Buttons
-
-| Variant | Background | Text | Border |
-|---------|-----------|------|--------|
-| **Default** | `bg-brand-blue` | `text-white` | None |
-| Destructive | `bg-destructive` | `text-white` | None |
-| Outline | `bg-background` | `text-foreground` | `border-input` |
-| Secondary | `bg-secondary` | `text-secondary-foreground` | None |
-| Ghost | Transparent | `text-foreground` | None |
-| Link | Transparent | `text-primary` | None |
-
-**Sizes:** `sm` (h-9), `default` (h-10), `lg` (h-11), `icon` (h-10 w-10)
-
-**States:**
-- Hover: 90% opacity on primary, `bg-accent` on ghost/outline
-- Focus: `ring-2 ring-offset-2`
-- Disabled: `opacity-50 pointer-events-none`
-- Active: `scale(0.98) opacity-0.9`
-
-### 7.2 Cards
-
-```
-Base: bg-card rounded-lg border shadow-sm
-Header: p-6, gap space-y-1.5
-Content: p-6 pt-0
-Footer: p-6 pt-0, flex items-center
-Hover: border-muted-foreground/30, shadow-lg
-```
-
-### 7.3 Inputs
-
-```
-Base: h-10 rounded-md border px-3 py-2 text-sm
-Background: bg-background/20
-Border: border-input
-Focus: ring-2 ring-ring ring-offset-2
-Disabled: opacity-50 cursor-not-allowed
-```
-
-### 7.4 Modals
-
-```
-Mobile: rounded-t-2xl, slide-in-from-bottom, max-h-[90vh]
-Desktop: rounded-2xl, zoom-in-95, max-h-[85vh]
-Backdrop: bg-black/60 backdrop-blur-sm
-Sizes: sm (384px), md (448px), lg (512px), xl (576px)
-```
-
-### 7.5 Badges
-
-| Variant | Background | Text |
-|---------|-----------|------|
-| Default | `bg-primary` | `text-primary-foreground` |
-| Secondary | `bg-secondary` | `text-secondary-foreground` |
-| Destructive | `bg-destructive` | `text-white` |
-| Outline | Transparent | `text-foreground` |
-| Success | `bg-success-bg` | `text-success` |
-| Warning | `bg-warning-bg` | `text-warning` |
-
-Base: `rounded-md px-2.5 py-0.5 text-xs font-semibold`
-
-### 7.6 Tables
-
-```
-Wrapper: rounded-lg border overflow-auto
-Header: bg-gray-900/50
-Head Cell: h-12 px-6 py-4 text-xs font-semibold tracking-wider uppercase text-gray-400
-Body: divide-y divide-gray-800
-Row Hover: hover:bg-primary-foreground
-Cell: text-sm
-```
-
-### 7.7 Switches (Hairline)
-
-The canonical toggle. Used in `NotificationSettings`, `SecuritySettings`, and any
-ToggleItem row. Source: `frontend/src/components/ui/switch.tsx`.
-
-| Property | Off | On |
-|----------|-----|----|
-| Track size | 44 × 24 px | 44 × 24 px |
-| Track radius | `rounded-full` | `rounded-full` |
-| Track background | `transparent` | `brand-green` (`#10b981`) |
-| Track border | `1px white/10` | `1px brand-green` |
-| Thumb size | 16 × 16 px | 16 × 16 px |
-| Thumb color | `slate-400` (`#94a3b8`) | `white` |
-| Thumb position | `translate-x-[3px]` | `translate-x-[23px]` |
-| Transition | 250ms ease-out (track), 250ms cubic-bezier(0.4,0,0.2,1) (thumb) | same |
-| Focus ring | `focus-visible:ring-[3px] ring-brand-green/15` | same |
-
-**Required class**: `no-min-touch`. The global `button:not(.no-min-touch)` rule
-in `globals.css` forces `min-height: 44px` on all buttons for tap-target
-accessibility. Without `no-min-touch` the 24px-tall track expands to a 44×44
-square — a regression we shipped once. Keep the class on the Switch primitive.
-
-Touch-target compensation: the 44px width still meets WCAG 2.5.5 on the
-dominant axis, and the row container (`py-3`) gives an effective vertical hit
-area of ~48px around the toggle.
-
----
-
-## 8. Animation & Motion
-
-### 8.1 Entry Animations
-
-| Animation | Duration | Easing | Use |
-|-----------|----------|--------|-----|
-| `fade-in` | 200ms | ease-out | General appearance |
-| `slide-in-from-top` | 200ms | ease-out | Dropdowns |
-| `slide-in-from-bottom` | 200ms | ease-out | Mobile modals |
-| `zoom-in-95` | 200ms | ease-out | Desktop modals |
-
-### 8.2 Transitions
-
-| Property | Duration | Use |
-|----------|----------|-----|
-| `transition-colors` | 150ms | Hover color changes |
-| `transition-all` | 150ms | Multi-property changes |
-| `transition-transform` | 150ms | Scale/translate |
-| `duration-200` | 200ms | Focus states |
-| `duration-300` | 300ms | Modal animations |
-
-### 8.3 Brand Animations
-
-| Name | Duration | Use |
-|------|----------|-----|
-| `crypto-float` | 6s | Floating crypto elements |
-| `brand-pulse` | 3s | Blue glow pulsing |
-| `breathe` | 4s | Scale 1→1.02 breathing |
-| `orbit` | 20s | Rotating orbital elements |
-| `coin-spin` | 4s | 3D coin rotation |
-| `scroll-left` | 30s | Marquee scrolling |
-| `border-glow` | 3s | Pulsing border glow |
-| `shimmer` | 1.5s | Skeleton loading |
-
-### 8.4 Interaction Animations (Framer Motion)
-
-| Element | Animation | Timing |
-|---------|-----------|--------|
-| Hero H1 | fade + translateY(30→0) | 0.7s, custom ease |
-| Hero subtitle | fade + translateY(20→0) | 0.6s, 0.5s delay |
-| Hero CTAs | fade + translateY(20→0) | 0.6s, 0.7s delay |
-| Hero image | float up/down | 5s infinite |
-| Background orbs | drift x/y | 6–8s infinite |
-| ScaleOnHover | scale on hover | instant |
-| SlideIn | translateX direction | 0.5s |
-
----
-
-## 9. Layout
-
-### 9.1 Breakpoints
-
-| Name | Width | Use |
-|------|-------|-----|
-| `sm` | 640px | Mobile → tablet |
-| `md` | 768px | Tablet adjustments |
-| `lg` | 1024px | Desktop layout switch |
-| `xl` | 1280px | Large desktop |
-
-### 9.2 Container Widths
-
-| Token | Width | Use |
-|-------|-------|-----|
-| `max-w-md` | 448px | Dialogs, small containers |
-| `max-w-lg` | 512px | Modals |
-| `max-w-xl` | 576px | Medium containers |
-| `max-w-2xl` | 672px | Cards |
-| `max-w-3xl` | 768px | Text content |
-| `max-w-4xl` | 896px | Page sections |
-| `max-w-6xl` | 1152px | Hero sections |
-| `max-w-7xl` | 1280px | Full-width hero |
-
-### 9.3 Grid Patterns
-
-| Pattern | Use |
-|---------|-----|
-| `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` | Feature cards, testimonials |
-| `grid-cols-1 md:grid-cols-2` | Two-column layouts |
-| `grid-cols-2 gap-3` | Compact grids |
-
-### 9.4 Adjacent Card Sizing
-
-Cards that sit next to one another horizontally or vertically form an adjacent card group. Every card in that group must use the same width and height. Size the whole group to fit the card with the most content, including its required internal padding and the spacing between cards. Recalculate the shared size at each responsive breakpoint when the layout changes.
-
-### 9.5 Z-Index Scale
-
-| Value | Use |
-|-------|-----|
-| `z-10` | Modal inner content |
-| `z-40` | Header, sticky nav |
-| `z-50` | Modals, dropdowns, toasts |
-| `z-[9999]` | Critical overlays (progress bar) |
-
----
-
-## 10. Responsive Patterns
-
-### Mobile-First Strategy
-
-- Base styles target mobile
-- Progressive enhancement via breakpoints
-- Bottom-sheet modals on mobile, centered on desktop
-- Single-column → multi-column grid transitions
-- Touch targets: minimum 44×44px
-
-### Key Breakpoint Behaviors
-
-| Element | Mobile | Desktop |
-|---------|--------|---------|
-| Header padding | `px-3` | `px-24` |
-| Navigation | Hamburger drawer | Inline links |
-| Hero layout | Stacked (vertical) | Side-by-side |
-| Feature grid | 1 column | 3–4 columns |
-| Modal style | Bottom sheet | Centered dialog |
-| Card grid | 1 column | 2–3 columns |
-
----
-
-## 11. Anti-Patterns (Do NOT use)
-
-- **Fonts:** Do not introduce Inter, Roboto, Arial, Space Grotesk, or system fonts. Poppins only.
-- **Colors:** No purple-on-white gradients. No colors outside the defined palette without approval.
-- **Radius:** No `rounded-3xl` or larger except `rounded-full` for pills/avatars.
-- **Shadows:** No colored shadows except the brand blue glow.
-- **Layout:** No centered hero + three-column feature grid (generic AI pattern).
-- **Suppression:** No `let _ =` on Result types. No `.ok()` on financial paths.
-- **Components:** No custom components when Shadcn equivalents exist.
-- **Hardcoded values:** Use CSS variables/Tailwind tokens. No raw hex in components.
-
----
-
-## 12. File Reference
+| --shadow-dock | 0 10px 28px rgba(15,23,42,.22),0 2px 6px rgba(15,23,42,.14) | Dock and island (`shadow-dock`). |
+| --shadow-overlay | 0 12px 32px rgba(15,23,42,.16),0 2px 8px rgba(15,23,42,.08) | Popovers, menus and toasts (`shadow-overlay`). |
+| --shadow-dialog | 0 24px 64px rgba(15,23,42,.24),0 4px 12px rgba(15,23,42,.08) | Dialogs and sheets (`shadow-dialog`). |
+
+Shadows are for floating layers only. Cards on paper use a --border outline, not a shadow.
+
+## 5. Spacing
+
+A 4 px base, the Tailwind spacing unit (globals.css does not override `--spacing`). The Tailwind column is the
+utility step (`p-4`, `gap-3`, `px-3.5`).
+
+| Value | Tailwind | Kind | Use |
+|-------|----------|------|-----|
+| 4 | 1 | scale | Icon to text, tight stacks |
+| 8 | 2 | scale | Button gap, chip rows |
+| 12 | 3 | scale | Row gap, list items |
+| 16 | 4 | scale | Phone gutter, card stacks |
+| 20 | 5 | scale | Phone card padding |
+| 24 | 6 | scale | Desktop card padding, phone section gap |
+| 32 | 8 | scale | Desktop gutter and section gap |
+| 40 | 10 | scale | Large separations |
+| 48 | 12 | scale | Page top and bottom |
+| 6 | 1.5 | internal | Chip gap, field label gap, menu padding |
+| 10 | 2.5 | internal | Input icon gap, group label padding |
+| 14 | 3.5 | internal | Input side padding, sheet body gap |
+
+| Layout | Phone | Desktop |
+|--------|-------|---------|
+| Page gutter | 16 | 32 |
+| Card padding | 20 | 24 |
+| Section gap | 24 | 32 |
+
+Internal steps stay inside components. Layout spacing uses the scale only.
+
+## 6. Hit areas
+
+Every pointer target is at least 44 x 44 px. The global rule in globals.css gives `button`, `a` and
+`[role=button]` a 44 px minimum; a control that is smaller on purpose opts out (`no-min-touch`, or
+`customer:min-h-0 customer:min-w-0` inside a component) and extends its hit area around its centre instead
+(`.hit44`, or the same `::after` or `::before` extender in the component).
+
+| Target | Visual | Hit area | How |
+|--------|--------|----------|-----|
+| Button, default | 44 | 44 | Its own height |
+| Button, large | 52 | 52 | Its own height |
+| Button, small | 36 | 44 | Centred ::after extender |
+| Icon button | 44 | 44 | Its own size |
+| Checkbox | 22 | 44 | customer:min-h-0 and customer:min-w-0, and a centred ::before extender |
+| Radio | 22 | 44 | The wrapping label row |
+| Glass menu row | 44 | 44 | min-height on .gl-mi |
+| Section pill | 40 | 44 | .hit44 |
+| Status chip | 28 | 44 | .hit44 when it is interactive |
+
+Keep 44 px between the centres of two extended targets, and never extend inside an `overflow:hidden` box narrower
+than 44 px.
+
+## 7. Controls
+
+Every shared control keeps its public API, adds a stable `data-testid` before `{...props}` so a caller's own value
+wins, and takes the v5.2 look only on the customer surface.
+
+| Variant | Button prop | Default | Hover | Pressed |
+|---------|-------------|---------|-------|---------|
+| Primary | default | --action, white label | --action-hover | --action-pressed, scale .98 |
+| Secondary | outline | --card, --input-border edge, --action-pressed label | --surface | --surface, scale .98 |
+| Secondary | secondary | --card, --input-border edge, --foreground label | --surface | --surface-hover, scale .98 |
+| Tertiary | ghost, link | transparent, --action-pressed label | --action-subtle | --action-subtle, scale .98 |
+| Danger | destructive | --error, white label | --error-hover | --error-pressed, scale .98 |
+| Danger quiet | danger-quiet | transparent, --error label | --error-bg | --error-bg |
+
+1. Buttons (`qt-button`): 44 px default, 52 px large, 36 px small with a 44 px hit area, 44 px icon. 600 weight,
+   --radius-control, press scale over `duration-press`. Disabled is --surface with --text-secondary and no opacity
+   fade. Loading keeps the button width and shows a spinner.
+2. Inputs (`qt-input`): 48 px, --input-border edge, --card fill, 16 px text, --text-placeholder. Focus is a 1 px edge
+   plus a 1 px ring in --focus. Error is --error with a message and icon (`qt-field-error`, role alert). Disabled is
+   --surface with a --border edge.
+3. Checkbox (`qt-checkbox`) and radio (`qt-radio`): 22 px, 1.5 px --input-border edge on --card. On is an
+   --action-pressed fill with a white tick or an 8 px white dot. Disabled and selected is a --border fill with a
+   --text-secondary mark.
+4. Stepper (`qt-step`): done steps --success, the current step --action-pressed with `aria-current="step"` and a 600
+   label, upcoming steps --border. Segments sit 6 px apart. Labels are text only, 13/18, with no tick. State is also
+   given by `aria-current` and a hidden "completed" suffix on done steps.
+5. Selected fills and the current step always use --action-pressed.
+6. Focus is a 2 px ring with a 2 px offset. Its colour depends on the surface:
+
+| Surface | Focus colour |
+|---------|--------------|
+| Opaque light surfaces, opaque commit steps (.gl-solid), plates | --focus |
+| Glass layers (.gl), bands and content zones | --foreground |
+| Navy navigation (--ink-surface, .qt-on-ink) | --focus-on-ink |
+
+7. Never paint a ticked checkbox, selected radio, current step, progress bar, focused field edge or focus ring in
+   --action or --brand-blue (G14 section 5). --action is the primary fill only.
+
+## 8. Glass
+
+Glass v3.2.1 classes (`.gl`, `.gl-band`, `.gl-body`, `.gl-plate`, `.gl-solid`, `.gl-sheet`, `.gl-dialog`,
+`.gl-popover`, `.gl-menu`, `.gl-mi`, `.gl-toast`, `.hit44`) live under the customer surface only.
+
+1. Glass is for navigation and floating layers only: dock, island, sheets, dialogs, popovers and menus. Pages,
+   cards and forms are opaque paper.
+2. One material: blur 16 px (never more), saturate 1.5, an --action-subtle stain, a 1 px white edge and a lead line.
+3. Text on the frost (`.gl-band`) is --foreground only, with links underlined. Forms, amounts and status sit in the
+   content zone (`.gl-body`).
+4. QR codes, deposit addresses and amounts to pay sit on an opaque `.gl-plate`.
+5. Irreversible steps (release, I've paid, cancel, dispute, withdrawal review, send, start a trade, delete) are
+   opaque `.gl-solid` from the commit step until the layer closes. Toasts are opaque too.
+6. Never glass on glass. A layer opened from a glass layer is paper. One glass layer on a phone at rest (the dock).
+7. Fallbacks, all to one opaque look (--action-subtle pane, --input-border edge, --card content):
+   no `backdrop-filter` support, `prefers-reduced-transparency: reduce`, `prefers-contrast: more` (adds 1 px
+   --input-border edges), `forced-colors: active` (Canvas and CanvasText, Highlight for the active row), and
+   `data-glass="lite"` on html for slow phones (blur 8 px, stain 6 points stronger).
+8. Blur, saturate and stain never animate.
+
+## 9. Motion
+
+| Token | Value | Utility | Use |
+|-------|-------|---------|-----|
+| --dur-press | 100ms | duration-press | Press scale, tick and dot in |
+| --dur-quick | 150ms | duration-quick | Menus, popovers, selects; any opacity-only fade |
+| --dur-base | 200ms | duration-base | Dialog in, progress fill, toast in |
+| --dur-sheet | 280ms | duration-sheet | Phone sheet up |
+| --dur-exit | 180ms | duration-exit | Dialog, sheet and toast out |
+| --ease-out | cubic-bezier(.2,0,0,1) | ease-qt-out | Everything that enters or responds |
+| --ease-in | cubic-bezier(.4,0,1,1) | ease-qt-in | Everything that leaves |
+
+1. Only opacity and transform animate. Colour, border, shadow and focus rings change in the same frame.
+2. Amounts, balances and status chips never animate; they replace in place.
+3. The spinner (800 ms per turn, linear) is the only loop on the customer surface. Customer skeletons are static.
+4. The theme change never animates (`qt-theme-swap` and the customer block turn the html transition off).
+
+With `prefers-reduced-motion: reduce`:
+
+1. Decorative animation, pulse, ping and skeleton shimmer stop (`animate-pulse`, `animate-ping`, `animate-spin`,
+   `animate-shimmer` get `animation: none`; everything else ends at once in 0.01 ms with its end state kept).
+2. Spinners become static text: the icon is hidden (`qt-motion-only`) and the label or "Loading..." shows
+   (`qt-reduced-motion-only`). Status and progress text stay visible.
+3. Layers fade only: opacity cross-fades are capped at 150 ms, with no slide and no scale.
+4. Entry animations (`animate-in`, `fade-in`, `slide-in-from-*`, the tick and dot) jump to their end state, so
+   nothing is left invisible.
+
+## 10. Money and status
+
+One rule for every amount, through the shared `Amount` component (`qt-amount`, `data-direction`).
+
+1. A confirmed 120.00 USDT deposit shows `+120.00 USDT` in --money-in green.
+2. A 121.20 USDT trade lock shows `−121.20 USDT` in --money-out navy, never red.
+3. Held funds are a fact, not a direction: navy, no sign.
+4. A balance of 1234.567891 USDT shows `1,234.567891 USDT`. Amount never rounds and never drops a decimal; it pads to
+   at least two decimals. It never runs a server amount through parseFloat or Number for display.
+5. A value that is loading shows a skeleton. A value that is unavailable shows `Unavailable`, never 0.00 or 0.
+6. A cancelled trade shows a neutral `Cancelled` chip (--muted-foreground on --surface), never red.
+7. Every status chip (`qt-status-chip`, `data-tone`) has a text label, with an optional icon or dot, so colour never
+   carries meaning alone. Tones: success, warning, error, info, neutral, action and turn (--attention).
+
+## 11. Anti-patterns
+
+1. No raw hex or rgb in components. Use the tokens and their Tailwind keys.
+2. No fonts other than Poppins, and Figtree only inside Amount.
+3. No --action or --brand-blue as text, as an indicator or as a focus ring.
+4. No red for outgoing money or for a cancelled outcome.
+5. No 0.00 standing in for a missing or failed value.
+6. No radius outside the table in section 4.
+7. No shadow on paper cards, and no coloured shadows.
+8. No glass on pages, cards or forms, and never glass on glass.
+9. No animated colour, blur or filter, and no infinite animation other than the spinner.
+10. No v5.2 class outside the `customer:` variant on a shared component.
+
+## 12. Contrast exception
+
+The CTA blue #00A3F6 with a white label is the only contrast exception in the palette. Kept as approved by Christian
+(21 Oct 2026); limitation documented.
+
+| State | Fill | Label | Ratio | Result |
+|-------|------|-------|-------|--------|
+| Default | --action #00A3F6 | white #FFFFFF | 2.77:1 | Fails 4.5:1 for text and 3:1 for large text |
+| Hover | --action-hover #0284C7 | white #FFFFFF | 4.10:1 | Fails 4.5:1 for text |
+| Pressed | --action-pressed #0073AD | white #FFFFFF | 5.18:1 | Passes 4.5:1 |
+
+While this stands, the palette is not AA compliant as a whole. Every other text pair passes 4.5:1, and every control
+edge, indicator and focus ring passes 3:1 (`contrast.test.ts`).
+
+## 13. Files
 
 | File | Contents |
 |------|----------|
-| `src/app/globals.css` | CSS variables, animations, global styles |
-| `src/app/layout.tsx` | Font import (Poppins), metadata, root layout |
-| `src/components/ui/` | Shadcn component library |
-| `components.json` | Shadcn config (New York style) |
-| `public/logo.svg` | Brand logo |
-| `public/landing/` | Landing page assets |
-| `public/icons/` | Favicons and app icons |
-
----
-
-*This document is the single source of truth for QICTRADER's visual identity. Update it when design decisions change.*
+| `frontend/src/app/globals.css` | Customer block, Tailwind theme keys, motion utilities, glass, reduced motion |
+| `frontend/src/config/routes.ts` | `CUSTOMER_SURFACE_RULES` and `isCustomerSurface()` |
+| `frontend/src/app/layout.tsx` | Poppins, Figtree for Amount figures, the before-paint surface script |
+| `frontend/src/components/ui/` | Button, Input, Field, Checkbox, RadioGroup, Progress and Steps, Spinner, Amount, StatusChip, EmptyState, ErrorState, Skeleton |
+| `frontend/src/__tests__/design/` | Jest checks for this document, contrast, reduced motion and the controls |
