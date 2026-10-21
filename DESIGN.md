@@ -187,7 +187,8 @@ wins, and takes the v5.2 look only on the customer surface.
 | Variant | Button prop | Default | Hover | Pressed |
 |---------|-------------|---------|-------|---------|
 | Primary | default | --action, white label | --action-hover | --action-pressed, scale .98 |
-| Secondary | outline, secondary | --card, --input-border edge, --foreground label | --surface | --surface-hover, scale .98 |
+| Secondary | outline | --card, --input-border edge, --action-pressed label | --surface | --surface, scale .98 |
+| Secondary | secondary | --card, --input-border edge, --foreground label | --surface | --surface-hover, scale .98 |
 | Tertiary | ghost, link | transparent, --action-pressed label | --action-subtle | --action-subtle, scale .98 |
 | Danger | destructive | --error, white label | --error-hover | --error-pressed, scale .98 |
 | Danger quiet | danger-quiet | transparent, --error label | --error-bg | --error-bg |
@@ -202,7 +203,8 @@ wins, and takes the v5.2 look only on the customer surface.
    --action-pressed fill with a white tick or an 8 px white dot. Disabled and selected is a --border fill with a
    --text-secondary mark.
 4. Stepper (`qt-step`): done steps --success, the current step --action-pressed with `aria-current="step"` and a 600
-   label, upcoming steps --border. Labels 13/18.
+   label, upcoming steps --border. Segments sit 6 px apart. Labels are text only, 13/18, with no tick. State is also
+   given by `aria-current` and a hidden "completed" suffix on done steps.
 5. Selected fills and the current step always use --action-pressed.
 6. Focus is a 2 px ring with a 2 px offset. Its colour depends on the surface:
 
