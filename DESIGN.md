@@ -129,7 +129,8 @@ The unit is Poppins 500 in --muted-foreground, except in the summary and inline 
 | --radius-pill | 9999px | Chips, pills, the dock, the island and an open menu trigger (`rounded-full`). |
 | --radius | 0.625rem | Legacy 10 px base behind rounded-sm to rounded-xl and glass menu rows. |
 
-Component-internal radii: checkbox 6 px, skeleton blocks 8 px.
+Component-internal radii: checkbox 6 px, skeleton blocks 8 px, support chat (board D1c): the new-ticket note 14 px and the
+bubble's tail corner 4 px.
 
 | Token | Value | Use |
 |-------|-------|-----|
