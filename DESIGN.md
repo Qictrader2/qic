@@ -180,11 +180,13 @@ Every pointer target is at least 44 x 44 px. The global rule in globals.css give
 | Button, large | 52 | 52 | Its own height |
 | Button, small | 36 | 44 | Centred ::after extender |
 | Icon button | 44 | 44 | Its own size |
+| Icon button, large | 52 | 52 | Its own size (`size="icon-lg"`) |
 | Checkbox | 22 | 44 | customer:min-h-0 and customer:min-w-0, and a centred ::before extender |
 | Radio | 22 | 44 | customer:min-h-0 and customer:min-w-0 on the 22 px label row, and a centred ::before extender on the row |
 | Glass menu row | 44 | 44 | min-height on .gl-mi |
 | Section pill | 40 | 44 | .hit44 |
 | Status chip | 28 | 44 | A centred ::after extender when it is interactive (`as="button"`) |
+| Status chip, compact | 22 | 44 | The same ::after extender when it is interactive (`size="compact"`) |
 
 Keep 44 px between the centres of two extended targets, and never extend inside an `overflow:hidden` box narrower
 than 44 px.
@@ -205,10 +207,12 @@ wins, and takes the v5.2 look only on the customer surface.
 | Icon | icon | transparent, --foreground glyph | --surface-hover; --gl-row-hover in a glass band | transparent, no scale |
 | Open trigger | any variant with aria-expanded="true" | --gl-row-active stain, 1.5 px inset --gl-row-edge ring, pill radius, --foreground label | unchanged | unchanged |
 
-1. Buttons (`qt-button`): 44 px default, 52 px large, 36 px small with a 44 px hit area, 44 px icon. 600 weight,
+1. Buttons (`qt-button`): 44 px default, 52 px large, 36 px small with a 44 px hit area, 44 px icon, and a 52 px
+   large icon (`size="icon-lg"`, no padding, the large 16/20 label metrics). 600 weight,
    --radius-control, press scale over `duration-press`. Labels are 15/20, 14/20 small and 16/20 large, centred with
    no vertical padding. Disabled is --surface with --text-secondary and no opacity fade. Loading keeps the button
-   width and shows an 18 px spinner in the label colour.
+   width and shows the 18 px spinner ring in the label colour beside its loading words (`loadingText`, for example
+   "Publishing…" or "Signing in..."), or beside its own label when no loading words are given.
 2. Inputs (`qt-input`): 48 px, --input-border edge, --card fill, 16 px text, --text-placeholder. Focus is a 1 px edge
    plus a 1 px ring in --focus. Error is --error with a message and icon (`qt-field-error`, role alert). Disabled is
    --surface with a --border edge. No vertical padding: the text centres in the 48 px box. A focused field inside a
@@ -234,7 +238,9 @@ wins, and takes the v5.2 look only on the customer surface.
 
 7. Never paint a ticked checkbox, selected radio, current step, progress bar, focused field edge or focus ring in
    --action or --brand-blue (G14 section 5). --action is the primary fill only.
-8. The spinner (`qt-spinner`) is 18 px at the small size and takes the surrounding text colour.
+8. The spinner (`qt-spinner`, `SpinnerRing`) is the qt-v5.css `.spinner` ring on the customer surface: a round
+   18 px box (small size; 32, 48 and 64 px for the larger sizes) with a 2 px border in the surrounding text colour
+   and a transparent right edge. Off the customer surface it stays the Loader2 icon.
 
 ## 8. Glass
 
@@ -277,8 +283,10 @@ With `prefers-reduced-motion: reduce`:
 
 1. Decorative animation, pulse, ping and skeleton shimmer stop (`animate-pulse`, `animate-ping`, `animate-spin`,
    `animate-shimmer` get `animation: none`; everything else ends at once in 0.01 ms with its end state kept).
-2. Spinners become static text: the icon is hidden (`qt-motion-only`) and the label or "Loading..." shows
-   (`qt-reduced-motion-only`). Status and progress text stay visible.
+2. On the customer surface the spinner ring stays visible and still, and a loading button keeps its own words
+   beside it; the text carries the state (C12, C18 "Spinner: Still", E1d). Off the customer surface the icon is
+   hidden (`qt-motion-only`) and the label or "Loading..." shows (`qt-reduced-motion-only`). Status and progress
+   text stay visible.
 3. Layers fade only: opacity cross-fades are capped at 150 ms, with no slide and no scale.
 4. Entry animations (`animate-in`, `fade-in`, `slide-in-from-*`, the tick and dot) jump to their end state, so
    nothing is left invisible.
@@ -289,17 +297,18 @@ One rule for every amount, through the shared `Amount` component (`qt-amount`, `
 
 1. A confirmed 120.00 USDT deposit shows `+120.00 USDT` in --money-in green.
 2. A 121.20 USDT trade lock shows `−121.20 USDT` in --money-out navy, never red.
-3. Held funds are a fact, not a direction: navy, no sign.
+3. Held funds are a fact, not a direction: `direction="held"`, --money-out navy, no sign.
 4. A balance of 1234.567891 USDT shows `1,234.567891 USDT`. Amount never rounds and never drops a decimal; it pads to
    at least two decimals. It never runs a server amount through parseFloat or Number for display.
 5. A value that is loading shows a skeleton. A value that is unavailable shows `Unavailable`, never 0.00 or 0.
 6. A cancelled trade shows a neutral `Cancelled` chip (--muted-foreground on --surface), never red.
 7. Every status chip (`qt-status-chip`, `data-tone`) has a text label, with an optional icon or dot, so colour never
-   carries meaning alone. Tones: success, warning, error, info, neutral, action, turn (--attention) and outline
+   carries meaning alone. Chips are 28 px (13/16 600, padding 0 10px) or compact 22 px (`size="compact"`, 12/16 600,
+   padding 0 8px), both pill-shaped with a 6 px gap. Tones: success, warning, error, info, neutral, action, turn (--attention) and outline
    (--card with a 1 px inset --border ring and a --muted-foreground label). A chip that acts is `as="button"`: pointer
    cursor and the surface focus ring; a status chip that only reports stays a span.
-8. On navy (`.qt-on-ink`) a neutral figure takes --text-on-ink; incoming figures stay --money-in and outgoing
-   figures stay --money-out.
+8. On navy (`.qt-on-ink`) a neutral or held figure takes --text-on-ink; incoming figures stay --money-in and
+   outgoing figures stay --money-out.
 
 ## 11. Anti-patterns
 
