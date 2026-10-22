@@ -205,7 +205,7 @@ wins, and takes the v5.2 look only on the customer surface.
 | Danger | destructive | --error, white label | --error-hover | --error-pressed, scale .98 |
 | Danger quiet | danger-quiet | transparent, --error label | --error-bg | --error-bg |
 | Icon | icon | transparent, --foreground glyph | --surface-hover; --gl-row-hover in a glass band | transparent, no scale |
-| Open trigger | any variant with aria-expanded="true" | --gl-row-active stain, 1.5 px inset --gl-row-edge ring, pill radius, --foreground label | unchanged | unchanged |
+| Open trigger | a glass trigger (`gl-trigger` class, or an icon button in the header capsule) with aria-expanded="true" | --gl-row-active stain, 1.5 px inset --gl-row-edge ring, pill radius, --foreground label | unchanged | unchanged |
 
 1. Buttons (`qt-button`): 44 px default, 52 px large, 36 px small with a 44 px hit area, 44 px icon, and a 52 px
    large icon (`size="icon-lg"`, no padding, the large 16/20 label metrics). 600 weight,
@@ -215,8 +215,9 @@ wins, and takes the v5.2 look only on the customer surface.
    "Publishing…" or "Signing in..."), or beside its own label when no loading words are given.
 2. Inputs (`qt-input`): 48 px, --input-border edge, --card fill, 16 px text, --text-placeholder. Focus is a 1 px edge
    plus a 1 px ring in --focus. Error is --error with a message and icon (`qt-field-error`, role alert). Disabled is
-   --surface with a --border edge. No vertical padding: the text centres in the 48 px box. A focused field inside a
-   glass band also gets a 2 px --foreground outline at a -2 px offset. Select triggers (`qt-select-trigger`) match
+   --surface with a --border edge. No vertical padding: the text centres in the 48 px box. A focused shared field
+   (Input, Select trigger, textarea, AmountInput) inside a glass band also gets a 2 px --foreground outline at a
+   -2 px offset; a band field that draws its own focus on its wrapper (the Jump field) keeps that one ring. Select triggers (`qt-select-trigger`) match
    the input: 48 px, --input-border edge, --card fill, 16/24 --foreground text, --text-placeholder.
    AmountInput (`qt-amount-input`) draws the edge, fill and ring on the field box, an optional unit prefix 10 px
    before the figure, and the figure in the Amount face; sizes are in section 3.
@@ -284,7 +285,8 @@ With `prefers-reduced-motion: reduce`:
 1. Decorative animation, pulse, ping and skeleton shimmer stop (`animate-pulse`, `animate-ping`, `animate-spin`,
    `animate-shimmer` get `animation: none`; everything else ends at once in 0.01 ms with its end state kept).
 2. On the customer surface the spinner ring stays visible and still, and a loading button keeps its own words
-   beside it; the text carries the state (C12, C18 "Spinner: Still", E1d). Off the customer surface the icon is
+   beside it; the text carries the state (C12, C18 "Spinner: Still", E1d). A standalone spinner without a label
+   also shows "Loading..." beside the still ring. Off the customer surface the icon is
    hidden (`qt-motion-only`) and the label or "Loading..." shows (`qt-reduced-motion-only`). Status and progress
    text stay visible.
 3. Layers fade only: opacity cross-fades are capped at 150 ms, with no slide and no scale.
@@ -307,8 +309,8 @@ One rule for every amount, through the shared `Amount` component (`qt-amount`, `
    padding 0 8px), both pill-shaped with a 6 px gap. Tones: success, warning, error, info, neutral, action, turn (--attention) and outline
    (--card with a 1 px inset --border ring and a --muted-foreground label). A chip that acts is `as="button"`: pointer
    cursor and the surface focus ring; a status chip that only reports stays a span.
-8. On navy (`.qt-on-ink`) a neutral or held figure takes --text-on-ink; incoming figures stay --money-in and
-   outgoing figures stay --money-out.
+8. On navy (`.qt-on-ink`) a neutral or held figure takes --text-on-ink, and so does the unit of a summary-size
+   Amount; incoming figures stay --money-in and outgoing figures stay --money-out.
 
 ## 11. Anti-patterns
 
