@@ -112,7 +112,9 @@ variables of the same faces in the same order, and Figtree stays limited to Amou
 | summary | 14/20, tracking -.01em | 600 | 14 px, in the figure's face, weight and colour |
 | inline | The host text's size, weight, line height and colour, tracking -.01em | host | The host text style |
 
-The unit is Poppins 500 in --muted-foreground, except in the summary and inline sizes.
+The unit is Poppins 500. Beside an incoming or outgoing figure it takes the figure's tone (green or navy) at xs, sm, md and
+xl, and in the summary and inline sizes; at lg it stays --muted-foreground (the B8 outcome and lg-popover boards). A
+neutral or held figure keeps a --muted-foreground unit. `unitTone` overrides either default.
 
 | AmountInput size | Field | Figure | Unit prefix |
 |------------------|-------|--------|-------------|
