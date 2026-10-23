@@ -1,0 +1,361 @@
+{
+ "run_id": "910-r1",
+ "task": "910 https://trello.com/c/bPlQQy2u",
+ "phase": 0,
+ "phase_name": "INVESTIGATE",
+ "objective": "Reproduce the reported symptom, trace root cause, classify severity, confirm the plan's size still holds",
+ "summary": "Reproduced at HEAD by running: the existing create_trade_on_chain_success test passes (a trade opens on an on_chain offer), the new router test shows PATCH /status moving a created trade to escrow_funded with no wallet lock, and POST /offers accepts and stores on_chain. Root-cause bodies, callers, fixtures and intent-doc lines are cited; no plan anchor drifted. Severity financial, track full, size L still holds. No owner question is open.",
+ "requirements": [
+  "AC1: An offer that uses an escrow mode the platform does not support is refused when it is created, with a clear error to the caller.",
+  "AC2: No trade can open without the seller's USDT being locked in the same step, so no customer sees an open trade that is not funded.",
+  "AC3: A trade cannot be marked funded by hand, so funded always means the seller's USDT is locked.",
+  "AC4: Custodial offers, resells and crypto swaps are created and funded exactly as they are today."
+ ],
+ "evidence": {
+  "track": "full",
+  "severity": "financial",
+  "size": "L",
+  "checklist": [
+   {
+    "item": 1,
+    "status": "applies",
+    "reason": "Reproduced by running the existing test and two new router-level sqlx tests",
+    "citations": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "item": 2,
+    "status": "applies",
+    "reason": "Root-cause bodies cited in full: create_trade lock/funding block, update_trade_status, link_onchain_escrow, validate_business_rules, validate_offer_kyc_compatibility, EscrowType, is_recordable_refusal, error.rs pattern",
+    "citations": [
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     7
+    ]
+   },
+   {
+    "item": 3,
+    "status": "applies",
+    "reason": "Caller grep across src for every changed function, the shared lock primitive and every EscrowFunded writer; fixtures grep for tests; frontend grep out of scope",
+    "citations": [
+     15,
+     14,
+     16,
+     17
+    ]
+   },
+   {
+    "item": 4,
+    "status": "applies",
+    "reason": "New outcome is AppError::UnsupportedEscrowType (422). Callers: POST /trades routes and keyed replay via is_recordable_refusal; offer publish runs validate_business_rules first; PATCH handler returns validation 400; link route has no app caller; no caller treats it as a held/skip state",
+    "citations": [
+     15,
+     12,
+     13,
+     17
+    ]
+   },
+   {
+    "item": 5,
+    "status": "applies",
+    "reason": "Intent doc says Created to EscrowFunded is System only at creation; the plan changes agree with it, no conflicting job or alert rule found",
+    "citations": [
+     18
+    ]
+   },
+   {
+    "item": 6,
+    "status": "applies",
+    "reason": "Answered by owner rule in run.log and the 13 Oct owner decision quoted in the plan; no open product question",
+    "citations": [
+     19,
+     20
+    ]
+   },
+   {
+    "item": 7,
+    "status": "does not apply",
+    "reason": "No held or skip state is added; refusals happen before any write",
+    "citations": [
+     5
+    ]
+   },
+   {
+    "item": 8,
+    "status": "applies",
+    "reason": "Both gaps recorded as Reproduced checks with status pass",
+    "citations": [
+     1,
+     2,
+     3
+    ]
+   }
+  ],
+  "plan_drift": {
+   "statement": "No drift: every anchor the plan names is at the same place at HEAD and the worktree has no source change",
+   "citations": [
+    21,
+    22
+   ]
+  },
+  "build_plan": {
+   "files": {
+    "qictrader-backend-rs/src/error.rs": [
+     13
+    ],
+    "qictrader-backend-rs/src/services/money_request.rs": [
+     12,
+     13,
+     15
+    ],
+    "qictrader-backend-rs/src/types/enums.rs": [
+     11,
+     15
+    ],
+    "qictrader-backend-rs/src/api/offers.rs": [
+     9,
+     10,
+     15
+    ],
+    "qictrader-backend-rs/src/api/trades.rs": [
+     5,
+     6,
+     7,
+     15,
+     14
+    ],
+    "qictrader-backend-rs/src/api/escrow.rs": [
+     8,
+     15
+    ],
+    "tests (5 fixture files plus tests/trade_creation_mpr013.rs)": [
+     16,
+     0
+    ],
+    "qictrader-backend-rs/tests/ticket_910_trade_funding_invariant.rs (new)": [
+     1
+    ],
+    "qictrader-backend-rs/docs/intended-entity-state-machines.md": [
+     18
+    ],
+    "qictrader-backend-rs/src/repo/wallet.rs (read only, unchanged)": [
+     14
+    ]
+   }
+  },
+  "size_check": "L still holds: backend-only, six source files plus five fixture files and a new test file, no migration, money and state-transition risk"
+ },
+ "deterministic_checks": [
+  {
+   "name": "Reproduced: a trade on an on_chain offer commits as created with no wallet lock (existing test passes at HEAD)",
+   "status": "pass",
+   "detail": "Citation 0"
+  },
+  {
+   "name": "Reproduced: PATCH /status escrow_funded by the buyer funds a created trade with no wallet lock",
+   "status": "pass",
+   "detail": "Citations 2 and 1"
+  },
+  {
+   "name": "Reproduced: POST /offers accepts escrowType on_chain and stores it",
+   "status": "pass",
+   "detail": "Citations 3 and 4"
+  },
+  {
+   "name": "Worktree has no source change vs HEAD",
+   "status": "pass",
+   "detail": "Citation 22"
+  }
+ ],
+ "open_findings": [
+  {
+   "severity": "low",
+   "detail": "link_onchain_escrow gap and the legacy-row counts are source-verified or unknown only; no link-route repro test was run (citation 8 shows the body)"
+  },
+  {
+   "severity": "low",
+   "detail": "A concurrent cargo build held the shared target lock for several minutes; the reruns used the 920 target dir at the coordinator's request"
+  }
+ ],
+ "next_phase": "BOIL",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "Existing test create_trade_on_chain_success passes at HEAD, codifying a trade opened on an on_chain offer",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "cd /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs && ( echo \"DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1\"; ulimit -s unlimited && DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1 REQUIRE_TEST_DB=1 RUST_MIN_STACK=2147483648 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/920/target cargo test --test trade_creation_mpr013 create_trade_on_chain_success 2>&1; echo \"EXIT=$?\" ) 2>&1 | tee /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-0-repro-existing.log",
+   "stdout": "test create_trade_on_chain_success ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.20s\n\nEXIT=0",
+   "exit_code": 0,
+   "log": "phase-0-repro-existing.log"
+  },
+  {
+   "claim": "New repro tests both pass at HEAD, i.e. both gaps exist",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "cd /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs && ( echo \"DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1\"; ulimit -s unlimited && DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1 REQUIRE_TEST_DB=1 RUST_MIN_STACK=2147483648 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/920/target cargo test --test ticket_910_trade_funding_invariant -- --nocapture --test-threads=1 2>&1; echo \"EXIT=$?\" ) 2>&1 | tee /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-0-repro.log",
+   "stdout": "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.02s\n\nEXIT=0",
+   "exit_code": 0,
+   "log": "phase-0-repro.log"
+  },
+  {
+   "claim": "PATCH escrow_funded by the buyer moved a created trade to escrow_funded with no wallet_locks row",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "cd /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs && ( echo \"DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1\"; ulimit -s unlimited && DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1 REQUIRE_TEST_DB=1 RUST_MIN_STACK=2147483648 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/920/target cargo test --test ticket_910_trade_funding_invariant -- --nocapture --test-threads=1 2>&1; echo \"EXIT=$?\" ) 2>&1 | tee /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-0-repro.log",
+   "stdout": "trade status after PATCH = escrow_funded; wallet_locks rows = 0",
+   "exit_code": 0,
+   "log": "phase-0-repro.log"
+  },
+  {
+   "claim": "POST /offers with escrowType on_chain returns 200 and stores on_chain",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "cd /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs && ( echo \"DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1\"; ulimit -s unlimited && DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1 REQUIRE_TEST_DB=1 RUST_MIN_STACK=2147483648 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/920/target cargo test --test ticket_910_trade_funding_invariant -- --nocapture --test-threads=1 2>&1; echo \"EXIT=$?\" ) 2>&1 | tee /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-0-repro.log",
+   "stdout": "stored offers.escrow_type = on_chain",
+   "exit_code": 0,
+   "log": "phase-0-repro.log"
+  },
+  {
+   "claim": "POST /offers on_chain response status",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "cd /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs && ( echo \"DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1\"; ulimit -s unlimited && DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_1 REQUIRE_TEST_DB=1 RUST_MIN_STACK=2147483648 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/920/target cargo test --test ticket_910_trade_funding_invariant -- --nocapture --test-threads=1 2>&1; echo \"EXIT=$?\" ) 2>&1 | tee /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-0-repro.log",
+   "stdout": "POST /offers on_chain -> 200 OK",
+   "exit_code": 0,
+   "log": "phase-0-repro.log"
+  },
+  {
+   "claim": "create_trade: crypto-swap dispatch, needs_wallet_lock gate, lock block, escrow insert, trade insert, funding block, commit",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 1630,1635p src/api/trades.rs; echo ----; sed -n 1957,2200p src/api/trades.rs",
+   "stdout": "                                                                            \n                                                                                 \n                                                            \n    if offer.quote_currency.is_crypto() {\n        return create_crypto_swap_trade(\n            state, db, auth, offer, req, buyer_id, seller_id, keyed,\n----\n    let tx = db.begin().await.map_err(|e| {\n        tracing::error!(error = %e, \"TF-001: failed to begin transaction\");\n        AppError::internal(\"failed to begin trade transaction\")\n    })?;\n\n    let (mut tx, claim_id) =\n        match claim_or_yield(keyed, db, tx, \"trade start\").await? {\n            KeyedOutcome::Fresh(pair) => pair,\n            KeyedOutcome::Replayed(replay) => return Ok(KeyedOutcome::Replayed(replay)),\n        };\n\n                                                                \n    let is_custodial = offer.escrow_type == EscrowType::Custodial;\n    let is_btc_wallet_lock = offer.escrow_type == EscrowType::BtcWalletLock;\n    let needs_wallet_lock = is_custodial || is_btc_wallet_lock;\n\n                                                                 \n                                                           \n                                                                                 \n    let base_lock = lock_crypto_i64\n        .checked_add(fee_crypto_i64)\n        .ok_or_else(|| AppError::validation(\"lock amount overflow (amount + fee)\"))?;\n    let lock_amount = if is_btc_wallet_lock {\n        base_lock\n            .checked_add(state.config.btc_gas_reserve_sats)\n            .ok_or_else(|| AppError::validation(\"lock amount overflow (+ gas reserve)\"))?\n    } else {\n        base_lock\n    };\n\n    let business: Result<_> = async {\n    let wallet_lock_id = if needs_wallet_lock {\n        let lock_user = vendor_id;\n                                                                               \n                                                                                                \n        let is_buy_resell = is_resell && offer.offer_type == OfferType::Buy;\n        let lock_offer = if is_resell && !is_buy_resell {\n            offer.parent_offer_id.unwrap_or(offer.id)\n        } else {\n            offer.id\n        };\n\n                                                                                    \n                                                                                   \n                                                                                  \n                                                                             \n                                                                       \n        let wallet_row = sqlx::query_as::<_, (i64, i64)>(\n            \"SELECT balance, locked_balance FROM wallets WHERE user_id = $1 AND cryptocurrency = $2\",\n        )\n        .bind(lock_user)\n        .bind(offer.cryptocurrency)\n        .fetch_optional(&mut *tx)\n        .await\n        .map_err(|e| {\n            tracing::error!(lock_user = %lock_user, error = %e, \"failed to check wallet balance before lock\");\n            AppError::internal(\"failed to verify wallet balance\")\n        })?;\n\n        let factor = offer.cryptocurrency.minor_unit_factor();\n                                                                                          \n                                                                                    \n        let taker_is_crypto_provider = lock_user == auth.user_id;\n                                                                                \n                                                                             \n                                                                  \n        if let Some(msg) = insufficient_lock_balance_message(\n            wallet_row,\n            lock_amount,\n            taker_is_crypto_provider,\n            offer.cryptocurrency,\n            factor,\n        ) {\n            return Err(AppError::validation(msg));\n        }\n\n        let lock = match crate::repo::wallet::lock_balance_for_trade_on(\n            &mut tx,\n            lock_user,\n            lock_offer,\n            offer.cryptocurrency,\n            lock_amount,\n        )\n        .await\n        {\n            Ok(lock) => lock,\n            Err(sqlx::Error::RowNotFound) => {\n                return Err(AppError::validation(\n                    \"Insufficient balance to lock for this trade. Your available funds may have changed.\",\n                ));\n            }\n            Err(e) => return Err(e.into()),\n        };\n        Some(lock.id)\n    } else {\n        None\n    };\n\n                            \n                                                                           \n                                                                                  \n                                                                                      \n    let escrow = crate::repo::escrow::create(\n        &mut *tx,\n        None,\n        Some(offer.id),\n        buyer_id,\n        seller_id,\n        offer.escrow_type,\n        offer.cryptocurrency,\n        lock_crypto_i64,\n        fee_crypto_i64,\n        None,\n        buyer_crypto_i64,\n    )\n    .await?;\n\n                                           \n    let offer_version_id = crate::repo::offer::get_latest_version_id(&mut *tx, req.offer_id)\n        .await\n        .map_err(|e| {\n            tracing::error!(offer_id = %req.offer_id, error = %e, \"TF-001: failed to fetch offer version id\");\n            AppError::internal(\"failed to fetch offer version for trade\")\n        })?;\n\n                           \n                                                                                  \n                                                                                     \n                                                                                  \n    let trade = crate::repo::trade::create(\n        &mut *tx,\n        req.offer_id,\n        buyer_id,\n        seller_id,\n        offer.cryptocurrency,\n        offer.fiat_currency,\n        effective_quote.crypto_amount,\n        effective_quote.fiat_amount,\n        effective_quote.effective_rate,\n        effective_quote.fee_amount,\n        payment_method,\n        offer.time_limit_minutes,\n        offer_version_id,\n        index_price_snapshot,\n        index_at,\n        fx_rate_snapshot,\n        fx_at,\n        fx_source.map(|s| s.as_str()),\n        Some(effective_quote.premium_percentage),\n        reseller_id,\n        if is_resell { Some(vendor_id) } else { None },\n        vendor_fiat_amount,\n        vendor_exchange_rate,\n        vendor_premium_percentage,\n    )\n    .await?;\n\n    if let Some(lock_id) = wallet_lock_id {\n        crate::repo::wallet::attach_lock_to_trade(&mut tx, lock_id, trade.id).await?;\n    }\n\n                                                                           \n    let trade = crate::repo::trade_kyc::snapshot_requirements(\n        &mut *tx,\n        trade.id,\n        requires_id_doc,\n        requires_bank_letter,\n    )\n    .await?;\n\n                                  \n    crate::repo::trade::set_escrow(&mut *tx, trade.id, escrow.id).await?;\n    crate::repo::escrow::set_trade_id(&mut *tx, escrow.id, trade.id).await?;\n\n                                                                                  \n    if needs_wallet_lock {\n        crate::repo::escrow::update_status(&mut *tx, escrow.id, EscrowStatus::Held).await?;\n        if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\n            return Err(AppError::validation(format!(\n                \"cannot transition trade from {} to EscrowFunded\",\n                trade.status,\n            )));\n        }\n        crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\n\n        let seller_balance = match sqlx::query_as::<_, (i64,)>(\n            \"SELECT COALESCE(balance, 0) FROM wallets WHERE user_id = $1 AND cryptocurrency = $2\",\n        )\n        .bind(vendor_id)\n        .bind(offer.cryptocurrency)\n        .fetch_optional(&mut *tx)\n        .await\n        {\n            Ok(Some(row)) => row.0,\n            Ok(None) => 0,\n            Err(e) => {\n                tracing::warn!(vendor_id = %vendor_id, error = %e, \"failed to fetch seller balance for ledger entry, defaulting to 0\");\n                0\n            }\n        };\n\n                                                                              \n                                                                              \n                                                                              \n                                                      \n        crate::services::ledger::record_escrow_lock_in_tx(\n            &mut tx,\n            vendor_id,\n            Some(trade.id),\n            escrow.id,\n            lock_crypto_i64,\n            offer.cryptocurrency,\n            seller_balance,\n        )\n        .await?;\n    }\n\n    if let (Some(k), Some(claim)) = (keyed, claim_id) {\n        k.complete(\n            &mut tx,\n            claim,\n            crate::types::money_request::MoneyRequestResource {\n                kind: crate::types::money_request::MoneyRequestResourceType::Trade,\n                id: trade.id,\n            },\n            serde_json::json!({}),\n        )\n        .await?;\n    }\n        Ok::<_, AppError>((trade, escrow))\n    }\n    .await;\n\n    let (trade, escrow) = match business {\n        Ok(v) => v,\n        Err(err) => {\n            crate::services::money_request::rollback_then(tx, \"trade start\", ()).await?;\n            return Err(err);\n        }\n    };\n\n    tx.commit().await.map_err(|e| {\n        tracing::error!(error = %e, \"TF-001: failed to commit trade transaction\");\n        AppError::internal(\"failed to commit trade transaction\")",
+   "exit_code": 0
+  },
+  {
+   "claim": "update_trade_status in full (PATCH /trades/{id}/status)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 2613,2861p src/api/trades.rs",
+   "stdout": "pub async fn update_trade_status(\n    auth: AuthUser,\n    State(state): State<AppState>,\n    Path(trade_id): Path<Uuid>,\n    Json(req): Json<UpdateTradeStatusRequest>,\n) -> Result<Json<TradeResponse>> {\n    let db = state.require_db()?;\n    let old_trade = crate::repo::trade::find_by_id(db, trade_id).await?;\n    let old_status = old_trade.status;\n\n                                                       \n                                                                             \n    let is_buyer = auth.user_id == old_trade.buyer_id;\n    let is_seller = auth.user_id == old_trade.seller_id;\n    let is_vendor = old_trade.vendor_id == Some(auth.user_id);\n    let is_admin = auth.role.has_admin_access();\n    if !is_buyer && !is_seller && !is_vendor && !is_admin {\n        return Err(AppError::forbidden(\n            \"you are not a participant in this trade\",\n        ));\n    }\n\n                                                                \n    if !old_status.can_transition_to(&req.status) {\n        return Err(AppError::validation(invalid_transition_message(\n            old_status, req.status,\n        )));\n    }\n\n                                                                         \n                                                                                \n                                                                            \n                                                                             \n                                                                              \n                                                                           \n                                                                         \n                                                 \n    if req.status == TradeStatus::Released {\n        return Err(AppError::validation(\n            \"Use POST /trades/{id}/complete to release escrow \u2014 PATCH /status cannot move funds.\",\n        ));\n    }\n\n                                                                                  \n                                                                               \n                                                                             \n                                                                                  \n                                                                               \n                                                                                  \n                                                        \n    if req.status == TradeStatus::Disputed {\n        return Err(AppError::validation(\n            \"Use POST /trades/{id}/dispute to open a dispute \u2014 PATCH /status cannot freeze escrow or create a dispute record.\",\n        ));\n    }\n\n                                                 \n    if req.status == TradeStatus::Cancelled {\n        return Err(AppError::validation(PATCH_STATUS_CANCEL_REFUSAL));\n    }\n\n    match req.status {\n        TradeStatus::Paid => {\n            if !is_buyer && !is_admin {\n                return Err(AppError::forbidden(\n                    \"only the buyer can mark a trade as paid\",\n                ));\n            }\n            crate::services::trade_kyc::ensure_can_mark_paid(&old_trade)?;\n        }\n        TradeStatus::Released | TradeStatus::Completed => {\n                                                                                              \n                                                                                  \n                                                                   \n            let can_release = if old_trade.vendor_id.is_some() {\n                is_seller || is_vendor || is_admin\n            } else {\n                is_seller || is_admin\n            };\n            if !can_release {\n                return Err(AppError::forbidden(\n                    \"only the seller, vendor, or admin can release/complete a trade\",\n                ));\n            }\n        }\n        TradeStatus::Disputed => {\n            if !is_buyer && !is_seller && !is_vendor && !is_admin {\n                return Err(AppError::forbidden(\"only trade participants can dispute\"));\n            }\n        }\n        TradeStatus::Resolved => {\n                                                                      \n            if !auth.role.has_moderator_access() {\n                return Err(AppError::forbidden(\n                    \"only moderators or admins can resolve disputes\",\n                ));\n            }\n        }\n                                                                    \n                                                                        \n                                                                               \n        TradeStatus::Created | TradeStatus::EscrowFunded | TradeStatus::Cancelled => {}\n    }\n\n    let trade = crate::repo::trade::update_status(db, trade_id, req.status).await?;\n\n                                         \n    if let Err(e) = crate::repo::trade::add_event(\n        db,\n        trade_id,\n        \"status_changed\",\n        Some(auth.user_id),\n        Some(serde_json::json!({\n            \"from\": old_status.to_string(),\n            \"to\": trade.status.to_string(),\n        })),\n    )\n    .await\n    {\n        tracing::error!(trade_id = %trade_id, error = %e, \"TF-010: failed to log status_changed event\");\n    }\n\n                                  \n    tracing::info!(\n        trade_id = %trade_id,\n        actor = %auth.user_id,\n        from = %old_status,\n        to = %trade.status,\n        \"MPR-006 trade state transition\"\n    );\n\n    state\n        .ws\n        .broadcast(\n            trade_id,\n            crate::ws::WsMessage::TradeStatusChanged {\n                trade_id: trade_id.to_string(),\n                old_status: format!(\"{old_status}\"),\n                new_status: format!(\"{}\", trade.status),\n            },\n        )\n        .await;\n\n                                                                                           \n    crate::socket_io::emit_trade_update(\n        &state.io,\n        trade_id,\n        &old_status.to_string(),\n        &trade.status.to_string(),\n    )\n    .await;\n                                                                        \n    let mut notify_ids: Vec<Uuid> = Vec::with_capacity(3);\n    if auth.user_id != old_trade.buyer_id {\n        notify_ids.push(old_trade.buyer_id);\n    }\n    if auth.user_id != old_trade.seller_id {\n        notify_ids.push(old_trade.seller_id);\n    }\n    if let Some(vid) = old_trade.vendor_id {\n        if auth.user_id != vid && vid != old_trade.seller_id {\n            notify_ids.push(vid);\n        }\n    }\n    for counterparty_id in &notify_ids {\n        match crate::repo::notification::create(\n            db,\n            *counterparty_id,\n            NotificationType::Trade,\n            \"Trade Status Updated\",\n            &format!(\n                \"Trade {} status changed: {} \u2192 {}\",\n                &trade_id.to_string()[..8],\n                old_status,\n                trade.status\n            ),\n            Some(\"trade\"),\n            Some(&trade_id.to_string()),\n            Some(serde_json::json!({\n                \"tradeId\": trade_id,\n                \"oldStatus\": old_status.to_string(),\n                \"newStatus\": trade.status.to_string(),\n            })),\n        )\n        .await\n        {\n            Ok(notif) => {\n                crate::services::notify::emit_to_user(&state.io, db, *counterparty_id, &notif)\n                    .await;\n            }\n            Err(e) => {\n                tracing::error!(\n                    trade_id = %trade_id,\n                    counterparty_id = %counterparty_id,\n                    error = %e,\n                    \"failed to create status change notification\"\n                );\n            }\n        }\n    }\n\n                                                                                  \n    if trade.status == TradeStatus::Completed {\n        for &participant_id in &[old_trade.buyer_id, old_trade.seller_id] {\n            if let Err(e) = crate::repo::affiliate::activate_referral(db, participant_id).await {\n                tracing::error!(\n                    user_id = %participant_id,\n                    trade_id = %trade_id,\n                    error = %e,\n                    \"AFL-011: failed to activate referral on trade status update\"\n                );\n            }\n        }\n        if let Some(vid) = old_trade.vendor_id {\n            if let Err(e) = crate::repo::affiliate::activate_referral(db, vid).await {\n                tracing::error!(\n                    user_id = %vid,\n                    trade_id = %trade_id,\n                    error = %e,\n                    \"AFL-011: failed to activate referral for vendor on trade status update\"\n                );\n            }\n        }\n\n                                                                                      \n                                                                                       \n                                                                                       \n                                                                                       \n                                                                  \n        let escrow_lookup = crate::repo::escrow::find_by_trade(db, trade_id)\n            .await\n            .map(|escrow| (escrow.fee_amount, escrow.id));\n        let basis = crate::services::affiliate_commission::CommissionBasis::from_escrow_lookup(\n            escrow_lookup,\n            || {\n                crate::services::platform_fee::vendor_fee(\n                    crypto_to_minor_units(old_trade.crypto_amount, old_trade.cryptocurrency),\n                    state.fee_config.platform_fee_bps(),\n                )\n            },\n        );\n        settle_affiliate_commissions(&state, db, &old_trade, basis).await;\n    }\n\n    let merchant_tiers = merchant_tiers_for_trade(db, &state.config, &trade).await;\n    Ok(Json(\n        trade_to_response(db, &state.fee_config, &trade, &merchant_tiers).await,\n    ))\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "PATCH_STATUS_CANCEL_REFUSAL constant (where PATCH_STATUS_FUND_REFUSAL would sit)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 2866,2871p src/api/trades.rs",
+   "stdout": "   \n                                                           \npub const DISPUTED_TRADE_CANCEL_REFUSAL: &str = \"This trade is in dispute. A moderator will decide it.\";\n\npub const PATCH_STATUS_CANCEL_REFUSAL: &str =\n    \"Use POST /trades/{id}/cancel to cancel a trade - PATCH /status cannot move funds.\";",
+   "exit_code": 0
+  },
+  {
+   "claim": "link_onchain_escrow in full",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 1455,1498p src/api/escrow.rs",
+   "stdout": "pub async fn link_onchain_escrow(\n    auth: AuthUser,\n    State(state): State<AppState>,\n    Path(trade_id): Path<Uuid>,\n    Json(req): Json<LinkOnChainEscrowRequest>,\n) -> Result<Json<EscrowResponse>> {\n    let db = state.require_db()?;\n    let escrow = crate::repo::escrow::find_by_trade(db, trade_id).await?;\n                                                              \n    let trade = crate::repo::trade::find_by_id(db, trade_id).await?;\n    if auth.user_id != escrow.buyer_id\n        && auth.user_id != escrow.seller_id\n        && trade.vendor_id != Some(auth.user_id)\n        && !auth.role.has_admin_access()\n    {\n        return Err(AppError::forbidden(\n            \"not authorized to link escrow for this trade\",\n        ));\n    }\n\n                                                                                       \n                                                                              \n    if escrow.escrow_type != EscrowType::OnChain {\n        crate::repo::escrow::update_escrow_type(db, escrow.id, EscrowType::OnChain).await?;\n    }\n\n                                                                                              \n    crate::repo::escrow::set_contract_address(db, escrow.id, &req.contract_address).await?;\n    let updated =\n        crate::repo::escrow::set_deposit(db, escrow.id, &req.contract_address, &req.tx_hash)\n            .await?;\n\n    tracing::info!(\n        escrow_id = %updated.id,\n        trade_id = %trade_id,\n        contract_address = %req.contract_address,\n        deposit_tx_hash = %req.tx_hash,\n        network = ?req.network,\n        old_escrow_type = ?escrow.escrow_type,\n        new_escrow_type = \"on_chain\",\n        \"ESCROW_JOURNEY link_onchain: escrow linked with contract address and type updated to OnChain\"\n    );\n    Ok(Json(escrow_to_response(&updated)))\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "CreateOfferRequest::validate_business_rules in full",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 137,177p src/api/offers.rs",
+   "stdout": "    pub fn validate_business_rules(&self) -> Result<()> {\n        if self.min_amount > self.max_amount {\n            return Err(AppError::validation(\"min_amount cannot exceed max_amount\"));\n        }\n        if self.pricing_mode == PricingMode::Fixed && self.fixed_price.is_none() {\n            return Err(AppError::validation(\n                \"fixed_price required when pricing_mode is fixed\",\n            ));\n        }\n        if self.pricing_mode == PricingMode::MarketPlusPremium && self.premium_percentage.is_none()\n        {\n            return Err(AppError::validation(\n                \"premium_percentage required when pricing_mode is market_plus_premium\",\n            ));\n        }\n        if self.payment_methods.is_empty() {\n            return Err(AppError::validation(\"at least one payment method required\"));\n        }\n        validate_offer_kyc_compatibility(\n            self.require_id_doc.unwrap_or(false),\n            self.require_bank_letter.unwrap_or(false),\n            self.escrow_type,\n            self.quote_currency\n                .unwrap_or_else(|| Currency::from(self.fiat_currency)),\n        )?;\n        if let Some(ref title) = self.title {\n            validate_title_no_banned_words(title)?;\n        }\n        let vis = self.visibility.unwrap_or_default();\n        if vis == OfferVisibility::Direct && self.target_user_id.is_none() {\n            return Err(AppError::validation(\n                \"target_user_id required for direct offers\",\n            ));\n        }\n        if vis != OfferVisibility::Direct && self.target_user_id.is_some() {\n            return Err(AppError::validation(\n                \"target_user_id only allowed for direct offers\",\n            ));\n        }\n        Ok(())\n    }",
+   "exit_code": 0
+  },
+  {
+   "claim": "validate_offer_kyc_compatibility in full",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 191,211p src/api/offers.rs",
+   "stdout": "fn validate_offer_kyc_compatibility(\n    require_id_doc: bool,\n    require_bank_letter: bool,\n    escrow_type: EscrowType,\n    quote_currency: Currency,\n) -> Result<()> {\n    if !require_id_doc && !require_bank_letter {\n        return Ok(());\n    }\n    if quote_currency.is_crypto() {\n        return Err(AppError::validation(\n            \"Offer KYC requirements are only available for fiat payment trades\",\n        ));\n    }\n    match escrow_type {\n        EscrowType::Custodial | EscrowType::OfferEscrow | EscrowType::BtcWalletLock => Ok(()),\n        EscrowType::OnChain => Err(AppError::validation(\n            \"Offer KYC requirements require an escrow-backed fiat trade\",\n        )),\n    }\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "EscrowType enum and Display",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 779,800p src/types/enums.rs",
+   "stdout": "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, sqlx::Type)]\n#[serde(rename_all = \"snake_case\")]\n#[sqlx(type_name = \"escrow_type\", rename_all = \"snake_case\")]\npub enum EscrowType {\n    Custodial,\n    OnChain,\n    OfferEscrow,\n    BtcWalletLock,\n}\n\nimpl fmt::Display for EscrowType {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            EscrowType::Custodial => write!(f, \"custodial\"),\n            EscrowType::OnChain => write!(f, \"on_chain\"),\n            EscrowType::OfferEscrow => write!(f, \"offer_escrow\"),\n            EscrowType::BtcWalletLock => write!(f, \"btc_wallet_lock\"),\n        }\n    }\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "is_recordable_refusal in full",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 247,297p src/services/money_request.rs",
+   "stdout": "pub fn is_recordable_refusal(err: &AppError) -> bool {\n    match err {\n        AppError::Validation { .. }\n        | AppError::Forbidden { .. }\n        | AppError::NotFound { .. }\n        | AppError::Conflict { .. }\n        | AppError::Unprocessable { .. } => true,\n        AppError::Io(_)\n        | AppError::Json(_)\n        | AppError::Database(_)\n        | AppError::Unauthorized { .. }\n        | AppError::KycRequired { .. }\n        | AppError::SolanaNotEnabled\n        | AppError::TradeReceiptNotEnabled\n        | AppError::ValidationWithDetails { .. }\n        | AppError::PayloadTooLarge { .. }\n        | AppError::TreasurySurplusExceeded { .. }\n        | AppError::WithdrawalFeeQuoteExpired\n        | AppError::RateLimited { .. }\n        | AppError::Blockchain { .. }\n        | AppError::Escrow { .. }\n        | AppError::Wallet { .. }\n        | AppError::Config { .. }\n        | AppError::ServiceUnavailable { .. }\n        | AppError::WithdrawalFeeRecipientUnavailable\n        | AppError::WithdrawalFeeRecipientUnavailableWithQuote { .. }\n        | AppError::Internal { .. }\n        | AppError::IdempotencyKeyReused\n        | AppError::OperationInProgress { .. }\n        | AppError::MoneyRecoveryDisabled\n        | AppError::MethodNotAllowed\n        | AppError::TargetNotEligible { .. }\n        | AppError::UnsupportedNetwork\n        | AppError::DepositNotPending { .. }\n        | AppError::SharedSweepGroup { .. }\n        | AppError::ChainDetectionUnavailable\n        | AppError::DepositBelowMinimum\n        | AppError::DepositNotConfirmed\n        | AppError::DepositNotOnChain\n        | AppError::WithdrawalNotTreasuryHeld { .. }\n        | AppError::DepositWalletUsdtRestricted\n        | AppError::DepositSweepHoldStillRestricted { .. }\n        | AppError::DepositSweepHoldAlreadyReleased { .. }\n        | AppError::DepositSweepHoldChainUnverifiable\n        | AppError::WithdrawalRetryInProgress\n        | AppError::TreasuryInsufficient { .. }\n        | AppError::TreasuryBalanceUnavailable\n        | AppError::WithdrawalNotReconcilable { .. }\n        | AppError::ReplayedRefusal { .. } => false,\n    }\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "AppError::UnsupportedNetwork pattern sites in error.rs",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n UnsupportedNetwork src/error.rs; sed -n 850,853p src/error.rs; grep -n UnsupportedNetwork src/services/money_request.rs",
+   "stdout": "252:    UnsupportedNetwork,\n645:            AppError::UnsupportedNetwork => StatusCode::UNPROCESSABLE_ENTITY,\n707:            | AppError::UnsupportedNetwork\n767:            AppError::UnsupportedNetwork => \"unsupported_network\",\n850:            AppError::UnsupportedNetwork => {\n1207:        let (status, body) = render(AppError::UnsupportedNetwork).await;\n            AppError::UnsupportedNetwork => {\n                \"this deposit's network is not supported by deposit retry\".to_string()\n            }\n            AppError::DepositNotPending { .. } => \"deposit is not pending\".to_string(),\n279:        | AppError::UnsupportedNetwork",
+   "exit_code": 0
+  },
+  {
+   "claim": "lock_balance_for_trade_on in full (shared money primitive)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n 603,633p src/repo/wallet.rs",
+   "stdout": "pub async fn lock_balance_for_trade_on(\n    conn: &mut sqlx::PgConnection,\n    user_id: Uuid,\n    offer_id: Uuid,\n    cryptocurrency: Cryptocurrency,\n    amount: i64,\n) -> Result<WalletLock, sqlx::Error> {\n    let updated = sqlx::query(\n        \"UPDATE wallets SET balance = balance - $1, locked_balance = locked_balance + $1, updated_at = now()\n         WHERE user_id = $2 AND cryptocurrency = $3 AND balance >= $1\n         RETURNING id\",\n    )\n    .bind(amount)\n    .bind(user_id)\n    .bind(cryptocurrency)\n    .fetch_optional(&mut *conn)\n    .await?;\n    let _row = updated.ok_or_else(|| sqlx::Error::RowNotFound)?;\n    let lock = sqlx::query_as::<_, WalletLock>(\n        \"INSERT INTO wallet_locks (id, user_id, offer_id, cryptocurrency, amount, locked_at)\n         VALUES (gen_random_uuid(), $1, $2, $3, $4, now())\n         RETURNING *\",\n    )\n    .bind(user_id)\n    .bind(offer_id)\n    .bind(cryptocurrency)\n    .bind(amount)\n    .fetch_one(&mut *conn)\n    .await?;\n    Ok(lock)\n}",
+   "exit_code": 0
+  },
+  {
+   "claim": "Callers and writers of every changed function and of EscrowFunded",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -rn \"fn create_trade\\b\\|update_trade_status\\|link_onchain_escrow\\|validate_business_rules\\|is_recordable_refusal\\|lock_balance_for_trade_on\\|TradeStatus::EscrowFunded\" src",
+   "stdout": "src/types/enums.rs:641:            (TradeStatus::Created, TradeStatus::EscrowFunded)\nsrc/types/enums.rs:643:                | (TradeStatus::EscrowFunded, TradeStatus::Paid)\nsrc/types/enums.rs:644:                | (TradeStatus::EscrowFunded, TradeStatus::Released)\nsrc/types/enums.rs:645:                | (TradeStatus::EscrowFunded, TradeStatus::Cancelled)\nsrc/types/enums.rs:658:        matches!(self, TradeStatus::Created | TradeStatus::EscrowFunded)\nsrc/types/enums.rs:663:            TradeStatus::Created => &[TradeStatus::EscrowFunded, TradeStatus::Cancelled],\nsrc/types/enums.rs:664:            TradeStatus::EscrowFunded => &[\nsrc/types/enums.rs:696:            TradeStatus::EscrowFunded => write!(f, \"escrow_funded\"),\nsrc/types/enums.rs:3765:        assert!(TradeStatus::Created.can_transition_to(&TradeStatus::EscrowFunded));\nsrc/types/enums.rs:3767:        assert!(TradeStatus::EscrowFunded.can_transition_to(&TradeStatus::Paid));\nsrc/types/enums.rs:3768:        assert!(TradeStatus::EscrowFunded.can_transition_to(&TradeStatus::Released));\nsrc/types/enums.rs:3769:        assert!(TradeStatus::EscrowFunded.can_transition_to(&TradeStatus::Cancelled));\nsrc/types/enums.rs:3889:        let status = TradeStatus::EscrowFunded;\nsrc/types/enums.rs:4227:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:4253:        assert!(TradeStatus::EscrowFunded.user_can_cancel());\nsrc/types/enums.rs:4326:        assert!(!TradeStatus::Resolved.can_transition_to(&TradeStatus::EscrowFunded));\nsrc/types/enums.rs:4353:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:4405:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:4483:            Just(TradeStatus::EscrowFunded),\nsrc/types/enums.rs:5051:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:5077:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:5087:            let expected = matches!(status, TradeStatus::Paid | TradeStatus::EscrowFunded);\nsrc/types/enums.rs:5101:            TradeStatus::EscrowFunded,\nsrc/types/enums.rs:5151:            let expected = matches!(from, TradeStatus::Paid | TradeStatus::EscrowFunded);\nsrc/api/offers.rs:137:    pub fn validate_business_rules(&self) -> Result<()> {\nsrc/api/offers.rs:1937:    req.validate_business_rules()?;\nsrc/api/offers.rs:3440:        assert!(crypto_quote.validate_business_rules().is_err());\nsrc/api/offers.rs:3456:        assert!(on_chain.validate_business_rules().is_err());\nsrc/api/reseller.rs:476:        .filter(|t| matches!(t.status, TradeStatus::EscrowFunded | TradeStatus::Paid))\nsrc/api/reseller.rs:531:            TradeStatus::EscrowFunded | TradeStatus::Paid | TradeStatus::Released => {\nsrc/api/wallet.rs:1836:        let lock = crate::repo::wallet::lock_balance_for_trade_on(\nsrc/api/escrow.rs:1091:    crate::repo::wallet::lock_balance_for_trade_on(\nsrc/api/escrow.rs:1455:pub async fn link_onchain_escrow(\nsrc/api/escrow.rs:1708:            Some(TradeStatus::Created) | Some(TradeStatus::EscrowFunded) => {\nsrc/api/escrow.rs:1726:                | Some(TradeStatus::EscrowFunded)\nsrc/api/escrow.rs:1788:        TradeStatus::Created | TradeStatus::EscrowFunded | TradeStatus::Paid => {\nsrc/api/escrow.rs:2349:        .route(\"/{trade_id}/link\", post(link_onchain_escrow))\nsrc/api/escrow.rs:2397:            seller_resolution_trade_status(TradeStatus::EscrowFunded),\nsrc/api/escrow.rs:2467:        Some(TradeStatus::EscrowFunded),\nsrc/api/escrow.rs:2556:            (Some(TradeStatus::EscrowFunded), RefundRefusal::BuyerBeforePayment),\nsrc/api/escrow.rs:2570:            (Some(TradeStatus::EscrowFunded), None),\nsrc/api/escrow.rs:2653:        for trade in [TradeStatus::EscrowFunded, TradeStatus::Paid] {\nsrc/api/escrow.rs:2664:        for trade in [TradeStatus::Created, TradeStatus::EscrowFunded] {\nsrc/api/escrow.rs:2694:            TradeStatus::EscrowFunded,\nsrc/api/trades.rs:394:    if !matches!(status, TradeStatus::Created | TradeStatus::EscrowFunded) {\nsrc/api/trades.rs:1236:    let wallet_lock_id = match crate::repo::wallet::lock_balance_for_trade_on(\nsrc/api/trades.rs:1309:    if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\nsrc/api/trades.rs:1315:    crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\nsrc/api/trades.rs:1477:pub async fn create_trade(\nsrc/api/trades.rs:2033:        let lock = match crate::repo::wallet::lock_balance_for_trade_on(\nsrc/api/trades.rs:2134:        if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\nsrc/api/trades.rs:2140:        crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\nsrc/api/trades.rs:2613:pub async fn update_trade_status(\nsrc/api/trades.rs:2714:        TradeStatus::Created | TradeStatus::EscrowFunded | TradeStatus::Cancelled => {}\nsrc/api/trades.rs:2981:                    | TradeStatus::EscrowFunded\nsrc/api/trades.rs:3699:        TradeStatus::EscrowFunded => format!(\nsrc/api/trades.rs:4507:    if old_trade.status != TradeStatus::EscrowFunded {\nsrc/api/trades.rs:6193:        .route(\"/{trade_id}/status\", patch(update_trade_status))\nsrc/api/trades.rs:6327:            cancel_refusal(TradeStatus::EscrowFunded, CancelActor::Buyer),\nsrc/api/trades.rs:6345:            TradeStatus::EscrowFunded,\nsrc/api/trades.rs:7116:            status: TradeStatus::EscrowFunded,\nsrc/api/trades.rs:7286:        prop_oneof![Just(TradeStatus::Created), Just(TradeStatus::EscrowFunded),]\nsrc/api/trades.rs:7435:            is_within_unviewed_cancel_window(&TradeStatus::EscrowFunded, None, created_at, now),\nsrc/repo/trade.rs:807:            TradeStatus::EscrowFunded => \"escrow_funded\",\nsrc/repo/trade.rs:819:        TradeStatus::EscrowFunded,\nsrc/repo/wallet.rs:597:        lock_balance_for_trade_on(&mut tx, user_id, offer_id, cryptocurrency, amount).await?;\nsrc/repo/wallet.rs:603:pub async fn lock_balance_for_trade_on(\nsrc/services/dispute.rs:813:            TradeStatus::EscrowFunded,\nsrc/services/money_request.rs:247:pub fn is_recordable_refusal(err: &AppError) -> bool {\nsrc/services/money_request.rs:307:    if !is_recordable_refusal(err) || err.status_code().is_server_error() {\nsrc/services/money_request.rs:339:        is_recordable_refusal(&err)\nsrc/services/trade_kyc.rs:225:        TradeStatus::Created | TradeStatus::EscrowFunded\nsrc/services/trade_kyc.rs:818:            status: TradeStatus::EscrowFunded,",
+   "exit_code": 0
+  },
+  {
+   "claim": "Test files using OnChain/OfferEscrow/on_chain/offer_escrow",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -rln \"OnChain\\|OfferEscrow\\|\\\"on_chain\\\"\\|\\\"offer_escrow\\\"\" tests | sort",
+   "stdout": "tests/escrow_offer_auto_fund.rs\ntests/escrow_refund.rs\ntests/escrow_release.rs\ntests/mpr001_trade_escrow_ledger_invariants.rs\ntests/mpr002_offer_version_trade_snapshot.rs\ntests/mpr003_index_premium.rs\ntests/ticket_741_merchant_tier_override_grants.rs\ntests/ticket_910_trade_funding_invariant.rs\ntests/trade_creation_mpr013.rs\ntests/uz_seller_escrow_fee_quote.rs",
+   "exit_code": 0
+  },
+  {
+   "claim": "Frontend callers (out of scope, none send on_chain/escrow_funded to PATCH)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -rn \"escrowType\\|useLinkEscrow\\|escrow_funded\" /Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src --include=*.ts --include=*.tsx | head -20",
+   "stdout": "/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/types/reseller.types.ts:127:    | \"escrow_funded\"\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/types/escrow.types.ts:32:  escrowType?: string\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/types/escrow.types.ts:115:  escrowType: string\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/types/war-room.types.ts:17:  | \"escrow_funded\"\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/types/offerVersion.types.ts:25:  escrowType: string\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(main)/trade/[id]/page.tsx:258:        {/* Status Bars \u2014 pre-payment states (created / escrow_funded) show no\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/moderator/trades/[id]/page.tsx:39:  escrow_funded: { bg: \"bg-indigo-500/20\", text: \"text-indigo-500\", label: \"Escrow Funded\" },\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/admin/war-room/components/TransactionsTable.tsx:40:  escrow_funded:  { label: \"Escrow Funded\",  cls: \"bg-cyan-500/10 text-cyan-400\" },\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/admin/war-room/components/TransactionsTable.tsx:55:  \"escrow_funded\",\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/trade-history/[id]/page.tsx:72:    case \"escrow_funded\":\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/trade-history/[id]/page.tsx:362:            {userRole === \"buyer\" && trade.status === \"escrow_funded\" && (\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/trade-history/page.tsx:149:    if (lowerStatus === \"escrow_funded\") {\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(dashboard)/trade-history/page.tsx:272:                      <SelectItem value=\"escrow_funded\">Escrow Funded</SelectItem>\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/app/(offers)/offer/[id]/page.tsx:192:  escrowType: \"Escrow Type\",\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/utils/format.ts:67: * @param str - The string to format (e.g. \"escrow_funded\", \"in-progress\")\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/components/features/trade/TradeDetailHeader.tsx:18:    escrow_funded: \"bg-indigo-500/20 text-indigo-500\",\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/components/features/trade/TradeDetailHeader.tsx:32:    escrow_funded: \"Escrow Funded\",\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/components/features/trade/CounterpartyTradeHistory.tsx:26:  escrow_funded: \"bg-indigo-500/15 text-indigo-400 border-indigo-500/30\",\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/components/features/trade/TradeStatusBanner.tsx:35:// The pre-payment states (created, escrow_funded, and the legacy `pending` alias)\n/Users/starbird/Workspace/Code/qic/.scratch/920/wt/frontend/src/components/features/trade/TradeStatusBanner.tsx:112:// Pre-payment states (created / escrow_funded / pending) intentionally show none",
+   "exit_code": 0
+  },
+  {
+   "claim": "Intent doc lines on EscrowFunded/on_chain/offer_escrow/Created",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n \"EscrowFunded\\|on_chain\\|offer_escrow\\|Created\" docs/intended-entity-state-machines.md | head -30",
+   "stdout": "82:    [*] --> Created\n83:    Created --> EscrowFunded\n84:    EscrowFunded --> Paid\n85:    EscrowFunded --> Released\n86:    EscrowFunded --> Cancelled\n101:| Created \u2192 EscrowFunded | System (custodial lock at trade creation) |\n102:| EscrowFunded \u2192 Paid | Buyer or Admin |\n103:| EscrowFunded \u2192 Released / Completed | Seller or Admin |\n106:| Created/EscrowFunded \u2192 Cancelled | The buyer (POST /trades/{id}/cancel) or a moderator/admin who is not a party (962) |\n114:> **Design note \u2014 release is unilateral.** The seller's release does **not** depend on the buyer having marked the trade as paid. The buyer's `EscrowFunded \u2192 Paid` transition is informational \u2014 it signals to the seller that fiat is on the way \u2014 but it is **not** a precondition for release. The seller may release directly from `EscrowFunded \u2192 Released` at any time after escrow funds, accepting the risk of releasing before fiat lands. This is symmetric across sell-side and buy-side ads: the staker (seller in both directions \u2014 maker on sell-side ads, taker on buy-side ads) is the only party who controls release.\n958:3. On trade completion (crypto staker releases \u2014 the buyer's `mark-paid` is informational, not a gate; the staker may release directly from `EscrowFunded`):\n1020:5. On trade completion (seller releases \u2014 typically after the buyer confirms fiat sent, but not gated on it; the seller may release from `EscrowFunded` directly), atomic 3-way split:\n1730:**Actions:** `trade_start` (fiat and crypto swap), `offer_publish`, `internal_transfer`, `affiliate_payout`, `offer_lock`, `offer_unlock`, `offer_escrow_fund` (`POST /escrow/offer/create`). Withdrawals keep their own key on `sponsored_withdrawals`, checked against amount, trimmed address, network and asset at both replay points. Unlock refusals (no active lock, trade-linked lock, open trade) are recorded and replayed, and an unlock replay never releases another lock.",
+   "exit_code": 0
+  },
+  {
+   "claim": "Owner rule line in run.log",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -n \"Christian\" run.log",
+   "stdout": "2:2026-10-22T14:27:47Z L1: owner rule (Christian, PM, confirmed 21 Oct, relayed by the parent session): check and lock the full amount including the fee in one transaction on every trade-start route; a failed attempt leaves no trade, no hold and no payment instruction",
+   "exit_code": 0
+  },
+  {
+   "claim": "13 Oct owner decision quoted in PLAN.md",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -n \"owner decision of 13 Oct 2026\" PLAN.md | cut -c1-420",
+   "stdout": "226:Sources: ticket 910 Expected behaviour and acceptance criteria; owner decision of 13 Oct 2026 recorded on the card (\"on_chain and offer_escrow are not supported product modes. Escrow is not a separate wallet; it is a ledger lock on the seller's balance\"); intended design docs/intended-entity-state-machines.md:101 (Created \u2192 EscrowFunded by System only) and :156-182 (escrow funded at creation, \u2192 Held by System onl",
+   "exit_code": 0
+  },
+  {
+   "claim": "Anchors the plan names, at HEAD",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git rev-parse HEAD; grep -n \"pub async fn create_trade\\|pub async fn update_trade_status\\|pub const PATCH_STATUS_CANCEL_REFUSAL\\|let needs_wallet_lock\\|if needs_wallet_lock\\|\\.route(\\\"/{trade_id}/status\\\"\" src/api/trades.rs; grep -n \"pub async fn link_onchain_escrow\\|link\\\", post\" src/api/escrow.rs; grep -n \"req.validate_business_rules\\|pub fn validate_business_rules\" src/api/offers.rs",
+   "stdout": "8fda17fa8f713b5cdc5d1bfef494bf72dd54edc6\n1419:pub async fn create_trade_request(\n1477:pub async fn create_trade(\n1971:    let needs_wallet_lock = is_custodial || is_btc_wallet_lock;\n1988:    let wallet_lock_id = if needs_wallet_lock {\n2132:    if needs_wallet_lock {\n2436:    if needs_wallet_lock {\n2613:pub async fn update_trade_status(\n2870:pub const PATCH_STATUS_CANCEL_REFUSAL: &str =\n6193:        .route(\"/{trade_id}/status\", patch(update_trade_status))\n1455:pub async fn link_onchain_escrow(\n2349:        .route(\"/{trade_id}/link\", post(link_onchain_escrow))\n137:    pub fn validate_business_rules(&self) -> Result<()> {\n1937:    req.validate_business_rules()?;",
+   "exit_code": 0
+  },
+  {
+   "claim": "No source change in the worktree vs HEAD",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat HEAD -- src docs; git status --short",
+   "stdout": "?? tests/ticket_910_trade_funding_invariant.rs",
+   "exit_code": 0
+  }
+ ],
+ "cited_numbers_exempt": []
+}

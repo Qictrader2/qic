@@ -1,0 +1,30 @@
+{
+  "citations_replayed": 10,
+  "confidence": 0.79,
+  "credential_source": "/Users/starbird/Workspace/.env:TYPESAFE_JEV_API_KEY",
+  "decision": "rework",
+  "deterministic_checks_passed": true,
+  "gate": "jev-typesafe",
+  "generated_at": "2026-10-23T01:09:59.023789+00:00",
+  "model": "jev-latest",
+  "model_transition": "advance",
+  "next_phase": "GOLIVE",
+  "objective_demonstrated": 0.36,
+  "open_findings_blocking": false,
+  "phase": 4,
+  "phase_name": "PUSH",
+  "probe_answers": {
+    "finding_contradicts_summary": 0.07,
+    "summary_overclaims": 0.84,
+    "verification_gap": 0.49
+  },
+  "proposed_transition": "advance",
+  "reasons": [
+    "objective 0.36 < 0.75",
+    "the summary appears to claim something the evidence does not show"
+  ],
+  "rework_reason_kind": "score_threshold",
+  "run_id": "910-r1",
+  "safe_to_advance": 0.8125,
+  "task": "910 https://trello.com/c/bPlQQy2u"
+}

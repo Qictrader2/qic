@@ -1,0 +1,128 @@
+{
+ "run_id": "917-964-20261022",
+ "task": "917 https://trello.com/c/WOXYFLpt and 964 https://trello.com/c/0Bji1QKU (combined change; tick each card's ACs separately). Route: .scratch/ship/917-964-20261022T1200/route.json",
+ "phase": 3,
+ "phase_name": "DRY",
+ "objective": "De-duplicate what was written; re-verify",
+ "summary": "The one duplication the review named is removed: the rule id now comes only from PasswordRule::id(), with the serde derive dropped and its test turned into a direct assertion of the five ids. A small DB test now pins the change endpoint's policy check ahead of current-password verification. Re-verified on a private cargo target after touching sources: policy unit tests 20 passed and the policy DB target 12 passed three runs in a row, and the gate's check and clippy passed there; the only lib failure is the environment-bound 864 test. This is run 2 (a scoped restart after the run-1 DRY phase-overrun caused by a shared cargo target).",
+ "requirements": [
+  "917 AC1: A customer resetting a password needs at least 12 characters, the same as at sign-up.",
+  "917 AC2: A signed-in customer changing their password needs at least 12 characters.",
+  "917 AC3: The page and the server give the same message about the minimum.",
+  "917 AC4: Existing shorter passwords keep working until their owner changes them.",
+  "964 AC1: On staging, sign-up, reset and change password each refuse a password that misses any of the five rules, and say which rule is missing.",
+  "964 AC2: A password that meets all five rules is accepted on all three.",
+  "964 AC3: Customers whose existing password breaks the new rules can still sign in."
+ ],
+ "evidence": {
+  "restart": "run 1 stopped at DRY with phase-overrun (shared cargo target linked another worktree's rlib); parent session gave a go-ahead for a fresh scoped run from DRY; gates 0 to 2 stand",
+  "target": "private CARGO_TARGET_DIR qictrader-backend-rs/target-964 (git-excluded)",
+  "gate_partial": "gate 20261022T210042 was stopped after the lib step at the parent's request (CPU contention with 910); its integration and frontend steps run in PUSH on the committed tree",
+  "dedup": "LOW-4 from TEMPER",
+  "extra_test": "LOW-1 from TEMPER"
+ },
+ "deterministic_checks": [
+  {
+   "name": "rule id single source",
+   "status": "pass",
+   "detail": "citation 0"
+  },
+  {
+   "name": "ordering test added and passing",
+   "status": "pass",
+   "detail": "citations 2, 4"
+  },
+  {
+   "name": "targeted tests on private target",
+   "status": "pass",
+   "detail": "citation 3"
+  },
+  {
+   "name": "check and clippy on private target",
+   "status": "pass",
+   "detail": "citation 5"
+  },
+  {
+   "name": "lib failure only env-bound 864",
+   "status": "pass",
+   "detail": "citation 6"
+  },
+  {
+   "name": "no comments",
+   "status": "pass",
+   "detail": "citation 7"
+  }
+ ],
+ "open_findings": [
+  {
+   "severity": "low",
+   "detail": "Integration targets and frontend steps of the fast gate are re-run in PUSH on the committed tree"
+  }
+ ],
+ "next_phase": "PUSH",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "The rule id now has one source: no Serialize derive or serde attribute remains in the policy module",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -c 'Serialize\\|rename_all' src/services/password_policy.rs; grep -n 'pub fn id' src/services/password_policy.rs",
+   "stdout": "0\n25:    pub fn id(self) -> &'static str {\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "The serde comparison test became a direct assertion of the five ids",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -n 'fn rule_ids_are_the_five_frontend_keys_in_display_order' src/services/password_policy.rs",
+   "stdout": "197:    fn rule_ids_are_the_five_frontend_keys_in_display_order() {\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "A new DB test pins the change check ahead of current-password verification",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -n 'fn change_checks_the_new_password_policy_before_verifying_the_current_password' tests/password_policy_964.rs",
+   "stdout": "442:async fn change_checks_the_new_password_policy_before_verifying_the_current_password() -> TestResult {\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "On the private target, sources touched, policy unit tests 20 passed and the policy DB target 12 passed three runs in a row",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "grep -E '^CARGO_TARGET_DIR|^test result|EXIT=' DRY-db-r3.log",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs/target-964 sources touched 2026-10-22T16:50:36Z\ntest result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 4320 filtered out; finished in 0.00s\nLIB EXIT=0\ntest result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.15s\nRUN1 EXIT=0\ntest result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.34s\nRUN2 EXIT=0\ntest result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.35s\nRUN3 EXIT=0\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "The new ordering test passed in all three runs",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "grep -c 'change_checks_the_new_password_policy_before_verifying_the_current_password ... ok' DRY-db-r3.log",
+   "stdout": "3\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "On the private target the gate's static steps, check and clippy passed",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "sed -n 1,10p phase-3-gate.log",
+   "stdout": "DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_917_964_20261022_8\nCARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs/target-964\ngate --fast \u00b7 base origin/main \u00b7 receipts /Users/starbird/Workspace/Code/qic/.scratch/964/wt/.scratch/gate/20261022T210042\nbackend: 9 changed files\nbackend: pre-existing suppressions on base (not gated): let _ = 1, .ok(); 23\n  ok   suppression-added-let-underscore (0s)\n  ok   suppression-added-ok-discard (0s)\n  ok   migration-collisions (0s)\n  ok   cargo-check (243s)\n  ok   cargo-clippy (314s)\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Lib on the private target: only the environment-bound 864 test failed",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/.scratch/gate/20261022T210042",
+   "cmd": "grep -E '^test result|^    services::' cargo-test-lib.log",
+   "stdout": "    services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract\ntest result: FAILED. 4332 passed; 1 failed; 7 ignored; 0 measured; 0 filtered out; finished in 103.70s\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "No comment lines in the two edited files",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -cE '//|/\\*' src/services/password_policy.rs tests/password_policy_964.rs",
+   "stdout": "src/services/password_policy.rs:0\ntests/password_policy_964.rs:0\n",
+   "exit_code": 1
+  }
+ ],
+ "cited_numbers_exempt": [
+  {
+   "number": 5,
+   "why": "the five password rules defined by the owner decision and api-contract.md (length, uppercase, lowercase, number, symbol)"
+  }
+ ]
+}

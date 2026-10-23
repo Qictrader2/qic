@@ -1,0 +1,34 @@
+# 910 PHASE 2 TEMPER review, round 1 (opus55 independent reviewer)
+
+Verdict: NEEDS_FIXES
+
+Scope reviewed: `git diff origin/main` (8fda17fa) in /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs plus untracked tests/ticket_910_trade_funding_invariant.rs. I judged from code only.
+
+Re-run: `cargo test --test ticket_910_trade_funding_invariant --test trade_creation_mpr013`, using CARGO_TARGET_DIR=.scratch/910/target-910, CARGO_INCREMENTAL=0, minted DB qic_631_910_r1_20, REQUIRE_TEST_DB=1, RUST_MIN_STACK=2147483648 and ulimit -s unlimited. Result: 15/15 and 6/6 passed, EXIT=0. Log: /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-2-review-opus.log
+
+## What holds
+
+1. Root cause is addressed. `create_trade` (src/api/trades.rs:1633) refuses `!offer.escrow_type.is_lock_backed()` after the read-only eligibility checks. The refusal comes before the swap dispatch, the quote, the transaction and the keyed claim, so it covers both POST /trades routes (fiat and crypto swap) with or without a key. The lock branch is now unconditional (`wallet_lock_id` is a plain `Uuid`, `attach_lock_to_trade` and the Held/EscrowFunded/EscrowLock block always run). No path in `create_trade` can commit a trade without its lock, and every error inside `business` still reaches `rollback_then`. The only other trade inserts are `create_crypto_swap` (always locks, unchanged) and the super-admin `seed_affiliate_scenario` test seeder (pre-existing, not a trade-start route).
+2. PATCH /trades/{id}/status refuses `escrow_funded` for every caller (trades.rs:2669). The refusal comes after the role check and `can_transition_to`, and before `update_status`, the event and the notifications. POST /escrow/{trade_id}/link returns 422 after the participant check and writes nothing. Offer creation refuses in `validate_business_rules` before the publish transaction. That function is its only caller, and `UpdateOfferRequest` has no `escrow_type`.
+3. 920 contract: `UnsupportedEscrowType` is in all exhaustive matches in error.rs and in `is_recordable_refusal`. The keyed 422 replays are tested for both offer publish and trade start, and the key row is `refused/422/unsupported_escrow_type`.
+4. Money: the lock is amount + fee (+ `btc_gas_reserve_sats` for btc_wallet_lock), and the ledger records the amount. The code is unchanged for lock-backed types, and the tests assert lock = escrows.amount + escrows.fee_amount (+ reserve), the wallet deltas, and ledger = escrows.amount.
+5. Migrated fixtures: I found no weakened assertion. The only removed assertions are the old `create_trade_on_chain_success` success checks, which now form a refusal test with zero-row and balance checks. The cleanup queries now skip ledger-linked rows, and that only affects cleanup.
+6. Docs: the intended and as-built docs match the owner rule of 13 Oct. design-check is OK. The six regenerated .generated files change hashes only and must travel with the commit.
+
+## Findings
+
+| Severity | File:line | Finding | Concrete fix |
+|---|---|---|---|
+| MEDIUM | tests/ticket_910_trade_funding_invariant.rs:523-579 (used by :502, :681, :696, :720, :737, :775) | `assert_funded_trade` checks only internal consistency: the lock equals whatever the escrow row says (amount + fee). It never pins exact minor-unit values. PLAN AC4 (resell) requires "exact minor-unit values" for lock amount, escrows.amount, escrows.fee_amount, buyer_crypto_amount and the ledger entry. AC2 gives a worked fee (0.7%), and Risks says the regression tests must compare amounts before and after. A regression that changed or zeroed the fee, or changed the amount, in both the escrow row and the lock would pass all six regression tests. buyer_crypto_amount is never asserted. | Pass expected `(amount, fee, buyer_crypto_amount)` into `assert_funded_trade` and `assert_eq!` them. Custodial sell and buy at 5000 ZAR / 20.00 ZAR per USDT with the test-default 70 bps should give amount 250_000_000 and fee 1_750_000, so the lock is 251_750_000. For the resell, BTC and swap cases, record the values the same fixtures produce on origin/main 8fda17fa and pin those, or derive them from `Config::test_default()` fee bps. Also assert `fee > 0` so the "amount + fee" lock check proves something. |
+| LOW | src/repo/escrow.rs:354, :371 | `update_escrow_type` and `set_contract_address` lost their only caller (link_onchain_escrow) and are now dead pub functions. Root CLAUDE.md says to delete dead code. `LinkOnChainEscrowRequest` is now parsed only to be ignored. | Delete the two repo functions, or record them for the planned on_chain removal follow-up. |
+| LOW | frontend/e2e (19 `escrowType: 'on_chain'` fixtures, e.g. e2e/tests/smoke/critical-path.test.ts:59, idor.test.ts:32; PATCH `status: 'escrow_funded'` in e2e/tests/system/full-trade-journey.test.ts:98, dispute-resolution-journey.test.ts:50) | The frontend Playwright API suites build trades on on_chain offers and hand-fund them through PATCH. After this deploy they will fail against staging. The frontend repo has no CI, so nothing flags it. The PLAN checked only app source. | Open a follow-up card (or a companion frontend PR) to move these fixtures to funded custodial offers and drop the PATCH funding step. |
+| LOW | tests/ticket_910_trade_funding_invariant.rs:776 | The swap regression drops `trades_fiat_amount_check` to run at all, so it tests a schema that production does not have. In production every swap insert fails today. The owner ruled the bug out of scope, but run.log:24 says "no Trello card", so nothing tracks it. | Record the swap constraint bug on a card so the test's DROP can be removed when it is fixed. |
+| LOW | tests/common/mod.rs:547 vs tests/ticket_910_trade_funding_invariant.rs:103 | This diff adds two wallet-seeding helpers that do the same job (`fund_usdt_wallet` and a local `seed_wallet`). | Optional: have the 910 file use a parameterised common helper. |
+| LOW | src/api/trades.rs:2632-2671 | The order is `can_transition_to` first, then the fund refusal. So PATCH escrow_funded on a non-Created trade returns the generic "Invalid transition" 400 instead of `PATCH_STATUS_FUND_REFUSAL`. It is still refused before any write. | Optional: move the EscrowFunded refusal above `can_transition_to` so the message is stable. |
+
+Previous gate's non-blocking notes, graded:
+1. Fast gate not rerun after the test-only fix: LOW. My re-run of the full 910 file and mpr013 passes. Clippy on the lib is unaffected by a test-only change.
+2. Live-check signups returned 500 because SMTP is unset locally: environment only, not a finding.
+3. Six regenerated design files must be committed: agreed, LOW (hash-only changes, design-check OK).
+
+Required actions: fix the MEDIUM (pin exact minor-unit amounts, fee and buyer_crypto_amount in the AC2/AC4 regression tests).

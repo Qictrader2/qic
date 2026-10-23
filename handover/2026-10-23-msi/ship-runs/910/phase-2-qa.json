@@ -1,0 +1,20 @@
+{
+  "verdict": "APPROVE",
+  "phase": 2,
+  "role": "primary",
+  "reasons": [
+    "Independent reviewer (opus55) graded the diff fresh: round 1 NEEDS_FIXES (1 MEDIUM, 5 LOW), round 2 APPROVED with no HIGH or MEDIUM open. Round-2 diff sha1 190411687dbb and test-file sha1 e387fe0acf1f match the worktree as I read it, and no worktree file is newer than phase-2-gate.log (last edits 21:41Z, gate started 22:24Z), so the gate covers the reviewed tree.",
+    "Fast gate on the fixed tree (receipts .scratch/910/wt/.scratch/gate/20261022T222427): suppression scans, migration-collisions, cargo-check, cargo-clippy all ok; cargo-test-lib 4314 passed, 1 failed, the failure being services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract (env-bound, on the SKILL.md acceptable list; the solana flaky test passed this run); cargo-test-targets 71 targets, 874 passed, 0 failed, including ticket_910_trade_funding_invariant 16/16 and trade_creation_mpr013 6/6.",
+    "MEDIUM pin exact values in funding tests: FIXED. assert_funded_trade now takes a literal ExpectedFunding and asserts escrows.amount, fee_amount, buyer_crypto_amount, wallet_locks.amount, the staker wallet deltas and the escrow_lock ledger amount. Pinned values check out at 70 bps: SELL/RESELL 250_000_000 + 1_750_000 = 251_750_000 (resell buyer_crypto_amount 250_000_000), BTC 500_000 + 3_500 + 10_000 reserve = 513_500, SWAP 10_000_000 + 70_000 = 10_070_000.",
+    "LOW dead repo fns update_escrow_type/set_contract_address: FIXED. Both deleted from src/repo/escrow.rs; cargo-check and clippy pass so no reference remains.",
+    "LOW PATCH refusal order: FIXED. In update_trade_status the EscrowFunded refusal now sits after the participant check and before can_transition_to, so non-participants still get 403 first and every participant gets PATCH_STATUS_FUND_REFUSAL regardless of the current status; covered by patch_status_refuses_escrow_funded_on_a_trade_that_is_not_created.",
+    "LOW frontend e2e on_chain fixtures: NOT FIXED, does not block. Frontend app source has no on_chain/offer_escrow usage and no PATCH escrow_funded call (only unit-test fixtures carry the status string); 29 Playwright e2e files use on_chain offers or PATCH funding and will fail against staging. Recorded as a follow-up in phase-2.json; needs a frontend companion PR or card before anyone relies on that suite.",
+    "LOW swap CHECK bug card: NOT FIXED, does not block. Owner ruled the crypto-swap trades_fiat_amount_check bug out of scope under the USDT-only rule (run.log 17:24Z) with no Trello card; the swap regression test drops the constraint to run. Recorded in phase-2.json followups.",
+    "LOW duplicate wallet helpers: NOT FIXED, does not block. Optional test-only consolidation (tests/common/mod.rs fund_usdt_wallet vs the 910 file's seed_wallet).",
+    "Regression check on the fixes: the source diff touches only the lock conditional, the PATCH guard, the link route refusal, offer validation, the new error variant and its exhaustive matches; lock_amount, escrow_fee, quote and ledger amounts are unchanged for lock-backed offers, consistent with the pinned baseline values. Six regenerated docs/design/.generated files are hash-only and must travel with the commit.",
+    "Process note, not a finding: TEMPER overran its slice and the run overran its budget; both continued as a scoped run under the owner stance relayed in run.log."
+  ],
+  "required_actions": [],
+  "uncertain": false,
+  "verified_model": "claude-fable-5-1"
+}

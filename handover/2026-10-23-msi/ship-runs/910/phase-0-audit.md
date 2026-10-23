@@ -1,0 +1,1 @@
+Phase 0 audit (910): no reworks; phase ran past its slice (20 of 15 min, stop 22) because the shared cargo target was locked by another session's build for ~8 min. Prevention: when the shared target's lock is held by a foreign build, switch to the warm per-ticket target at once instead of waiting (done here at minute 5).

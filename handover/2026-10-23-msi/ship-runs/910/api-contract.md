@@ -1,0 +1,10 @@
+# 910 contract (BOIL)
+Shared names (slice A adds them first; others code against them):
+- `EscrowType::is_lock_backed(&self) -> bool` in src/types/enums.rs: true for Custodial and BtcWalletLock, false for OnChain and OfferEscrow (exhaustive match), with a unit test over all four variants.
+- `AppError::UnsupportedEscrowType` in src/error.rs: 422, code "unsupported_escrow_type", message "This escrow type is not supported. Offers use custodial escrow." Added to every exhaustive match (status, error_code, user_message, rendered_code passthrough) with a render unit test like unsupported_network_is_422_with_stable_code.
+- `AppError::UnsupportedEscrowType` is a recordable business refusal in src/services/money_request.rs is_recordable_refusal (and its unit test), so keyed offer publish and trade start replay the same 422.
+- `pub const PATCH_STATUS_FUND_REFUSAL: &str = "A trade is funded only when it is created. PATCH /status cannot fund a trade.";` in src/api/trades.rs beside PATCH_STATUS_CANCEL_REFUSAL.
+Slices (disjoint files):
+- A: src/types/enums.rs, src/error.rs, src/services/money_request.rs, src/api/offers.rs (validate_business_rules refuses !is_lock_backed before KYC compat; unit test at the on_chain+requireBankLetter test updated; offer_escrow case added), src/api/escrow.rs (link_onchain_escrow refuses after the participant check, writes nothing), docs/intended-entity-state-machines.md (PLAN step 10).
+- B: src/api/trades.rs only (PLAN steps 5 and 6) + new tests in tests/ticket_910_trade_funding_invariant.rs (all AC cases incl. concurrency loop, keyed replays, regressions for custodial sell/buy, sell-side and buy-side resell, BTC wallet-lock, crypto swap, PATCH refusal for buyer/seller/vendor/admin, link refusal, offer-create refusal).
+- C: test fixtures that open trades on OnChain offers (PLAN step 8): tests/trade_creation_mpr013.rs, tests/mpr001_trade_escrow_ledger_invariants.rs, tests/mpr002_offer_version_trade_snapshot.rs, tests/uz_seller_escrow_fee_quote.rs, tests/ticket_741_merchant_tier_override_grants.rs, tests/common/mod.rs (shared funded-wallet helper). Assertions never weakened.

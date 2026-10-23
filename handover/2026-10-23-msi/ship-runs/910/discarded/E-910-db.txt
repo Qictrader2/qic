@@ -1,0 +1,94 @@
+=== S1 before ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|0
+-- money_request_keys
+
+
+=== S1 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 before offer ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 before offer ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 before offer ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+

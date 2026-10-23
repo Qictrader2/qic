@@ -1,0 +1,18 @@
+{
+  "decision": "advance",
+  "gate": "jev-qic-ship-combined",
+  "generated_at": "2026-10-22T14:48:01.349881+00:00",
+  "jev_decision": "rework",
+  "jev_rework_reason_kind": "score_threshold",
+  "phase": 0,
+  "phase_name": "INVESTIGATE",
+  "qa_role": "primary",
+  "qa_uncertain": false,
+  "qa_uncertainty_reason_plain_english": null,
+  "qa_verdict": "APPROVE",
+  "qa_verified_model": "claude-fable-5-1",
+  "reasons": [
+    "Jev gate decision = rework, but only on a graded score threshold (model itself chose advance, all deterministic checks passed, no blocking finding)",
+    "QA verdict = APPROVE \u2014 waiving the score-threshold rework"
+  ]
+}

@@ -1,0 +1,4 @@
+Tickets 917 and 964 (passwords), size L.
+The run was removing one small duplication after the independent review had approved the change (gates 0, 1 and 2 all passed).
+It stopped on the phase time limit: a shared build folder made the tests run another worktree's code, and the worker spent 22 minutes on failures that were not ours.
+It needs a go-ahead to restart from the de-duplication step on a private build folder; nothing has been pushed or merged yet.

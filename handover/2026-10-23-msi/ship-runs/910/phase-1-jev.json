@@ -1,0 +1,32 @@
+{
+  "citations_replayed": 67,
+  "confidence": 0.3,
+  "credential_source": "/Users/starbird/Workspace/.env:TYPESAFE_JEV_API_KEY",
+  "decision": "rework",
+  "deterministic_checks_passed": true,
+  "gate": "jev-typesafe",
+  "generated_at": "2026-10-22T17:31:18.747912+00:00",
+  "model": "jev-latest",
+  "model_transition": "advance",
+  "next_phase": "TEMPER",
+  "objective_demonstrated": 0.64,
+  "open_findings_blocking": false,
+  "phase": 1,
+  "phase_name": "BOIL",
+  "probe_answers": {
+    "finding_contradicts_summary": 0.24,
+    "summary_overclaims": 0.56,
+    "verification_gap": 0.88
+  },
+  "proposed_transition": "advance",
+  "reasons": [
+    "confidence 0.30 < 0.7",
+    "objective 0.64 < 0.75",
+    "safety 0.34 <= 0.75 \u2014 at or below the 'check again before moving forward' level",
+    "a required verification (staging, test, or build) appears to be missing from the evidence"
+  ],
+  "rework_reason_kind": "score_threshold",
+  "run_id": "910-r1",
+  "safe_to_advance": 0.345,
+  "task": "910 https://trello.com/c/6acd983a914864e091d819ad"
+}

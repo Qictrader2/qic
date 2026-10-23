@@ -1,0 +1,23 @@
+{
+  "verdict": "APPROVE",
+  "phase": 0,
+  "role": "primary",
+  "reasons": [
+    "Gate check rerun by the reviewer: `jev_phase_gate.py --verify-citations` passes, all 23 citations reproduce, every summary number is backed.",
+    "Item 1 applies, met: three reproductions ran against minted DB qic_631_910_r1_1 on the HEAD worktree (8fda17fa, only the untracked repro test present). phase-0-repro-existing.log: create_trade_on_chain_success passes (a trade opens on an on_chain offer). phase-0-repro.log: PATCH /status escrow_funded by the buyer returns 200 and leaves wallet_locks = 0; POST /offers with escrowType on_chain returns 200 and stores on_chain.",
+    "Item 2 applies, met with one gap: update_trade_status (2613-2861), link_onchain_escrow (1455-1498), validate_business_rules (137-177), validate_offer_kyc_compatibility, EscrowType and is_recordable_refusal (247-297) are cited in full; create_trade is cited only for the segments the plan edits (1630-1635 dispatch and 1957-2200 lock/escrow/funding/commit), not the whole body. Reviewer read the same ranges in the worktree and confirms the plan's anchors (needs_wallet_lock :1971, else None :2051-2053, funding block :2132-2172, keyed complete :2174, rollback :2193) are correct.",
+    "Item 3 applies, met: caller grep (citation 15) lists every caller of the changed functions, of lock_balance_for_trade_on (trades.rs:1236 swap, :2033 create_trade, escrow.rs:1091 fund_offer_escrow_in_savepoint, wallet.rs:1836 lock_funds) and every TradeStatus::EscrowFunded writer (trades.rs:1315, :2140, :2717). Reviewer confirmed the primitive is untouched by the plan, so the two non-trade callers are unaffected, and that escrow.rs:1946's dynamic `target` (resolve_to_seller) can never be EscrowFunded. Evidence does not spell out per-caller effect in prose; carried as a BUILD note.",
+    "Item 4 applies, met: new outcome AppError::UnsupportedEscrowType (422). create_trade_request and create_offer both route errors through `k.refuse` when keyed (recorded only if is_recordable_refusal is true, hence plan item 2) and return the error directly when unkeyed; PATCH returns a validation 400; link route has no app caller. No caller treats the new error as a held or skip state.",
+    "Item 5 applies, met: intended-entity-state-machines.md:101 (Created -> EscrowFunded, System at creation) and :182 (-> Held, System) quoted; the plan agrees with intent, no conflict.",
+    "Item 6 applies, met: Christian's owner rule is in run.log line 2; the 13 Oct 2026 decision is quoted in PLAN.md:226. Plan's refusal-before-any-write and in-transaction lock satisfy 'full amount including fee in one transaction, failed attempt leaves no trade, hold or payment instruction' (system message is sent post-commit at trades.rs:2290). Legacy on_chain/offer_escrow rows are deferred to a separate owner decision after counts; no question is open for this gate.",
+    "Item 7 does not apply: refusals happen before any write; no held/skip money state is introduced.",
+    "Item 8 applies, met: the three reproduced gaps are recorded as passing deterministic checks.",
+    "Severity financial, track FULL, size L still hold: backend only, six source files, five fixture files, one new test file, no migration."
+  ],
+  "required_actions": [
+    "BUILD evidence must cite in full every create_trade range it edits (including the post-commit `if needs_wallet_lock` branch at trades.rs:2436 if touched) and the diff of each, since INVESTIGATE cited create_trade only in part.",
+    "BUILD evidence must show by diff that src/repo/wallet.rs::lock_balance_for_trade_on is unchanged, so wallet.rs lock_funds and escrow.rs fund_offer_escrow_in_savepoint keep their behaviour."
+  ],
+  "uncertain": false,
+  "verified_model": "claude-fable-5-1"
+}

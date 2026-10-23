@@ -1,0 +1,245 @@
+{
+ "run_id": "917-964-20261022",
+ "task": "917 https://trello.com/c/WOXYFLpt and 964 https://trello.com/c/0Bji1QKU (combined change; tick each card's ACs separately). Route: .scratch/ship/917-964-20261022T1200/route.json",
+ "phase": 0,
+ "phase_name": "INVESTIGATE",
+ "objective": "Reproduce the reported symptom, trace root cause, classify severity, confirm the plan's size still holds",
+ "summary": "A reproduction test ran at backend HEAD 8fda17fa (equal to its merge-base) and 3 cases passed against today's behaviour: reset accepts a 6-character password past validation and fails only at token lookup, change-password returns 200 for an 8-character password with no symbol, and sign-up does not refuse a 12-character password that has no uppercase letter. The root cause is that each request struct carries only a length attribute (12, 6, 8) and no endpoint checks letter, digit or symbol classes; the only server rule set lives in the browser. Exactly three hash_password call sites set a customer password (signup and reset in auth.rs, change in users.rs); admin create-user, test-account provisioning, backup codes and email OTP are out of scope. All three frontend consumers already show the server's error message. No intended, as-built or design doc states a password rule, so there is no intent conflict and no open product question. Severity security, size L and full track still hold; risk area authorization (credential-setting guard).",
+ "requirements": [
+  "917 AC1: A customer resetting a password needs at least 12 characters, the same as at sign-up.",
+  "917 AC2: A signed-in customer changing their password needs at least 12 characters.",
+  "917 AC3: The page and the server give the same message about the minimum.",
+  "917 AC4: Existing shorter passwords keep working until their owner changes them.",
+  "964 AC1: On staging, sign-up, reset and change password each refuse a password that misses any of the five rules, and say which rule is missing.",
+  "964 AC2: A password that meets all five rules is accepted on all three.",
+  "964 AC3: Customers whose existing password breaks the new rules can still sign in."
+ ],
+ "evidence": {
+  "track": "full",
+  "severity": "security",
+  "size": "L (plan size, risk area authorization)",
+  "track_reason": "changes the guard on every self-service credential-setting endpoint (auth); full track per Speed rule 1",
+  "checklist": {
+   "1": "applies: all three gaps reproduced by running tests/password_policy_964_repro.rs at HEAD 8fda17fa (3 passed, EXIT=0). Reset with 6 chars reaches token lookup; change with 'Abcdefg1' returns 200; signup 'abcdefghij1!' is not refused for uppercase (500 'Email service is not configured' only because the test env has no mailer). Citations [2,0,1].",
+   "2": "applies: root-cause bodies cited. Validators are length-only: signup min 12, reset min 6, change min 8; no character-class check anywhere. Citations [3,4,5,6,7,8].",
+   "3": "applies: three entry points (/signup, /reset-password, /password/change) and 3 in-scope call sites of hash_password (auth.rs signup and reset, users.rs change); others out of scope. Citations [9,10].",
+   "4": "applies: today one validation string; frontend shows err.message on all three paths. Fixtures to update listed. Citations [8,11,12,13].",
+   "5": "does not apply: no password length or policy rule in intended, as-built or design docs (only 2FA fallback lines mention password). Citation [14].",
+   "6": "does not apply: no open product questions; no conflict found in item 5.",
+   "7": "does not apply: no money path (auth password endpoints only).",
+   "8": "applies: Reproduced: reset accepts 6-char password past validation (pass); Reproduced: change accepts 8-char no-symbol password with 200 (pass); Reproduced: signup does not refuse 12-char no-uppercase password for uppercase (pass). Citation [2]."
+  },
+  "callers": [
+   {
+    "site": "src/api/auth.rs:490 signup",
+    "effect": "IN SCOPE: policy check goes before DB reads, after rate limit"
+   },
+   {
+    "site": "src/api/auth.rs:2818 reset_password",
+    "effect": "IN SCOPE: check before token lookup so a refused reset does not use the link"
+   },
+   {
+    "site": "src/api/users.rs:1609 change_password",
+    "effect": "IN SCOPE: check before currentPassword verify/hash; currentPassword never policy-checked"
+   },
+   {
+    "site": "src/api/auth.rs:3322-3326 routes /signup /reset-password; src/api/users.rs:2473 /password/change",
+    "effect": "entry points; response becomes 400 with details.unmetPasswordRules"
+   }
+  ],
+  "out_of_scope": [
+   "src/api/admin.rs:3799 admin create user",
+   "src/api/admin.rs:7702 admin test-account provisioning",
+   "src/services/test_accounts.rs:108,113",
+   "src/services/backup_code.rs and src/api/users.rs:1331 backup codes",
+   "src/services/email_otp.rs:210 email OTP",
+   "OAuth signup (OAuthSignupRequest, no password)",
+   "login, 2FA, account deletion confirm"
+  ],
+  "fixtures_to_update": [
+   "tests/signup_default_fiat_782.rs:48 'longenoughpassword123' (no uppercase/symbol); the currency-refusal tests would see a password refusal first if the check precedes the currency gate",
+   "tests/legal_acceptance.rs:242 'longenoughpassword123' expects a legal-acceptance message; also password variables at :424 and :478 need checking",
+   "tests/banned_words_visibility.rs:166 'correct-horse-battery-staple' (no uppercase/number/symbol)",
+   "tests/pentest_002_auth_rate_limit.rs:232,332 'password12345': 6th request still 429 (rate limit first); not-429 assertion unaffected, but 1-5 now return 400",
+   "tests/auth_middleware.rs:324,332,340: validator errors fire before handler, unaffected if policy is in the handler; 340 'short' still 400 containing 'password'",
+   "tests/jwt_audit_2026_05_revocation.rs:336 'RotatedAfterAudit2026!secure' already complies; its TEST_PASSWORD is the currentPassword, not policy-checked"
+  ],
+  "frontend_consumers": [
+   "src/services/auth-api.ts:849 resetPassword -> throws Error(response.error.message); src/app/(auth)/reset-password/page.tsx:77-79 setError + toast.error(err.message); client check 'min 6' at :57, minLength=6 at :140,:157",
+   "src/services/users-api.ts:662 changePassword -> getErrorMessage(response.error); ChangePasswordSection.tsx:94-95 toast.error(error.message); client validate 8 chars + upper/lower/number, no symbol (:32-40), helper text :187",
+   "src/services/auth-api.ts:154 signup -> throws Error(message); src/hooks/auth/use-email-auth.ts:169 call, :179-181 setError(error.message); signup page already checks all five rules at :264-270"
+  ],
+  "plans": {
+   "PLAN-917.md": "f098acd037facbcccf884d9b1de82b5a6229cce7eea86e237d2f46f0d9ce0df0",
+   "PLAN-964.md": "77d3ffd8f300c7b92471212ce44436bae417b379ffd017b82dd40c49897f23e5"
+  },
+  "plan_conflict_resolved": "917 plan says no composition rules on the server; superseded by the 964 plan and the owner decision of 16 Oct and Christian 21 Oct (five rules on all three). Logged in run.log.",
+  "build_plan": {
+   "files": [
+    "src/services/password_policy.rs",
+    "src/services/mod.rs",
+    "src/api/auth.rs",
+    "src/api/users.rs",
+    "tests/password_policy_964.rs",
+    "tests/signup_default_fiat_782.rs",
+    "tests/legal_acceptance.rs",
+    "tests/banned_words_visibility.rs",
+    "frontend src/app/(auth)/reset-password/page.tsx",
+    "frontend src/components/features/settings/security/ChangePasswordSection.tsx",
+    "frontend src/lib/constants.ts"
+   ]
+  },
+  "notes": "Frontend is only in 917's scope. Repro file tests/password_policy_964_repro.rs is untracked and temporary. Used --nocapture --test-threads=1 on the cargo test (brief's command had neither) to show printed statuses. Signup repro case asserts not-400-uppercase because success needs an email service. Minted DB: qic_631_917_964_20261022_1. details.unmetPasswordRules will be needed in ValidatedJson-bypassing path since format_validation_errors yields only a joined string."
+ },
+ "deterministic_checks": [
+  {
+   "name": "Reproduced: reset accepts a 6-character password past validation at HEAD",
+   "status": "pass",
+   "detail": "citation 2"
+  },
+  {
+   "name": "Reproduced: change-password accepts an 8-character no-symbol password with 200 at HEAD",
+   "status": "pass",
+   "detail": "citation 2"
+  },
+  {
+   "name": "Reproduced: sign-up does not refuse a 12-character no-uppercase password for the uppercase rule at HEAD",
+   "status": "pass",
+   "detail": "citation 2"
+  },
+  {
+   "name": "Worktree base equals origin/main merge-base",
+   "status": "pass",
+   "detail": "citation 0"
+  },
+  {
+   "name": "Warm-up build finished clean before the phase opened",
+   "status": "pass",
+   "detail": "citation 1"
+  },
+  {
+   "name": "No password rule in intended, as-built or design docs",
+   "status": "pass",
+   "detail": "citation 14"
+  }
+ ],
+ "open_findings": [],
+ "next_phase": "BOIL",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "Backend worktree HEAD equals merge-base with origin/main (8fda17fa), branch 964-password-policy has no extra commits",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "git rev-parse HEAD; git merge-base HEAD origin/main; git branch --show-current",
+   "stdout": "8fda17fa8f713b5cdc5d1bfef494bf72dd54edc6\n8fda17fa8f713b5cdc5d1bfef494bf72dd54edc6\n964-password-policy\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Warm-up log tail (log-backed, not replayed): warm-cargo-3 ended EXIT=0",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "tail -3 .scratch/964/warm-cargo-3.log",
+   "stdout": "note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n  Executable tests/jwt_audit_2026_05_revocation.rs (/Users/starbird/Workspace/Code/qic/qictrader-backend-rs/target/debug/deps/jwt_audit_2026_05_revocation-03746236c2f18b47)\nEXIT=0 warm end 2026-10-22T14:38:53Z\n",
+   "exit_code": 0,
+   "log": ".scratch/964/warm-cargo-3.log"
+  },
+  {
+   "claim": "Reproduced: repro test (3 cases) passes at HEAD with today's behaviour; reset 6 chars reaches token lookup (400 'invalid or expired reset token', no details), change 'Abcdefg1' returns 200, signup 'abcdefghij1!' is not refused for uppercase (500 only because test env has no email service)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "sed -n 5,40p phase-0-repro.log",
+   "stdout": "note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running tests/password_policy_964_repro.rs (/Users/starbird/Workspace/Code/qic/qictrader-backend-rs/target/debug/deps/password_policy_964_repro-066617b472645cf6)\n\nrunning 3 tests\ntest reproduced_change_accepts_eight_char_password_without_symbol ... CHANGE status=200 OK message=\"password changed successfully\"\nok\ntest reproduced_reset_accepts_six_char_password_into_token_lookup ... RESET status=400 Bad Request message=\"invalid or expired reset token\" details=None\nok\ntest reproduced_signup_does_not_name_uppercase_for_12_char_password ... SIGNUP status=500 Internal Server Error message=\"Email service is not configured. Verification URL has been logged to the console for dev use.\"\nok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.48s\n\nEXIT=0\n",
+   "exit_code": 0,
+   "log": "phase-0-repro.log"
+  },
+  {
+   "claim": "Request structs: SignupRequest min 12 only; ResetPasswordRequest min 6; ChangePasswordRequest new_password min 8",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "sed -n 56,64p src/api/auth.rs; sed -n 134,141p src/api/auth.rs; sed -n 139,146p src/api/users.rs",
+   "stdout": "#[derive(Debug, Deserialize, Validate)]\n#[serde(rename_all = \"camelCase\")]\npub struct SignupRequest {\n    #[validate(email(message = \"invalid email address\"))]\n    pub email: String,\n    #[validate(length(min = 3, max = 30, message = \"username must be 3-30 characters\"))]\n    pub username: String,\n    #[validate(length(min = 12, message = \"password must be at least 12 characters\"))]\n    pub password: String,\n#[derive(Debug, Deserialize, Validate)]\n#[serde(rename_all = \"camelCase\")]\npub struct ResetPasswordRequest {\n    pub token: String,\n    #[validate(length(min = 6, message = \"password must be at least 6 characters\"))]\n    pub new_password: String,\n}\n\n#[derive(Debug, Deserialize, Validate)]\n#[serde(rename_all = \"camelCase\")]\npub struct ChangePasswordRequest {\n    #[validate(length(min = 1))]\n    pub current_password: String,\n    #[validate(length(min = 8))]\n    pub new_password: String,\n}\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "reset_password body: ValidatedJson, token lookup, then hash_password and set (no character-class check)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "sed -n 2805,2823p src/api/auth.rs",
+   "stdout": "pub async fn reset_password(\n    State(state): State<AppState>,\n    ValidatedJson(req): ValidatedJson<ResetPasswordRequest>,\n) -> Result<Json<MessageResponse>> {\n    let db = state.require_db()?;\n\n    let token_hash = crate::services::auth::hash_reset_token(&req.token);\n\n    let user_id = crate::repo::user::find_valid_reset_token(db, &token_hash)\n        .await?\n        .ok_or_else(|| AppError::validation(\"invalid or expired reset token\"))?;\n\n    // Hash the new password and update\n    let new_hash = crate::services::auth::hash_password(&req.new_password)?;\n    crate::repo::user::set_password_hash(db, user_id, &new_hash).await?;\n\n    // Mark the token as used\n    crate::repo::user::mark_reset_token_used(db, &token_hash).await?;\n\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "change_password body: verifies currentPassword then hash_password(new) with no character-class check",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "sed -n 1593,1612p src/api/users.rs",
+   "stdout": "pub async fn change_password(\n    auth: AuthUser,\n    State(state): State<AppState>,\n    ValidatedJson(req): ValidatedJson<ChangePasswordRequest>,\n) -> Result<Json<MessageResponse>> {\n    let db = state.require_db()?;\n    let user = crate::repo::user::find_by_id(db, auth.user_id).await?;\n\n    let password_hash = user\n        .password_hash\n        .as_deref()\n        .ok_or_else(|| AppError::validation(\"password not set\"))?;\n    if !crate::services::auth::verify_password(&req.current_password, password_hash)? {\n        return Err(AppError::unauthorized(\"current password is incorrect\"));\n    }\n\n    let new_hash = crate::services::auth::hash_password(&req.new_password)?;\n    crate::repo::user::set_password_hash(db, auth.user_id, &new_hash).await?;\n\n                                                                        \n",
+   "exit_code": 0
+  },
+  {
+   "claim": "signup start up to hash_password: rate limit, legal, currency, db reads, then hash (policy hook sits after rate limit, before DB)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "sed -n 432,452p src/api/auth.rs; sed -n 488,491p src/api/auth.rs",
+   "stdout": "pub async fn signup(\n    headers: HeaderMap,\n    State(state): State<AppState>,\n    ValidatedJson(mut req): ValidatedJson<SignupRequest>,\n) -> Result<Json<SignupPendingResponse>> {\n    // PENTEST-002: throttle signup attempts per source IP before we\n    // touch the database. The endpoint must not be usable to stuff the\n    // users table or to fan out verification emails as a mail-bomb,\n    // even if the DB is temporarily unavailable.\n    let ip = rate_limit::client_ip_key(&headers, &state.config.trusted_ip_config());\n    enforce_rate_limit(\n        &state.auth_rate_limiter,\n        &format!(\"signup:ip:{ip}\"),\n        rate_limit::policies::SIGNUP_PER_IP,\n        \"signup-ip\",\n    )?;\n\n    // QICT-262: Reject signups where the legal click-through wasn't\n    // satisfied. The frontend gates the submit button on the same\n    // checkbox, but server-side validation is the authoritative gate\n    // \u2014 a forged client request without the flag must not produce a\n    }\n\n    let password_hash = crate::services::auth::hash_password(&req.password)?;\n\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "format_validation_errors joins validator messages to one string; AppError::validation_with_details and its into_response branch return the body verbatim",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "sed -n 47,60p src/extractors/validated.rs; sed -n 534,536p src/error.rs; sed -n 903,909p src/error.rs",
+   "stdout": "fn format_validation_errors(errors: &validator::ValidationErrors) -> String {\n    let mut messages = Vec::new();\n    for (field, field_errors) in errors.field_errors() {\n        for error in field_errors {\n            let msg = error\n                .message\n                .as_ref()\n                .map(|m| m.to_string())\n                .unwrap_or_else(|| format!(\"{}: validation failed ({})\", field, error.code));\n            messages.push(msg);\n        }\n    }\n    messages.join(\"; \")\n}\n    pub fn validation_with_details(body: serde_json::Value) -> Self {\n        AppError::ValidationWithDetails { body }\n    }\n    fn into_response(self) -> axum::response::Response {\n        let status = self.status_code();\n\n        if let AppError::ValidationWithDetails { body } = self {\n            return (status, Json(body)).into_response();\n        }\n\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Frontend reset page (min 6, minLength 6, err.message shown + toast) and ChangePasswordSection (8 chars + upper/lower/number, no symbol; strength meter; helper text; err.message toast)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/frontend",
+   "cmd": "sed -n 55,60p 'src/app/(auth)/reset-password/page.tsx'; sed -n 75,80p 'src/app/(auth)/reset-password/page.tsx'; sed -n 133,141p 'src/app/(auth)/reset-password/page.tsx'; sed -n 32,40p src/components/features/settings/security/ChangePasswordSection.tsx; sed -n 43,50p src/components/features/settings/security/ChangePasswordSection.tsx; sed -n 92,96p src/components/features/settings/security/ChangePasswordSection.tsx; sed -n 186,188p src/components/features/settings/security/ChangePasswordSection.tsx",
+   "stdout": "    setError(\"\")\n\n    if (newPassword.length < 6) {\n      setError(\"Password must be at least 6 characters\")\n      return\n    }\n      setTimeout(() => router.replace(\"/login\"), 3000)\n    } catch (err) {\n      const message = err instanceof Error ? err.message : \"An error occurred\"\n      setError(message)\n      toast.error(message)\n      logger.error(\"Password reset error\", { error: message })\n          <PasswordInput\n            id=\"new-password\"\n            placeholder=\"Enter new password (min 6 characters)\"\n            value={newPassword}\n            onChange={(e) => setNewPassword(e.target.value)}\n            disabled={isSubmitting}\n            required\n            minLength={6}\n            autoComplete=\"new-password\"\n  const validatePassword = useCallback((password: string): string | undefined => {\n    console.log(\"[ChangePasswordSection] Validating password\")\n    if (!password) return \"Password is required\"\n    if (password.length < 8) return \"Password must be at least 8 characters\"\n    if (!/[A-Z]/.test(password)) return \"Password must contain an uppercase letter\"\n    if (!/[a-z]/.test(password)) return \"Password must contain a lowercase letter\"\n    if (!/[0-9]/.test(password)) return \"Password must contain a number\"\n    return undefined\n  }, [])\n  const passwordStrength: PasswordStrength = useMemo(() => {\n    if (!newPassword) return { score: 0, label: \"\", color: \"\" }\n    let score = 0\n    if (newPassword.length >= 8) score++\n    if (newPassword.length >= 12) score++\n    if (/[A-Z]/.test(newPassword)) score++\n    if (/[a-z]/.test(newPassword)) score++\n    if (/[0-9]/.test(newPassword)) score++\n    } catch (error) {\n      console.error(\"[ChangePasswordSection] Password update failed:\", error)\n      const message = error instanceof Error ? error.message : \"Failed to update password. Please try again.\"\n      toast.error(message)\n    } finally {\n            <p className=\"text-xs text-muted-foreground\">\n              Min 8 characters with uppercase, lowercase, and number\n            </p>\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "All hash_password callers and the three request types; route lines",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -rn 'hash_password(' src | grep -v 'fn hash_password'; grep -rn 'SignupRequest\\|ResetPasswordRequest\\|ChangePasswordRequest' src tests | grep -v OAuthSignup; grep -n 'route(\"/signup\"\\|route(\"/reset-password\"' src/api/auth.rs; grep -n 'route(\"/password/change\"' src/api/users.rs",
+   "stdout": "src/api/users.rs:1331:        let hash = crate::services::auth::hash_password(&code)?;\nsrc/api/users.rs:1609:    let new_hash = crate::services::auth::hash_password(&req.new_password)?;\nsrc/api/auth.rs:490:    let password_hash = crate::services::auth::hash_password(&req.password)?;\nsrc/api/auth.rs:2818:    let new_hash = crate::services::auth::hash_password(&req.new_password)?;\nsrc/api/admin.rs:3799:    let password_hash = crate::services::auth::hash_password(&req.password)?;\nsrc/api/admin.rs:7702:        let password_hash = crate::services::auth::hash_password(password.expose())?;\nsrc/services/test_accounts.rs:108:            let hash = crate::services::auth::hash_password(password.expose())?;\nsrc/services/test_accounts.rs:113:            let hash = crate::services::auth::hash_password(password.expose())?;\nsrc/services/auth.rs:111:        .hash_password(password.as_bytes(), &salt)\nsrc/services/backup_code.rs:144:        let hash = crate::services::auth::hash_password(\"87654321\").unwrap();\nsrc/services/backup_code.rs:151:        let hash = crate::services::auth::hash_password(\"87654321\").unwrap();\nsrc/services/backup_code.rs:159:            code_row(&crate::services::auth::hash_password(\"11111111\").unwrap()),\nsrc/services/backup_code.rs:160:            code_row(&crate::services::auth::hash_password(\"22222222\").unwrap()),\nsrc/services/backup_code.rs:161:            code_row(&crate::services::auth::hash_password(\"33333333\").unwrap()),\nsrc/services/backup_code.rs:168:        let good = crate::services::auth::hash_password(\"44444444\").unwrap();\nsrc/services/email_otp.rs:210:    let code_hash = crate::services::auth::hash_password(&code)?;\nsrc/services/email_otp.rs:383:        let hash = crate::services::auth::hash_password(code).unwrap();\nsrc/api/users.rs:141:pub struct ChangePasswordRequest {\nsrc/api/users.rs:1596:    ValidatedJson(req): ValidatedJson<ChangePasswordRequest>,\nsrc/api/auth.rs:58:pub struct SignupRequest {\nsrc/api/auth.rs:136:pub struct ResetPasswordRequest {\nsrc/api/auth.rs:435:    ValidatedJson(mut req): ValidatedJson<SignupRequest>,\nsrc/api/auth.rs:2807:    ValidatedJson(req): ValidatedJson<ResetPasswordRequest>,\n3322:        .route(\"/signup\", post(signup))\n3326:        .route(\"/reset-password\", post(reset_password))\n2473:        .route(\"/password/change\", post(change_password))\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Tests that call the three routes",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -rln 'auth/signup\\|reset-password\\|password/change' tests | grep -v password_policy_964_repro",
+   "stdout": "tests/signup_default_fiat_782.rs\ntests/banned_words_visibility.rs\ntests/route_structure.rs\ntests/pentest_002_auth_rate_limit.rs\ntests/auth_middleware.rs\ntests/jwt_audit_2026_05_revocation.rs\ntests/legal_acceptance.rs\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Password literals in tests that sign up or change a password",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -n '\"password\"\\|password\\\":\\|newPassword' tests/signup_default_fiat_782.rs tests/legal_acceptance.rs tests/banned_words_visibility.rs tests/pentest_002_auth_rate_limit.rs tests/auth_middleware.rs tests/jwt_audit_2026_05_revocation.rs | grep -v 'password_hash'",
+   "stdout": "tests/signup_default_fiat_782.rs:48:        \"password\": \"longenoughpassword123\",\ntests/legal_acceptance.rs:242:        \"password\": \"longenoughpassword123\",\ntests/legal_acceptance.rs:424:        \"password\": password,\ntests/legal_acceptance.rs:478:        \"password\": password,\ntests/banned_words_visibility.rs:166:        \"password\": \"correct-horse-battery-staple\",\ntests/pentest_002_auth_rate_limit.rs:96:        r#\"{{\"email\":\"{email}\",\"password\":\"doesnotmatter1234\"}}\"#,\ntests/pentest_002_auth_rate_limit.rs:232:    let body = r#\"{\"email\":\"a@b.com\",\"username\":\"alice123\",\"password\":\"password12345\"}\"#;\ntests/pentest_002_auth_rate_limit.rs:332:        r#\"{\"email\":\"fresh@example.com\",\"username\":\"newuser\",\"password\":\"password12345\"}\"#;\ntests/auth_middleware.rs:324:    let body = r#\"{\"email\":\"not-an-email\",\"username\":\"testuser\",\"password\":\"password123\"}\"#;\ntests/auth_middleware.rs:332:    let body = r#\"{\"email\":\"test@example.com\",\"username\":\"ab\",\"password\":\"password123\"}\"#;\ntests/auth_middleware.rs:340:    let body = r#\"{\"email\":\"test@example.com\",\"username\":\"testuser\",\"password\":\"short\"}\"#;\ntests/auth_middleware.rs:343:    assert!(json[\"error\"].as_str().unwrap().contains(\"password\"));\ntests/jwt_audit_2026_05_revocation.rs:336:        \"newPassword\": \"RotatedAfterAudit2026!secure\",\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Frontend consumers of the three API calls and their error handling",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/frontend",
+   "cmd": "sed -n 849,862p src/services/auth-api.ts; sed -n 157,172p src/services/auth-api.ts; sed -n 662,676p src/services/users-api.ts; grep -rn 'authApi.signup' src | grep -v __tests__; grep -rn 'authApi.resetPassword\\|usersApi.changePassword' src | grep -v __tests__",
+   "stdout": "  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {\n    logger.info(\"Resetting password with token\")\n    const response = await apiClient.post<{ message: string }>(\"/auth/reset-password\", {\n      token,\n      newPassword,\n    })\n    if (response.error) {\n      const errorMessage = response.error.message || \"Password reset failed\"\n      logger.error(\"Password reset failed\", { error: errorMessage })\n      throw new Error(errorMessage)\n    }\n    logger.info(\"Password reset successful\")\n    return response.data as { message: string }\n  },\n\n    const response = await apiClient.post<SignupResponse>(\n      \"/auth/signup\",\n      data,\n      undefined,\n      { skipInternalTimeout: true }\n    )\n\n    if (response.error) {\n      const errorMessage = response.error.message || \"Signup failed\"\n      console.error(\"[auth-api] Signup failed:\", errorMessage)\n      logger.error(\"Signup failed\", { error: errorMessage })\n      throw new Error(errorMessage)\n    }\n\n    if (!response.data) {\n  async changePassword(currentPassword: string, newPassword: string): Promise<void> {\n    console.log(\"[users-api] Changing password\")\n    logger.info(\"[users-api] Changing password\")\n\n    const response = await apiClient.post<{ message: string }>(\n      \"/users/password/change\",\n      { currentPassword, newPassword }\n    )\n\n    if (response.error) {\n      const errorMessage = getErrorMessage(response.error)\n      console.error(\"[users-api] Change password failed:\", response.error.message)\n      logger.error(\"[users-api] Change password failed\", {\n        error: errorMessage,\n        status: response.error.status,\nsrc/hooks/auth/use-email-auth.ts:169:          authApi.signup({ email, password, username, displayName, referralCode, accepted_legal: true, preferredCurrency }),\nsrc/app/(auth)/reset-password/page.tsx:70:      await authApi.resetPassword(token, newPassword)\nsrc/components/features/settings/security/ChangePasswordSection.tsx:85:      await usersApi.changePassword(currentPassword, newPassword)\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "use-email-auth surfaces signup error message",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/frontend",
+   "cmd": "grep -n 'signup' -B2 -A25 src/hooks/auth/use-email-auth.ts | grep -n 'catch\\|message\\|toast\\|setError' | head -12",
+   "stdout": "7:162-        setError(null)\n23:178-      } catch (error) {\n24:179-        const errorMessage = error instanceof Error ? error.message : \"Sign up failed\"\n26:181-        setError(errorMessage)\n33:188-    [setLoading, setError]\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Docs password mentions: none give a length/policy rule (only 2FA fallback lines)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -rni 'password' docs/intended-entity-state-machines.md docs/as-built/as-built-state-machines.md docs/design/*.md | cut -c1-200",
+   "stdout": "docs/intended-entity-state-machines.md:701:| Account password | Only when the user has no authenticator set up | Fallback only. |\ndocs/intended-entity-state-machines.md:706:- Once an authenticator is set up, TOTP is the *only* accepted factor \u2014 the password fallback is never offered as an alternative to a user who already has TO\ndocs/intended-entity-state-machines.md:713:| Submit withdrawal | Wallet owner | `AuthUser` + wallet ownership + second factor (TOTP, else password) |\ndocs/intended-entity-state-machines.md:720:- The second factor is enforced by `require_2fa_if_enabled` in the `/wallet/withdraw` handler, which verifies TOTP **only when the user has 2FA enabled**. A \n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Frontend consumers of the three API calls show the server error message",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/frontend",
+   "cmd": "grep -n '' src/services/auth-api.ts | sed -n '154p;849p'; grep -n '' src/services/users-api.ts | sed -n '662p'; grep -n '' 'src/app/(auth)/reset-password/page.tsx' | sed -n '77,79p'; grep -n '' src/components/features/settings/security/ChangePasswordSection.tsx | sed -n '94,95p'",
+   "stdout": "154:  async signup(data: SignupRequest): Promise<SignupResponse> {\n849:  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {\n662:  async changePassword(currentPassword: string, newPassword: string): Promise<void> {\n77:      const message = err instanceof Error ? err.message : \"An error occurred\"\n78:      setError(message)\n79:      toast.error(message)\n94:      const message = error instanceof Error ? error.message : \"Failed to update password. Please try again.\"\n95:      toast.error(message)\n",
+   "exit_code": 0
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+SQL> SELECT count(*) FROM users WHERE email='d964-aa9325-0@example.test'
+0
+
+SQL> SELECT count(*) FROM users WHERE email='d964-aa9325-1@example.test'
+0
+
+SQL> SELECT count(*) FROM users WHERE email='d964-aa9325-2@example.test'
+0
+
+SQL> SELECT count(*) FROM users WHERE email='d964-aa9325-3@example.test'
+0
+
+SQL> SELECT count(*) FROM users WHERE email='d964-aa9325-4@example.test'
+0
+
+SQL> SELECT id,email,length(password_hash)>20 AS has_hash,email_verified,is_verified FROM users WHERE email='d964-aa9325-ok@example.test'
+dd997699-7f42-4bf0-bdc7-960ee396fa98|d964-aa9325-ok@example.test|t|f|f
+
+SQL> UPDATE users SET email_verified=true,is_verified=true WHERE email='d964-aa9325-ok@example.test'
+UPDATE 1
+
+SQL> SELECT id FROM users WHERE email='d964-aa9325-ok@example.test'
+dd997699-7f42-4bf0-bdc7-960ee396fa98
+
+SQL> INSERT INTO password_reset_tokens (user_id,token_hash,expires_at) VALUES ('dd997699-7f42-4bf0-bdc7-960ee396fa98','e68a1f959d7bfa0486ed5107f4becd149eaa7c05963f977f54d05d311318ec30',NOW()+interval '1 hour')
+INSERT 0 1
+
+SQL> SELECT used_at IS NULL AS used_at_null FROM password_reset_tokens WHERE token_hash='e68a1f959d7bfa0486ed5107f4becd149eaa7c05963f977f54d05d311318ec30'
+t
+
+SQL> SELECT used_at IS NULL AS used_at_null FROM password_reset_tokens WHERE token_hash='e68a1f959d7bfa0486ed5107f4becd149eaa7c05963f977f54d05d311318ec30'
+t
+
+SQL> SELECT used_at IS NOT NULL AS used_at_set FROM password_reset_tokens WHERE token_hash='e68a1f959d7bfa0486ed5107f4becd149eaa7c05963f977f54d05d311318ec30'
+t
+
+SQL> UPDATE users SET role='super_admin' WHERE email='d964-aa9325-ok@example.test'
+UPDATE 1
+
+SQL> UPDATE users SET email_verified=true,is_verified=true WHERE email='d964-aa9325-legacy@example.test'
+UPDATE 1
+

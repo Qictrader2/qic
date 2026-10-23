@@ -1,0 +1,60 @@
+{
+  "budget_minutes": 300,
+  "ci_allowance_minutes": 45,
+  "events": [
+    {
+      "at": "2026-10-22T08:01:00+00:00",
+      "kind": "start"
+    },
+    {
+      "at": "2026-10-22T08:59:36.669383+00:00",
+      "kind": "phase",
+      "name": "PREFLIGHT"
+    },
+    {
+      "at": "2026-10-22T09:00:08.751196+00:00",
+      "kind": "pause"
+    },
+    {
+      "at": "2026-10-22T14:26:31.890085+00:00",
+      "kind": "resume"
+    },
+    {
+      "at": "2026-10-22T14:39:03.877439+00:00",
+      "kind": "phase",
+      "name": "INVESTIGATE"
+    },
+    {
+      "at": "2026-10-22T14:46:56.350798+00:00",
+      "kind": "phase",
+      "name": "BOIL"
+    },
+    {
+      "at": "2026-10-22T16:17:06.980192+00:00",
+      "kind": "phase",
+      "name": "TEMPER"
+    },
+    {
+      "at": "2026-10-22T16:25:12.373910+00:00",
+      "kind": "phase",
+      "name": "DRY"
+    },
+    {
+      "at": "2026-10-22T16:50:10.583753+00:00",
+      "kind": "end"
+    }
+  ],
+  "size": "L",
+  "slices": {
+    "ACCHECK": 10,
+    "BOIL": 40,
+    "DRY": 5,
+    "GOLIVE": 10,
+    "INVESTIGATE": 5,
+    "PREFLIGHT": 5,
+    "PUSH": 5,
+    "QA": 15,
+    "TEMPER": 15
+  },
+  "ticket": "964"
+}

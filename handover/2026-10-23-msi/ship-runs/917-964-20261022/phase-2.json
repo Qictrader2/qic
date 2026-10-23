@@ -1,0 +1,105 @@
+{
+ "run_id": "917-964-20261022",
+ "task": "917 https://trello.com/c/WOXYFLpt and 964 https://trello.com/c/0Bji1QKU (combined change; tick each card's ACs separately). Route: .scratch/ship/917-964-20261022T1200/route.json",
+ "phase": 2,
+ "phase_name": "TEMPER",
+ "objective": "A fresh reviewer grades the diff independently; fix HIGH/MEDIUM",
+ "summary": "A fresh opus55-high reviewer that did not build the change graded the diff and returned APPROVED with 0 HIGH, 0 MEDIUM and 4 LOW findings, so no fix round was needed. It re-ran the policy unit tests and six integration targets on its own minted database and the frontend jest suites, all ok, and confirmed the policy is called at exactly three sites. The LOW findings are noted; the rule-id duplication goes to DRY.",
+ "requirements": [
+  "917 AC1: A customer resetting a password needs at least 12 characters, the same as at sign-up.",
+  "917 AC2: A signed-in customer changing their password needs at least 12 characters.",
+  "917 AC3: The page and the server give the same message about the minimum.",
+  "917 AC4: Existing shorter passwords keep working until their owner changes them.",
+  "964 AC1: On staging, sign-up, reset and change password each refuse a password that misses any of the five rules, and say which rule is missing.",
+  "964 AC2: A password that meets all five rules is accepted on all three.",
+  "964 AC3: Customers whose existing password breaks the new rules can still sign in."
+ ],
+ "evidence": {
+  "reviewer": "opus55-high (fresh, read-only)",
+  "verdict_file": "review-temper-verdict.md",
+  "review_log": "phase-2-review-opus.log",
+  "low_findings": "TEMPER reviewer: opus55-high (fresh, read-only). Verdict: APPROVED.\nFindings: 0 HIGH, 0 MEDIUM, 4 LOW.\nLOW-1 tests/password_policy_964.rs: no test pins change's check ahead of verify_password (wrong currentPassword + weak newPassword should be 400 not 401). Noted.\nLOW-2 compliant sign-up test asserts only not-400 (test env has no SMTP); sign-up success deferred to staging QA. Noted.\nLOW-3 interim frontend copy omits the symbol rule; server refuses with the symbol message; accepted by PLAN-964 scope, 955/956 own the checklist. Noted.\nLOW-4 src/services/password_policy.rs: rule id defined twice (id() and serde rename_all). Duplication this diff introduced: handed to DRY.\nReviewer re-ran: lib policy+auth 24 passed; DB qic_631_917_964_20261022_6: password_policy_964 11, pentest_002 8, auth_middleware 31, legal_acceptance 10, signup_default_fiat_782 16, banned_words_visibility 10; jest 13. Log: phase-2-review-opus.log.\nFix round: none needed (no HIGH or MEDIUM; no added comments).\n",
+  "fix_round": "none",
+  "carry_forward_gate1": "none (gate 1 had no required actions)"
+ },
+ "deterministic_checks": [
+  {
+   "name": "independent reviewer verdict APPROVED",
+   "status": "pass",
+   "detail": "citation 0"
+  },
+  {
+   "name": "reviewer re-ran tests itself",
+   "status": "pass",
+   "detail": "citations 1, 2"
+  },
+  {
+   "name": "policy wired at exactly three call sites",
+   "status": "pass",
+   "detail": "citation 4"
+  }
+ ],
+ "open_findings": [
+  {
+   "severity": "low",
+   "detail": "No test pins the change check ahead of verify_password"
+  },
+  {
+   "severity": "low",
+   "detail": "Compliant sign-up test asserts only not-400; success proven on staging"
+  },
+  {
+   "severity": "low",
+   "detail": "Interim frontend copy omits the symbol rule (accepted by plan; 955/956)"
+  },
+  {
+   "severity": "low",
+   "detail": "Rule id defined twice in password_policy.rs; handed to DRY"
+  }
+ ],
+ "next_phase": "DRY",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "Reviewer verdict and finding counts",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "sed -n 1,2p review-temper-verdict.md",
+   "stdout": "TEMPER reviewer: opus55-high (fresh, read-only). Verdict: APPROVED.\nFindings: 0 HIGH, 0 MEDIUM, 4 LOW.\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Reviewer's own test re-runs all ok",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "grep -E '^test result|^Tests:' phase-2-review-opus.log",
+   "stdout": "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 4316 filtered out; finished in 0.03s\ntest result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.79s\ntest result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s\ntest result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s\ntest result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.66s\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s\ntest result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s\nTests:       13 passed, 13 total\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Reviewer ran DB tests on a minted database",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/917-964-20261022",
+   "cmd": "grep -c 'qic_631_917_964_20261022_6' phase-2-review-opus.log minted-dbs.json",
+   "stdout": "phase-2-review-opus.log:1\nminted-dbs.json:1\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "Code unchanged since the gate receipt (no fix round): diff of tracked files is the BOIL diff",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat origin/main | tail -1; git status --porcelain | wc -l | tr -d ' '",
+   "stdout": " 7 files changed, 58 insertions(+), 8 deletions(-)\n9\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "enforce call sites are exactly three",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/964/wt/qictrader-backend-rs",
+   "cmd": "grep -rn 'password_policy::enforce' src | wc -l | tr -d ' '",
+   "stdout": "3\n",
+   "exit_code": 0
+  }
+ ],
+ "cited_numbers_exempt": [
+  {
+   "number": 6,
+   "why": "count of integration target names listed in review-temper-verdict.md (password_policy_964, pentest_002, auth_middleware, legal_acceptance, signup_default_fiat_782, banned_words_visibility); each has its own test result line in citation 1"
+  }
+ ]
+}

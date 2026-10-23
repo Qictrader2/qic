@@ -1,0 +1,112 @@
+{
+  "run_id": "910-r1",
+  "task": "910 https://trello.com/c/bPlQQy2u",
+  "phase": 4,
+  "phase_name": "PUSH",
+  "objective": "Rebase onto fresh origin/main, commit, push the ticket branch(es) once; never main, never deploy",
+  "summary": "I committed the 910 change as one commit on top of the current origin/main and pushed the ticket branch once; origin/main had not moved since the fast gate ran, so the pushed tree is the gated tree. The commit has the ticket prefix and trailer and no AI attribution. DRY changed nothing and its gate was approved after escalation.",
+  "requirements": [
+    "AC1: An offer that uses an escrow mode the platform does not support is refused when it is created, with a clear error to the caller.",
+    "AC2: No trade can open without the seller's USDT being locked in the same step, so no customer sees an open trade that is not funded.",
+    "AC3: A trade cannot be marked funded by hand, so funded always means the seller's USDT is locked.",
+    "AC4: Custodial offers, resells and crypto swaps are created and funded exactly as they are today."
+  ],
+  "evidence": {
+    "note": "PUSH mechanics run by L1 directly because worker agents were taking close to an hour per small task; recorded as a deviation",
+    "dry_evidence": "phase-3.json",
+    "backend_only": true
+  },
+  "deterministic_checks": [
+    {
+      "name": "one commit ahead of fresh origin/main",
+      "status": "pass"
+    },
+    {
+      "name": "remote branch sha equals local HEAD",
+      "status": "pass"
+    },
+    {
+      "name": "no AI attribution",
+      "status": "pass"
+    },
+    {
+      "name": "tree equals the gated tree (origin/main unmoved)",
+      "status": "pass"
+    }
+  ],
+  "open_findings": [],
+  "next_phase": "GOLIVE",
+  "proposed_transition": "advance",
+  "citations": [
+    {
+      "claim": "Branch head is one 910 commit on top of origin/main",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git log --oneline -2",
+      "stdout": "9fe3484 910: Fund every trade at creation and refuse unsupported escrow modes\n8fda17f 920: Request keys and a read-only result lookup for money actions (#321)\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "HEAD, its tree and origin/main",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git rev-parse HEAD HEAD^{tree} origin/main",
+      "stdout": "9fe3484575bc6b1fb7d6d93a1777909bbfb86d49\ne80e2f180e81af796fef1dfa4a688822e2dd2daa\n8fda17fa8f713b5cdc5d1bfef494bf72dd54edc6\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "Merge base equals origin/main",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git merge-base HEAD origin/main",
+      "stdout": "8fda17fa8f713b5cdc5d1bfef494bf72dd54edc6\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "Commits ahead of origin/main",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git rev-list --count origin/main..HEAD",
+      "stdout": "1\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "Remote branch matches local HEAD",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git ls-remote origin refs/heads/910-full-funding-check",
+      "stdout": "9fe3484575bc6b1fb7d6d93a1777909bbfb86d49\trefs/heads/910-full-funding-check\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "Working tree clean after commit",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git status --short",
+      "stdout": "",
+      "exit_code": 0
+    },
+    {
+      "claim": "Commit message follows TICKET-ID format with a Ticket-Id trailer",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git log -1 --format=%B",
+      "stdout": "910: Fund every trade at creation and refuse unsupported escrow modes\n\nI made trade creation always lock the seller's full amount plus the escrow fee in the same transaction that opens the trade, so no trade can be committed in Created without its lock. Offers and trades that use the unsupported on_chain or offer_escrow modes are now refused with 422 unsupported_escrow_type before anything is written, and the refusal is recorded under the 920 request-key contract. PATCH /trades/{id}/status can no longer mark a trade escrow_funded for any caller, and the on-chain escrow link route is refused. I moved the integration fixtures that relied on unfunded on_chain offers to funded custodial offers without weakening any assertion, added tests for every acceptance case including concurrent trade starts, and updated the design docs.\n\nTicket-Id: 6acd983a914864e091d819ad\n\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "No AI attribution in the commit",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git log origin/main..HEAD --format=%B | grep -ciE 'co-authored|generated with'; echo rc=$?",
+      "stdout": "0\nrc=1\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "The fast gate on this tree (log tail)",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "tail -9 phase-2-gate.log",
+      "stdout": "       test result: FAILED. 4314 passed; 1 failed; 7 ignored; 0 measured; 0 filtered out; finished in 68.30s\n       \n       error: test failed, to rerun pass `--lib`\nbackend: integration targets: 71\n  ok   fresh-test-db (0s)\n  ok   fresh-test-db (0s)\n  ok   cargo-test-targets (453s)\nGATE FAIL \u00b7 /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427\nEXIT=1\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "DRY evidence summary",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "python3 -c \"import json;print(json.load(open('phase-3.json'))['summary'])\"",
+      "stdout": "DRY scan of the 910 diff found no mechanical duplication in production code. The one test-helper duplication (tests/common fund_usdt_wallet vs the 910 file's seed_wallet) is not a drop-in: seed_wallet takes any cryptocurrency and balance and the 910 tests use BTC and several USDT amounts, while the common helper seeds a fixed 10_000_000_000 USDT. Left as is. No file changed in DRY, so cargo was not rerun; the tree is the one the TEMPER gate passed. The gate is green except the environment-bound 864 test.\n",
+      "exit_code": 0
+    }
+  ]
+}

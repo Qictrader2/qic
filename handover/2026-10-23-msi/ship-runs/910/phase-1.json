@@ -1,0 +1,944 @@
+{
+ "run_id": "910-r1",
+ "task": "910 https://trello.com/c/6acd983a914864e091d819ad",
+ "phase": 1,
+ "phase_name": "BOIL",
+ "objective": "Build the ticket to financial-grade completeness: refuse unsupported escrow types at offer and trade creation, make the lock mandatory in the same transaction as trade creation, refuse manual funding and the on-chain link route, tests asserting every AC case, docs updated, fast gate, live check",
+ "summary": "BOIL built the 910 fix in 21 changed files (293 insertions, 147 deletions) plus the new test file, now 15 tests (14 when the gate ran). create_trade now refuses offers whose escrow type is not lock-backed before the swap branch, takes the seller wallet lock unconditionally in the same transaction as the trade insert and escrow funding (needs_wallet_lock is gone), PATCH /status refuses escrow_funded, the on-chain link handler ends in the refusal, and offer validation refuses on_chain and offer_escrow with a new 422 unsupported_escrow_type error. repo/wallet.rs is untouched. The fast gate on the private target, run before that test-only change, is green except two accepted lib failures: 4313 lib tests passed, 2 failed (the environment-bound 864 test and the solana echoed-signature test, which passed in 3 alone reruns), 71 integration targets with no failing result line, and the last gate line is GATE FAIL with EXIT=1. The live check made 34 recorded calls on a real backend and matched every AC case it covered; concurrency, resell, btc and swap cases are covered locally only. A test for completion after a refused link was added after the gate and passed 3 of 3 fix runs, with the uz target and clippy clean on the same private target.",
+ "requirements": [
+  "AC1: An offer that uses an escrow mode the platform does not support is refused when it is created, with a clear error to the caller.",
+  "AC2: No trade can open without the seller's USDT being locked in the same step, so no customer sees an open trade that is not funded.",
+  "AC3: A trade cannot be marked funded by hand, so funded always means the seller's USDT is locked.",
+  "AC4: Custodial offers, resells and crypto swaps are created and funded exactly as they are today."
+ ],
+ "evidence": {
+  "diff_shape": {
+   "backend": "21 tracked files changed (293 insertions, 147 deletions) plus one new test file; no frontend, no migration, no new source file. Six of the tracked files are generated design files refreshed by design-check.",
+   "citations": [
+    0,
+    1,
+    2
+   ]
+  },
+  "changed_regions": {
+   "note": "Full sed of every edited range and the diff of each source file. Carried action 1: every create_trade range is cited (refusal, unconditional lock block, attach_lock_to_trade, funding block, post-commit wallet_updated emit); the old post-commit branch on needs_wallet_lock no longer exists. Carried action 2: repo/wallet.rs diff is 0 lines.",
+   "citations": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25
+   ]
+  },
+  "owner_rule": {
+   "note": "Owner rule (Christian, PM): check and lock the full amount including the fee in one transaction on every trade-start route; a failed attempt leaves no trade, no hold and no payment instruction. Met by the unconditional lock inside the business block before commit, so a refusal rolls back the transaction, and by the refusal before any write for unsupported escrow types.",
+   "citations": [
+    26,
+    5,
+    6,
+    7
+   ]
+  },
+  "suppression_scan": {
+   "note": "No added let _ =, .ok();, unwrap(), unreachable! or _ => in the tracked diff of src and tests or in the untracked test file.",
+   "citations": [
+    27,
+    28,
+    29
+   ]
+  },
+  "added_comments": {
+   "note": "No added comment lines in the tracked diff of src, tests and migrations, and none in the untracked test file, after the two doc lines were removed.",
+   "citations": [
+    30,
+    31
+   ]
+  },
+  "fast_gate": {
+   "note": "Gate on the private clone target-910. Lib: 4313 passed, 2 failed, both accepted failures (864 environment-bound; solana flaky under load, 3 of 3 alone reruns pass). Integration 71 targets, 0 failing result lines. Last gate line is GATE FAIL (EXIT=1); that is the lib failures only, so the gate is green except those two tests, not passed.",
+   "citations": [
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    43,
+    53,
+    54,
+    55
+   ]
+  },
+  "builder_logs": {
+   "note": "Builder logs, cited for counts, not the gate. They ran in a target used only by the 910 worktree at that time. B-910-existing2.log and B-910-clippy.log ran in the shared target after 2026-10-22T16:24Z and are unproven and not cited as evidence.",
+   "citations": [
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    42
+   ]
+  },
+  "test_inventory": {
+   "note": "15 sqlx tests in the new file (14 at gate time, one added after); trade_creation_mpr013 replaces the on-chain success test with a refusal test; unit tests in offers, enums, error and money_request.",
+   "citations": [
+    32,
+    33,
+    34,
+    35
+   ]
+  },
+  "docs": {
+   "note": "as-built-state-machines, money-flow and intended-entity-state-machines updated; six generated design files refreshed by design-check.",
+   "citations": [
+    3,
+    4,
+    59
+   ]
+  },
+  "live_check": {
+   "state": "done",
+   "note": "Real backend and database qic_631_910_r1_15 on port 18910; summary, call log and design-check cited. Steps 1 to 6 matched the AC expectations. Design-check failed first on stale generated files, then OK.",
+   "citations": [
+    56,
+    57,
+    58
+   ]
+  },
+  "carried_actions": [
+   {
+    "action": "1: cite in full every create_trade range edited, including the post-commit branch near the old if needs_wallet_lock",
+    "state": "FIXED",
+    "citations": [
+     5,
+     6,
+     7,
+     8,
+     23
+    ]
+   },
+   {
+    "action": "2: repo/wallet.rs diff is 0 lines",
+    "state": "FIXED",
+    "citations": [
+     24
+    ]
+   }
+  ],
+  "acceptance_map": [
+   {
+    "case": "AC1 offer create with on_chain or offer_escrow, unkeyed and keyed replay",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::offer_create_refuses_unsupported_escrow_types_without_a_key_and_writes_nothing",
+     "tests/ticket_910_trade_funding_invariant.rs::offer_create_keyed_refusal_for_unsupported_escrow_types_replays_the_same_422",
+     "offer_escrow_is_refused_with_and_without_kyc_flags (unit)",
+     "on_chain_is_refused_without_kyc_flags (unit)"
+    ],
+    "live": "live: step 1, all six calls 422 unsupported_escrow_type, offers 0, offer_versions 0, keys K1 and K2 refused 422, lookup outcome refused",
+    "state": "verified-local",
+    "citations": [
+     11,
+     18,
+     32,
+     51,
+     56
+    ],
+    "note": "staging QA curl transcript with the QA seller account is PHASE 5/QA work"
+   },
+   {
+    "case": "AC1 trade create on on_chain and offer_escrow offers, unkeyed and keyed",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::trade_on_unsupported_escrow_offer_is_refused_and_writes_nothing",
+     "trade_creation_mpr013::create_trade_on_chain_is_refused_with_unsupported_escrow_type"
+    ],
+    "live": "live: step 3, unkeyed, keyed K3 and K3 repeat all 422, row counts and balances unchanged",
+    "state": "verified-local",
+    "citations": [
+     5,
+     17,
+     34,
+     56
+    ]
+   },
+   {
+    "case": "AC1 custodial offers still created",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::offer_create_still_accepts_custodial_escrow",
+     "custodial_and_btc_wallet_lock_offers_are_accepted (unit)"
+    ],
+    "live": "live: step 2, custodial offer 200",
+    "state": "verified-local",
+    "citations": [
+     16,
+     32,
+     56
+    ],
+    "note": "app screenshot of offer creation is PHASE 5/QA work"
+   },
+   {
+    "case": "AC1 link route refused for buyer, seller, admin; escrow unchanged",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::link_route_is_refused_for_buyer_seller_and_admin_and_leaves_the_escrow_unchanged"
+    ],
+    "live": "live: step 6b, three actors each 422 unsupported_escrow_type, escrow row identical",
+    "state": "verified-local",
+    "citations": [
+     12,
+     19,
+     32,
+     56
+    ]
+   },
+   {
+    "case": "AC1 diagnosis counts of on_chain/offer_escrow offers and escrows (staging and production)",
+    "tests": [],
+    "live": "not run",
+    "state": "deferred-to-staging",
+    "citations": [],
+    "note": "mandatory QA diagnosis, production read by or handed to the owner"
+   },
+   {
+    "case": "AC2 custodial sell trade is funded at creation: lock, escrow held, one ledger entry",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::custodial_trade_is_funded_at_creation_with_lock_escrow_and_ledger_matching",
+     "trade_creation_mpr013::create_trade_custodial_with_balance_locks_and_escrow_funded"
+    ],
+    "live": "live: step 2, escrow_funded, seller locked +50.125 USDT (amount 50 plus fee 0.125), one wallet_locks row, one escrow_lock ledger entry 50000000",
+    "state": "verified-local",
+    "citations": [
+     6,
+     7,
+     23,
+     32,
+     56
+    ]
+   },
+   {
+    "case": "AC2 insufficient seller balance: 400, zero new rows",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::custodial_trade_with_insufficient_seller_balance_is_refused_with_zero_new_rows",
+     "trade_creation_mpr013::create_trade_custodial_insufficient_balance_returns_400"
+    ],
+    "live": "live: step 4, 400 VALIDATION_ERROR insufficient balance, counts unchanged",
+    "state": "verified-local",
+    "citations": [
+     6,
+     32,
+     34,
+     56
+    ],
+    "note": "the failed attempt leaves no trade, hold or payment instruction because the lock is taken inside the business block before commit (owner rule, run.log)"
+   },
+   {
+    "case": "AC2 two buyers race on a seller funded for one trade",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::concurrent_buyers_against_a_seller_funded_for_one_trade_open_exactly_one_funded_trade"
+    ],
+    "live": "not run live (local race test only)",
+    "state": "verified-local",
+    "citations": [
+     32,
+     40
+    ],
+    "note": "builder log repeats the race test ten times in the 910-only target; the gate ran it once"
+   },
+   {
+    "case": "AC2 every lock-backed path opens funded: custodial buy, sell resell, buy resell, btc_wallet_lock, crypto swap",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::custodial_buy_offer_trade_is_funded_from_the_taker_wallet",
+     "tests/ticket_910_trade_funding_invariant.rs::sell_side_resell_trade_is_funded_from_the_vendor_wallet",
+     "tests/ticket_910_trade_funding_invariant.rs::buy_side_resell_trade_is_funded_from_the_taker_wallet",
+     "tests/ticket_910_trade_funding_invariant.rs::btc_wallet_lock_trade_is_funded_with_the_gas_reserve_in_the_lock",
+     "tests/ticket_910_trade_funding_invariant.rs::crypto_swap_trade_is_funded_at_creation_and_replays_without_new_rows"
+    ],
+    "live": "not run live",
+    "state": "verified-local",
+    "citations": [
+     6,
+     7,
+     32,
+     51
+    ]
+   },
+   {
+    "case": "AC2 diagnosis of trades in created status (staging and production)",
+    "tests": [],
+    "live": "not run",
+    "state": "deferred-to-staging",
+    "citations": [],
+    "note": "mandatory QA diagnosis"
+   },
+   {
+    "case": "AC3 PATCH status escrow_funded refused for buyer, seller, vendor, admin",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::patch_status_refuses_escrow_funded_for_buyer_seller_vendor_and_admin"
+    ],
+    "live": "live: step 5, buyer, seller and admin each 400 with the refusal message, status stays created, trade_events 0",
+    "state": "verified-local",
+    "citations": [
+     9,
+     10,
+     32,
+     56
+    ]
+   },
+   {
+    "case": "AC3 the only EscrowFunded writers are the swap path and the create_trade funding block",
+    "tests": [],
+    "live": "not applicable",
+    "state": "verified-local",
+    "citations": [
+     25,
+     7
+    ],
+    "note": "code reading by grep, no test asserts it"
+   },
+   {
+    "case": "AC3 link attempt then completion releases through the custodial path and clears the lock",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::link_route_is_refused_for_buyer_seller_and_admin_and_leaves_the_escrow_unchanged",
+     "tests/ticket_910_trade_funding_invariant.rs::refused_link_leaves_a_funded_trade_to_release_through_the_custodial_lock_path"
+    ],
+    "live": "not run live",
+    "state": "verified-local",
+    "citations": [
+     12,
+     65,
+     60,
+     61,
+     62
+    ],
+    "note": "new test added after the fast gate; the three fix runs cover it"
+   },
+   {
+    "case": "AC4 sell-side and buy-side resell trades funded as before",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::sell_side_resell_trade_is_funded_from_the_vendor_wallet",
+     "tests/ticket_910_trade_funding_invariant.rs::buy_side_resell_trade_is_funded_from_the_taker_wallet"
+    ],
+    "live": "not run live",
+    "state": "verified-local",
+    "citations": [
+     32,
+     51
+    ]
+   },
+   {
+    "case": "AC4 btc_wallet_lock trade: lock includes gas reserve",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::btc_wallet_lock_trade_is_funded_with_the_gas_reserve_in_the_lock"
+    ],
+    "live": "not run live (CI-only by the plan)",
+    "state": "verified-local",
+    "citations": [
+     32,
+     51
+    ]
+   },
+   {
+    "case": "AC4 crypto swap funded and replay writes nothing new",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::crypto_swap_trade_is_funded_at_creation_and_replays_without_new_rows"
+    ],
+    "live": "not run live",
+    "state": "verified-local",
+    "citations": [
+     32,
+     51
+    ],
+    "note": "the swap test drops the pre-existing trades_fiat_amount_check, as in 920"
+   },
+   {
+    "case": "AC4 ledger reconciliation of a new custodial trade",
+    "tests": [
+     "tests/ticket_910_trade_funding_invariant.rs::custodial_trade_is_funded_at_creation_with_lock_escrow_and_ledger_matching"
+    ],
+    "live": "live: step 2 ledger entry 50000000 equals escrow amount, locked delta equals amount plus fee",
+    "state": "verified-local",
+    "citations": [
+     32,
+     56
+    ],
+    "note": "staging QA read-only query is PHASE 5/QA work"
+   },
+   {
+    "case": "AC4 staging trades traded to release by QA accounts through the app",
+    "tests": [],
+    "live": "not run",
+    "state": "deferred-to-staging",
+    "citations": [],
+    "note": "PHASE 5/QA work"
+   }
+  ]
+ },
+ "known_issues": [
+  {
+   "issue": "The crypto-swap test drops the pre-existing trades_fiat_amount_check constraint (every crypto-swap insert violates fiat_amount > 0), as in 920.",
+   "citations": [
+    32
+   ]
+  }
+ ],
+ "deterministic_checks": [
+  {
+   "name": "Fast gate green except two accepted lib failures: lib 4313 passed, 2 failed (quote_expiry_864_tests, environment-bound, and the solana echoed-signature test, flaky under load); integration 71 targets, 0 failing result lines; last gate line is GATE FAIL, EXIT=1",
+   "status": "pass",
+   "detail": "Both failing tests are listed in the jev-qic-ship skill. The solana test passed 3 of 3 alone on the same private target. No other lib failure.",
+   "citations": [
+    44,
+    46,
+    47,
+    48,
+    43,
+    53,
+    54,
+    55,
+    49,
+    50
+   ]
+  },
+  {
+   "name": "Gate ran on the private clone target-910 and database qic_631_910_r1_14 (log first lines)",
+   "status": "pass",
+   "citations": [
+    45,
+    44
+   ]
+  },
+  {
+   "name": "Six named integration targets all report 0 failed in the gate (new file had 14 tests then)",
+   "status": "pass",
+   "citations": [
+    51,
+    33
+   ]
+  },
+  {
+   "name": "needs_wallet_lock gone from trades.rs and repo/wallet.rs diff is 0 lines",
+   "status": "pass",
+   "citations": [
+    23,
+    24
+   ]
+  },
+  {
+   "name": "Suppression scan over tracked diff (src, tests) and the untracked test file: nothing added",
+   "status": "pass",
+   "citations": [
+    27,
+    28,
+    29
+   ]
+  },
+  {
+   "name": "Added-comments scan after the fix: no added comment lines in src or tests",
+   "status": "pass",
+   "citations": [
+    30,
+    31
+   ]
+  },
+  {
+   "name": "No migration added",
+   "status": "pass",
+   "citations": [
+    2
+   ]
+  },
+  {
+   "name": "Live check ran against a real backend; design-check OK on the second run",
+   "status": "pass",
+   "citations": [
+    56,
+    57,
+    58
+   ]
+  },
+  {
+   "name": "Docs updated: as-built-state-machines, money-flow, intended-entity-state-machines, plus six generated design files refreshed by design-check",
+   "status": "pass",
+   "citations": [
+    3,
+    4,
+    59
+   ]
+  }
+ ],
+ "open_findings": [
+  {
+   "severity": "low",
+   "detail": "The fast gate ran before a test-only change (one new test, two doc lines removed); the three fix runs, the uz run and clippy on target-910 cover it, and the gate itself was not rerun.",
+   "citations": [
+    44,
+    60,
+    61,
+    62,
+    63,
+    64
+   ]
+  },
+  {
+   "severity": "low",
+   "detail": "Live check did not run the concurrency, resell, btc_wallet_lock or crypto-swap cases; they are covered by local integration tests only. Staging QA is PHASE 5/QA work.",
+   "citations": [
+    56
+   ]
+  },
+  {
+   "severity": "low",
+   "detail": "Builder logs B-910-existing2.log and B-910-clippy.log were produced in the shared cargo target after 2026-10-22T16:24Z and are unproven; not used as evidence. The gate on target-910 and the live check are the authoritative runs.",
+   "citations": [
+    42
+   ]
+  },
+  {
+   "severity": "low",
+   "detail": "Live check first design-check run failed because six generated design files were stale; the refresh is in the worktree diff as modified files under docs/design/.generated, second run OK.",
+   "citations": [
+    58,
+    59
+   ]
+  },
+  {
+   "severity": "low",
+   "detail": "Diagnosis counts (offers and escrows of unsupported types, trades in created) are not collected; mandatory QA step with a production read by the owner.",
+   "citations": []
+  }
+ ],
+ "next_phase": "TEMPER",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "Backend diff against origin/main: 15 tracked files changed (untracked files are in git status)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat origin/main",
+   "stdout": "docs/as-built/as-built-state-machines.md           |   9 +-\n docs/as-built/money-flow.md                        |   2 +\n docs/design/.generated/as-built-merchant-tier.md   |   2 +-\n .../as-built-money-recovery-operation.md           |   2 +-\n .../.generated/as-built-treasury-sol-swap.md       |   2 +-\n docs/design/.generated/drift-merchant-tier.md      |   2 +-\n .../.generated/drift-money-recovery-operation.md   |   2 +-\n docs/design/.generated/drift-treasury-sol-swap.md  |   2 +-\n docs/intended-entity-state-machines.md             |   6 +-\n src/api/escrow.rs                                  |  26 +--\n src/api/offers.rs                                  |  58 ++++++-\n src/api/trades.rs                                  |  28 ++--\n src/error.rs                                       |  21 +++\n src/services/money_request.rs                      |   8 +-\n src/types/enums.rs                                 |  17 +-\n tests/common/mod.rs                                |  15 ++\n tests/mpr001_trade_escrow_ledger_invariants.rs     |   6 +-\n tests/mpr002_offer_version_trade_snapshot.rs       |   3 +-\n tests/ticket_741_merchant_tier_override_grants.rs  |  22 ++-\n tests/trade_creation_mpr013.rs                     | 184 +++++++++++----------\n tests/uz_seller_escrow_fee_quote.rs                |  23 ++-\n 21 files changed, 293 insertions(+), 147 deletions(-)"
+  },
+  {
+   "claim": "Backend git status: 15 modified files plus the new test file tests/ticket_910_trade_funding_invariant.rs; no new source file, no migration",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git status --short",
+   "stdout": "M docs/as-built/as-built-state-machines.md\n M docs/as-built/money-flow.md\n M docs/design/.generated/as-built-merchant-tier.md\n M docs/design/.generated/as-built-money-recovery-operation.md\n M docs/design/.generated/as-built-treasury-sol-swap.md\n M docs/design/.generated/drift-merchant-tier.md\n M docs/design/.generated/drift-money-recovery-operation.md\n M docs/design/.generated/drift-treasury-sol-swap.md\n M docs/intended-entity-state-machines.md\n M src/api/escrow.rs\n M src/api/offers.rs\n M src/api/trades.rs\n M src/error.rs\n M src/services/money_request.rs\n M src/types/enums.rs\n M tests/common/mod.rs\n M tests/mpr001_trade_escrow_ledger_invariants.rs\n M tests/mpr002_offer_version_trade_snapshot.rs\n M tests/ticket_741_merchant_tier_override_grants.rs\n M tests/trade_creation_mpr013.rs\n M tests/uz_seller_escrow_fee_quote.rs\n?? tests/ticket_910_trade_funding_invariant.rs"
+  },
+  {
+   "claim": "No migration added: the diff against origin/main touches no file under migrations",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat origin/main -- migrations; echo \"rc=$?\"; git status --short migrations; echo \"untracked_migrations=$(git ls-files --others --exclude-standard migrations | wc -l)\"",
+   "stdout": "rc=0\nuntracked_migrations=       0"
+  },
+  {
+   "claim": "Docs diff stat",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat origin/main -- docs",
+   "stdout": "docs/as-built/as-built-state-machines.md                    | 9 ++++++++-\n docs/as-built/money-flow.md                                 | 2 ++\n docs/design/.generated/as-built-merchant-tier.md            | 2 +-\n docs/design/.generated/as-built-money-recovery-operation.md | 2 +-\n docs/design/.generated/as-built-treasury-sol-swap.md        | 2 +-\n docs/design/.generated/drift-merchant-tier.md               | 2 +-\n docs/design/.generated/drift-money-recovery-operation.md    | 2 +-\n docs/design/.generated/drift-treasury-sol-swap.md           | 2 +-\n docs/intended-entity-state-machines.md                      | 6 +++++-\n 9 files changed, 21 insertions(+), 8 deletions(-)"
+  },
+  {
+   "claim": "Docs diff in full",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- docs",
+   "stdout": "diff --git a/docs/as-built/as-built-state-machines.md b/docs/as-built/as-built-state-machines.md\nindex 73967e4..d7968c6 100644\n--- a/docs/as-built/as-built-state-machines.md\n+++ b/docs/as-built/as-built-state-machines.md\n@@ -37,7 +37,7 @@ stateDiagram-v2\n\n | Transition | Who can trigger |\n |---|---|\n-| Created -> EscrowFunded | System (auto during trade creation for custodial/BtcWalletLock) |\n+| Created -> EscrowFunded | System (same transaction as trade creation for custodial/BtcWalletLock; PATCH /status refuses it for every caller) |\n | EscrowFunded -> Paid | Buyer or Admin (`mark_paid` endpoint) |\n | Paid -> Released / Completed | Seller, Vendor (resell trades via RS-003), or Admin |\n | Paid -> Disputed | Buyer, Seller, Vendor, or Admin |\n@@ -62,6 +62,13 @@ stateDiagram-v2\n - `PATCH /trades/{id}/status` refuses `cancelled` for every caller with 400 (use `POST /trades/{id}/cancel`).\n - `refund_escrow` and `custodial_refund` resolve the caller participants-first with `refund_route_refusal`. They admit only a non-party moderator or admin (`has_moderator_access`), for a Held escrow on a Created, EscrowFunded, Paid or (orphan repair) already Cancelled trade.\n - The trade is claimed with `repo::trade::cancel_from_status` (reason `staff_escrow_refund`) before `refund_to_seller`, through the shared `cancel_and_refund_trade` core. An `escrow_refund_route` audit entry is written and both parties are notified. A lost claim returns 409 with nothing moved.\n+\n+**As built after ticket 910 (22 Oct 2026):**\n+\n+- `create_trade` refuses an offer whose `escrow_type` is not lock-backed (`EscrowType::is_lock_backed`: `custodial` and `btc_wallet_lock`) with 422 `unsupported_escrow_type` before any write. Every accepted trade takes the wallet lock, holds the escrow, writes the `EscrowLock` entry and sets `escrow_funded` in one transaction, so no trade is returned in `created`. The refusal is a recordable refusal, so a keyed request replays it.\n+- `PATCH /trades/{id}/status` refuses `escrow_funded` for every caller, admins included, with 400 (`PATCH_STATUS_FUND_REFUSAL`).\n+- `POST /offers` refuses `on_chain` and `offer_escrow` with 422 `unsupported_escrow_type` before the KYC compatibility check.\n+- `POST /escrow/{trade_id}/link` (`link_onchain_escrow`) returns 422 `unsupported_escrow_type` after the participant check and writes nothing.\n - Disputed stays refused with the moderator-only message.\n - `mod_refund_escrow` on a Held escrow with a trade also cancels the trade and refuses a moderator who is a party. Its Disputed branch is unchanged.\n - `resolve_to_seller` on a Held escrow whose trade is not Disputed takes the same path as the refund routes: a staff account that is the buyer, seller or vendor gets 403, and a non-party moderator or admin cancels the trade (claimed first) and refunds the escrow. Its dispute branch (Disputed escrow, or a Held escrow on a Disputed trade) is unchanged and ends the trade as `Resolved`.\ndiff --git a/docs/as-built/money-flow.md b/docs/as-built/money-flow.md\nindex 446db9e..788a18a 100644\n--- a/docs/as-built/money-flow.md\n+++ b/docs/as-built/money-flow.md\n@@ -415,6 +415,8 @@ flowchart LR\n\n Seven actions accept an optional `idempotencyKey`: trade start (fiat and crypto swap, `POST /trades`), offer publish (`POST /offers`), internal transfer (`POST /wallet/transfer`), affiliate payout (`POST /affiliate/request-payout`), offer lock and offer unlock (`POST /wallet/locks/lock` and `/unlock`), and offer escrow funding (`POST /escrow/offer/create`, where the keyed path claims first and creates the escrow inside the funding transaction). The key is 1 to 128 characters of letters, digits, `_ . : -`. Withdrawals use the same key but store it on `sponsored_withdrawals`.\n\n+**Trade funding (910).** `POST /trades` locks the seller's amount plus fee, holds the escrow, writes the `EscrowLock` entry and sets the trade to `escrow_funded` in one transaction, for custodial and BTC wallet-lock offers only. An offer with `on_chain` or `offer_escrow` escrow is refused with 422 `unsupported_escrow_type` before any write (no trade, no hold). `PATCH /trades/{id}/status` never sets `escrow_funded`, and `POST /escrow/{trade_id}/link` is refused with the same 422.\n+\n **Key lifecycle (`money_request_keys`).** `claimed` exists only inside the uncommitted money transaction: the claim is the first write after BEGIN and `completed` is set immediately before COMMIT, so the key and the movement commit or roll back together. `completed` (resource type, resource id, stored result) and `refused` (HTTP status, code, message) are terminal.\n\n **Replay order.** Parse the key, check for a replay (before any step-up check, so a replay never consumes a single-use code), then claim. A unique violation on the claim means a twin won the race: the loser rolls back, re-reads the winner and answers like a replay. A replay returns the first result and repeats no ledger entry, notification or socket event.\ndiff --git a/docs/design/.generated/as-built-merchant-tier.md b/docs/design/.generated/as-built-merchant-tier.md\nindex c694889..e1eaa9d 100644\n--- a/docs/design/.generated/as-built-merchant-tier.md\n+++ b/docs/design/.generated/as-built-merchant-tier.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: merchant-tier -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: a662952f7ca7656468cb207b8b3c0c7933c568552830d254bc8f6e2d26b59b08 -->\n-<!-- source-sha256: 485db874e34a7adf5702e5bc77e4aee4ac8bb37eb666907fe9838ea9715f845a -->\n+<!-- source-sha256: ac63b703d82617c7344dda0ec45828a9faadcbb995d4ff087f2bf6a8cf1132a9 -->\n\n ## Overview\n\ndiff --git a/docs/design/.generated/as-built-money-recovery-operation.md b/docs/design/.generated/as-built-money-recovery-operation.md\nindex af5243a..9d4f3a3 100644\n--- a/docs/design/.generated/as-built-money-recovery-operation.md\n+++ b/docs/design/.generated/as-built-money-recovery-operation.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: money-recovery-operation -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: f2071e9d326e6733c120c9e5c7f3d266fae80d5cfcbc921f869f59b40f407bdc -->\n-<!-- source-sha256: 4bb8a6137ac4a11e6054cd6c263378768d01242a1329b09abe7bfdda051c151c -->\n+<!-- source-sha256: a5c55208d119b58178a0b72d9e09d510236965c79fa0ebf0358e7526c5dc027a -->\n\n ## Overview\n\ndiff --git a/docs/design/.generated/as-built-treasury-sol-swap.md b/docs/design/.generated/as-built-treasury-sol-swap.md\nindex 52d95bb..47a1263 100644\n--- a/docs/design/.generated/as-built-treasury-sol-swap.md\n+++ b/docs/design/.generated/as-built-treasury-sol-swap.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: treasury-sol-swap -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: 705d443e56d8e668c6f0691ccb9e4feef8e7985edc262d471d8167ed276e65e2 -->\n-<!-- source-sha256: 104995475d2fea29c6edc5fb8fd4344931b207fb8d8a760af4dade11e576d1d5 -->\n+<!-- source-sha256: e4b68bbf7a323902570a9744c23231bbb18bf9b6a6cdada1d28fc211ca3a58c2 -->\n\n ## Overview\n\ndiff --git a/docs/design/.generated/drift-merchant-tier.md b/docs/design/.generated/drift-merchant-tier.md\nindex f2a83c7..befa2d3 100644\n--- a/docs/design/.generated/drift-merchant-tier.md\n+++ b/docs/design/.generated/drift-merchant-tier.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: merchant-tier -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: a662952f7ca7656468cb207b8b3c0c7933c568552830d254bc8f6e2d26b59b08 -->\n-<!-- as-built-sha256: 3a84fdf03554cc454cfc1c353e66d19fe0ab1e910f3fcbbe66dcf2eab2b7c7b8 -->\n+<!-- as-built-sha256: 6f4af5cb17cff582818ce98d01ec1646f8a0f3c40c9ac2bef8504e0d7d89da03 -->\n\n | Section | Status |\n |---|---|\ndiff --git a/docs/design/.generated/drift-money-recovery-operation.md b/docs/design/.generated/drift-money-recovery-operation.md\nindex a33bf5e..86ce12e 100644\n--- a/docs/design/.generated/drift-money-recovery-operation.md\n+++ b/docs/design/.generated/drift-money-recovery-operation.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: money-recovery-operation -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: f2071e9d326e6733c120c9e5c7f3d266fae80d5cfcbc921f869f59b40f407bdc -->\n-<!-- as-built-sha256: ac3c746dc6072845e6453ce27a287911d5173b0ea8ecb1917be62a5945bb3009 -->\n+<!-- as-built-sha256: 158d31896fa16168685f2889245b21ccdadcdda8b20a7b74967791530ffd3817 -->\n\n | Section | Status |\n |---|---|\ndiff --git a/docs/design/.generated/drift-treasury-sol-swap.md b/docs/design/.generated/drift-treasury-sol-swap.md\nindex f586118..a9be54d 100644\n--- a/docs/design/.generated/drift-treasury-sol-swap.md\n+++ b/docs/design/.generated/drift-treasury-sol-swap.md\n@@ -3,7 +3,7 @@\n <!-- design-entity: treasury-sol-swap -->\n <!-- generated-by: cargo run --bin design-check -->\n <!-- intended-sha256: 705d443e56d8e668c6f0691ccb9e4feef8e7985edc262d471d8167ed276e65e2 -->\n-<!-- as-built-sha256: 2ff749718263ea2bc76d2d49943d34270e17938efa69e957b00ddbb529e4e7d1 -->\n+<!-- as-built-sha256: 3ff10744982cc17e2cff5fbd2d520b9a4f95655e93c6552b3463201fc09c2c62 -->\n\n | Section | Status |\n |---|---|\ndiff --git a/docs/intended-entity-state-machines.md b/docs/intended-entity-state-machines.md\nindex 813bedc..221399f 100644\n--- a/docs/intended-entity-state-machines.md\n+++ b/docs/intended-entity-state-machines.md\n@@ -98,7 +98,7 @@ stateDiagram-v2\n\n | Transition | Who should trigger |\n |---|---|\n-| Created \u2192 EscrowFunded | System (custodial lock at trade creation) |\n+| Created \u2192 EscrowFunded | System (custodial lock at trade creation). PATCH /trades/{id}/status never funds a trade for any caller, admin included. |\n | EscrowFunded \u2192 Paid | Buyer or Admin |\n | EscrowFunded \u2192 Released / Completed | Seller or Admin |\n | Paid \u2192 Released / Completed | Seller or Admin |\n@@ -149,6 +149,8 @@ stateDiagram-v2\n **Key fields:** `user_id`, `offer_type` (Buy/Sell), `cryptocurrency`, `fiat_currency`, `pricing_mode` (Fixed/MarketPlusPremium), `escrow_type`, `payment_methods`, `min_amount`, `max_amount`\n **Related entities:** OfferVersion (versioned edits)\n\n+**Supported escrow modes (owner decision, 13 Oct 2026):** only `custodial` and `btc_wallet_lock` are product escrow modes, and both lock the seller's funds when the trade is created. `on_chain` and `offer_escrow` are not supported: offer creation refuses them with `unsupported_escrow_type`, a trade is never opened on an offer that is not lock-backed, and `POST /escrow/{trade_id}/link` is refused. The two values remain only for legacy rows and the offer-level escrow route.\n+\n **Offer KYC requirements (DSP-57 / #535-#536):** An offer may optionally set `require_id_doc` and/or `require_bank_letter`. These are vendor-requested, per-trade document requirements and are separate from platform KYC (`require_verified`). KYC requirement flags are valid only for escrow-backed fiat trades because they gate fiat payment-detail reveal after escrow funding. A trade snapshots the flags at creation; later offer edits affect future trades only.\n\n ---\n@@ -173,6 +175,8 @@ stateDiagram-v2\n     Refunded --> [*]\n ```\n\n+> **Design note (13 Oct 2026):** Only `custodial` and `btc_wallet_lock` escrows are created for trades. `on_chain` and `offer_escrow` exist for legacy rows and the offer-level escrow route only, and linking an on-chain escrow to a trade is refused.\n+\n > **Design note:** The intended escrow flow starts at `Held` (funded instantly). The `Pending` and `AwaitingDeposit` states were not part of the original design \u2014 they were added in the as-built implementation to support non-custodial / on-chain escrow flows.\n\n **Intended role guards:**"
+  },
+  {
+   "claim": "trades.rs create_trade: the new refusal before the crypto-swap branch (edited range)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '1626,1650p' src/api/trades.rs",
+   "stdout": "if !offer.escrow_type.is_lock_backed() {\n        return Err(AppError::UnsupportedEscrowType);\n    }\n    if offer.quote_currency.is_crypto() {\n        return create_crypto_swap_trade(\n            state, db, auth, offer, req, buyer_id, seller_id, keyed,\n        )\n        .await;\n    }\n\n\n\n    let fiat_cents = (req.fiat_amount * 100.0).round() as i64;\n    if fiat_cents < offer.min_amount {\n        return Err(AppError::validation(\n            super::offers::amount_below_minimum_message(\n                offer.fiat_currency,\n            req.fiat_amount,"
+  },
+  {
+   "claim": "trades.rs create_trade: needs_wallet_lock removed, the wallet lock is now unconditional inside the business block (edited ranges, whole block)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '1966,2062p' src/api/trades.rs",
+   "stdout": "match claim_or_yield(keyed, db, tx, \"trade start\").await? {\n            KeyedOutcome::Fresh(pair) => pair,\n            KeyedOutcome::Replayed(replay) => return Ok(KeyedOutcome::Replayed(replay)),\n        };\n\n\n    let is_custodial = offer.escrow_type == EscrowType::Custodial;\n    let is_btc_wallet_lock = offer.escrow_type == EscrowType::BtcWalletLock;\n\n\n\n\n    let base_lock = lock_crypto_i64\n        .checked_add(fee_crypto_i64)\n        .ok_or_else(|| AppError::validation(\"lock amount overflow (amount + fee)\"))?;\n    let lock_amount = if is_btc_wallet_lock {\n        base_lock\n            .checked_add(state.config.btc_gas_reserve_sats)\n            .ok_or_else(|| AppError::validation(\"lock amount overflow (+ gas reserve)\"))?\n    } else {\n        base_lock\n    };\n\n    let business: Result<_> = async {\n    let wallet_lock_id = {\n        let lock_user = vendor_id;\n\n\n        let is_buy_resell = is_resell && offer.offer_type == OfferType::Buy;\n        let lock_offer = if is_resell && !is_buy_resell {\n            offer.parent_offer_id.unwrap_or(offer.id)\n        } else {\n            offer.id\n        };\n\n\n\n\n\n\n        let wallet_row = sqlx::query_as::<_, (i64, i64)>(\n            \"SELECT balance, locked_balance FROM wallets WHERE user_id = $1 AND cryptocurrency = $2\",\n        )\n        .bind(lock_user)\n        .bind(offer.cryptocurrency)\n        .fetch_optional(&mut *tx)\n        .await\n        .map_err(|e| {\n            tracing::error!(lock_user = %lock_user, error = %e, \"failed to check wallet balance before lock\");\n            AppError::internal(\"failed to verify wallet balance\")\n        })?;\n\n        let factor = offer.cryptocurrency.minor_unit_factor();\n\n\n        let taker_is_crypto_provider = lock_user == auth.user_id;\n\n\n\n        if let Some(msg) = insufficient_lock_balance_message(\n            wallet_row,\n            lock_amount,\n            taker_is_crypto_provider,\n            offer.cryptocurrency,\n            factor,\n        ) {\n            return Err(AppError::validation(msg));\n        }\n\n        let lock = match crate::repo::wallet::lock_balance_for_trade_on(\n            &mut tx,\n            lock_user,\n            lock_offer,\n            offer.cryptocurrency,\n            lock_amount,\n        )\n        .await\n        {\n            Ok(lock) => lock,\n            Err(sqlx::Error::RowNotFound) => {\n                return Err(AppError::validation(\n                    \"Insufficient balance to lock for this trade. Your available funds may have changed.\",\n                ));\n            }\n            Err(e) => return Err(e.into()),\n        };\n        lock.id\n    };\n\n\n\n\n\n    let escrow = crate::repo::escrow::create(\n        &mut *tx,\n        None,\n        Some(offer.id),"
+  },
+  {
+   "claim": "trades.rs create_trade: attach_lock_to_trade is unconditional and the funding block runs for every trade (edited ranges)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '2105,2145p' src/api/trades.rs",
+   "stdout": "Some(effective_quote.premium_percentage),\n        reseller_id,\n        if is_resell { Some(vendor_id) } else { None },\n        vendor_fiat_amount,\n        vendor_exchange_rate,\n        vendor_premium_percentage,\n    )\n    .await?;\n\n    crate::repo::wallet::attach_lock_to_trade(&mut tx, wallet_lock_id, trade.id).await?;\n\n\n    let trade = crate::repo::trade_kyc::snapshot_requirements(\n        &mut *tx,\n        trade.id,\n        requires_id_doc,\n        requires_bank_letter,\n    )\n    .await?;\n\n\n    crate::repo::trade::set_escrow(&mut *tx, trade.id, escrow.id).await?;\n    crate::repo::escrow::set_trade_id(&mut *tx, escrow.id, trade.id).await?;\n\n\n    {\n        crate::repo::escrow::update_status(&mut *tx, escrow.id, EscrowStatus::Held).await?;\n        if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\n            return Err(AppError::validation(format!(\n                \"cannot transition trade from {} to EscrowFunded\",\n                trade.status,\n            )));\n        }\n        crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\n\n        let seller_balance = match sqlx::query_as::<_, (i64,)>(\n            \"SELECT COALESCE(balance, 0) FROM wallets WHERE user_id = $1 AND cryptocurrency = $2\",\n        )\n        .bind(vendor_id)\n        .bind(offer.cryptocurrency)\n        .fetch_optional(&mut *tx)"
+  },
+  {
+   "claim": "trades.rs create_trade: post-commit wallet_updated emit is unconditional (the old post-commit branch on needs_wallet_lock)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '2426,2440p' src/api/trades.rs",
+   "stdout": "\"buyerId\": buyer_id,\n            \"fiatAmount\": notify_fiat,\n            \"cryptocurrency\": offer.cryptocurrency.to_string(),\n        })),\n    })\n    .await;\n\n\n    crate::services::notify::emit_wallet_updated(&state.io, vendor_id, offer.cryptocurrency).await;\n\n\n\n\n\n    if let Some(rid) = reseller_id {"
+  },
+  {
+   "claim": "trades.rs update_trade_status: refusal of escrow_funded next to the cancel refusal",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '2660,2682p' src/api/trades.rs",
+   "stdout": "\"Use POST /trades/{id}/dispute to open a dispute \u2014 PATCH /status cannot freeze escrow or create a dispute record.\",\n        ));\n    }\n\n\n    if req.status == TradeStatus::Cancelled {\n        return Err(AppError::validation(PATCH_STATUS_CANCEL_REFUSAL));\n    }\n\n    if req.status == TradeStatus::EscrowFunded {\n        return Err(AppError::validation(PATCH_STATUS_FUND_REFUSAL));\n    }\n\n    match req.status {\n        TradeStatus::Paid => {\n            if !is_buyer && !is_admin {\n                return Err(AppError::forbidden(\n                    \"only the buyer can mark a trade as paid\",\n                ));\n            }\n            crate::services::trade_kyc::ensure_can_mark_paid(&old_trade)?;\n        }\n        TradeStatus::Released | TradeStatus::Completed => {"
+  },
+  {
+   "claim": "trades.rs: PATCH_STATUS_FUND_REFUSAL constant",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '2866,2878p' src/api/trades.rs",
+   "stdout": "pub const DISPUTED_TRADE_CANCEL_REFUSAL: &str = \"This trade is in dispute. A moderator will decide it.\";\n\npub const PATCH_STATUS_CANCEL_REFUSAL: &str =\n    \"Use POST /trades/{id}/cancel to cancel a trade - PATCH /status cannot move funds.\";\n\npub const PATCH_STATUS_FUND_REFUSAL: &str =\n    \"A trade is funded only when it is created. PATCH /status cannot fund a trade.\";\n\npub const STAFF_REFUND_CLAIM_LOST: &str =\n    \"This trade changed while it was being refunded. Refresh and try again.\";\n\npub const STAFF_ESCROW_REFUND_REASON: &str = \"staff_escrow_refund\";"
+  },
+  {
+   "claim": "offers.rs validate_business_rules: refusal is the first check",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '134,150p' src/api/offers.rs",
+   "stdout": "}\n\nimpl CreateOfferRequest {\n    pub fn validate_business_rules(&self) -> Result<()> {\n        if !self.escrow_type.is_lock_backed() {\n            return Err(AppError::UnsupportedEscrowType);\n        }\n        if self.min_amount > self.max_amount {\n            return Err(AppError::validation(\"min_amount cannot exceed max_amount\"));\n        }\n        if self.pricing_mode == PricingMode::Fixed && self.fixed_price.is_none() {\n            return Err(AppError::validation(\n                \"fixed_price required when pricing_mode is fixed\",\n            ));\n        }\n        if self.pricing_mode == PricingMode::MarketPlusPremium && self.premium_percentage.is_none()\n        {"
+  },
+  {
+   "claim": "escrow.rs link_onchain_escrow: the handler now ends in the refusal",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '1452,1480p' src/api/escrow.rs",
+   "stdout": "Ok(Json(escrow_to_response(&escrow)))\n}\n\npub async fn link_onchain_escrow(\n    auth: AuthUser,\n    State(state): State<AppState>,\n    Path(trade_id): Path<Uuid>,\n    Json(_req): Json<LinkOnChainEscrowRequest>,\n) -> Result<Json<EscrowResponse>> {\n    let db = state.require_db()?;\n    let escrow = crate::repo::escrow::find_by_trade(db, trade_id).await?;\n\n    let trade = crate::repo::trade::find_by_id(db, trade_id).await?;\n    if auth.user_id != escrow.buyer_id\n        && auth.user_id != escrow.seller_id\n        && trade.vendor_id != Some(auth.user_id)\n        && !auth.role.has_admin_access()\n    {\n        return Err(AppError::forbidden(\n            \"not authorized to link escrow for this trade\",\n        ));\n    }\n\n    Err(AppError::UnsupportedEscrowType)\n}\n\npub async fn release_escrow(\n    auth: AuthUser,\n    State(state): State<AppState>,"
+  },
+  {
+   "claim": "error.rs: new variant UnsupportedEscrowType",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '250,258p' src/error.rs",
+   "stdout": "#[error(\"deposit retry does not support this deposit's network\")]\n    UnsupportedNetwork,\n\n    #[error(\"escrow type is not supported\")]\n    UnsupportedEscrowType,"
+  },
+  {
+   "claim": "error.rs: 422 status, client-error group, stable code and message",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n 'UnsupportedEscrowType' src/error.rs; sed -n '855,862p' src/error.rs",
+   "stdout": "255:    UnsupportedEscrowType,\n649:            AppError::UnsupportedEscrowType => StatusCode::UNPROCESSABLE_ENTITY,\n712:            | AppError::UnsupportedEscrowType\n773:            AppError::UnsupportedEscrowType => \"unsupported_escrow_type\",\n859:            AppError::UnsupportedEscrowType => {\n1224:        let (status, body) = render(AppError::UnsupportedEscrowType).await;\n            }\n            AppError::UnsupportedNetwork => {\n                \"this deposit's network is not supported by deposit retry\".to_string()\n            }\n            AppError::UnsupportedEscrowType => {\n                \"This escrow type is not supported. Offers use custodial escrow.\".to_string()\n            }\n            AppError::DepositNotPending { .. } => \"deposit is not pending\".to_string(),"
+  },
+  {
+   "claim": "money_request.rs: recordable-refusal arm includes the new variant",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '245,262p' src/services/money_request.rs",
+   "stdout": "}\n\npub fn is_recordable_refusal(err: &AppError) -> bool {\n    match err {\n        AppError::Validation { .. }\n        | AppError::Forbidden { .. }\n        | AppError::NotFound { .. }\n        | AppError::Conflict { .. }\n        | AppError::Unprocessable { .. }\n        | AppError::UnsupportedEscrowType => true,\n        AppError::Io(_)\n        | AppError::Json(_)\n        | AppError::Database(_)\n        | AppError::Unauthorized { .. }\n        | AppError::KycRequired { .. }\n        | AppError::SolanaNotEnabled\n        | AppError::TradeReceiptNotEnabled\n        | AppError::ValidationWithDetails { .. }"
+  },
+  {
+   "claim": "enums.rs: is_lock_backed is an exhaustive match, no catch-all",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n '785,800p' src/types/enums.rs",
+   "stdout": "OfferEscrow,\n    BtcWalletLock,\n}\n\nimpl EscrowType {\n    pub fn is_lock_backed(&self) -> bool {\n        match self {\n            EscrowType::Custodial | EscrowType::BtcWalletLock => true,\n            EscrowType::OnChain | EscrowType::OfferEscrow => false,\n        }\n    }\n}\n\nimpl fmt::Display for EscrowType {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {"
+  },
+  {
+   "claim": "Diff of src/api/trades.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/api/trades.rs",
+   "stdout": "diff --git a/src/api/trades.rs b/src/api/trades.rs\nindex c55da5a..5c60472 100644\n--- a/src/api/trades.rs\n+++ b/src/api/trades.rs\n@@ -1630,6 +1630,9 @@ pub async fn create_trade(\n\n\n\n+    if !offer.escrow_type.is_lock_backed() {\n+        return Err(AppError::UnsupportedEscrowType);\n+    }\n     if offer.quote_currency.is_crypto() {\n         return create_crypto_swap_trade(\n             state, db, auth, offer, req, buyer_id, seller_id, keyed,\n@@ -1968,7 +1971,6 @@ pub async fn create_trade(\n\n     let is_custodial = offer.escrow_type == EscrowType::Custodial;\n     let is_btc_wallet_lock = offer.escrow_type == EscrowType::BtcWalletLock;\n-    let needs_wallet_lock = is_custodial || is_btc_wallet_lock;\n\n\n\n@@ -1985,7 +1987,7 @@ pub async fn create_trade(\n     };\n\n     let business: Result<_> = async {\n-    let wallet_lock_id = if needs_wallet_lock {\n+    let wallet_lock_id = {\n         let lock_user = vendor_id;\n\n\n@@ -2047,9 +2049,7 @@ pub async fn create_trade(\n             }\n             Err(e) => return Err(e.into()),\n         };\n-        Some(lock.id)\n-    } else {\n-        None\n+        lock.id\n     };\n\n\n@@ -2111,9 +2111,7 @@ pub async fn create_trade(\n     )\n     .await?;\n\n-    if let Some(lock_id) = wallet_lock_id {\n-        crate::repo::wallet::attach_lock_to_trade(&mut tx, lock_id, trade.id).await?;\n-    }\n+    crate::repo::wallet::attach_lock_to_trade(&mut tx, wallet_lock_id, trade.id).await?;\n\n\n     let trade = crate::repo::trade_kyc::snapshot_requirements(\n@@ -2129,7 +2127,7 @@ pub async fn create_trade(\n     crate::repo::escrow::set_trade_id(&mut *tx, escrow.id, trade.id).await?;\n\n\n-    if needs_wallet_lock {\n+    {\n         crate::repo::escrow::update_status(&mut *tx, escrow.id, EscrowStatus::Held).await?;\n         if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\n             return Err(AppError::validation(format!(\n@@ -2433,10 +2431,7 @@ pub async fn create_trade(\n     .await;\n\n\n-    if needs_wallet_lock {\n-        crate::services::notify::emit_wallet_updated(&state.io, vendor_id, offer.cryptocurrency)\n-            .await;\n-    }\n+    crate::services::notify::emit_wallet_updated(&state.io, vendor_id, offer.cryptocurrency).await;\n\n\n\n@@ -2671,6 +2666,10 @@ pub async fn update_trade_status(\n         return Err(AppError::validation(PATCH_STATUS_CANCEL_REFUSAL));\n     }\n\n+    if req.status == TradeStatus::EscrowFunded {\n+        return Err(AppError::validation(PATCH_STATUS_FUND_REFUSAL));\n+    }\n+\n     match req.status {\n         TradeStatus::Paid => {\n             if !is_buyer && !is_admin {\n@@ -2870,6 +2869,9 @@ pub const DISPUTED_TRADE_CANCEL_REFUSAL: &str = \"This trade is in dispute. A mod\n pub const PATCH_STATUS_CANCEL_REFUSAL: &str =\n     \"Use POST /trades/{id}/cancel to cancel a trade - PATCH /status cannot move funds.\";\n\n+pub const PATCH_STATUS_FUND_REFUSAL: &str =\n+    \"A trade is funded only when it is created. PATCH /status cannot fund a trade.\";\n+\n pub const STAFF_REFUND_CLAIM_LOST: &str =\n     \"This trade changed while it was being refunded. Refresh and try again.\";"
+  },
+  {
+   "claim": "Diff of src/api/offers.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/api/offers.rs",
+   "stdout": "diff --git a/src/api/offers.rs b/src/api/offers.rs\nindex 304d12c..fbc3320 100644\n--- a/src/api/offers.rs\n+++ b/src/api/offers.rs\n@@ -135,6 +135,9 @@ impl CreateOfferRequest {\n\n impl CreateOfferRequest {\n     pub fn validate_business_rules(&self) -> Result<()> {\n+        if !self.escrow_type.is_lock_backed() {\n+            return Err(AppError::UnsupportedEscrowType);\n+        }\n         if self.min_amount > self.max_amount {\n             return Err(AppError::validation(\"min_amount cannot exceed max_amount\"));\n         }\n@@ -3453,7 +3456,60 @@ mod tests {\n             \"requireBankLetter\": true\n         }))\n         .expect(\"on-chain body\");\n-        assert!(on_chain.validate_business_rules().is_err());\n+        assert!(matches!(\n+            on_chain.validate_business_rules(),\n+            Err(AppError::UnsupportedEscrowType)\n+        ));\n+    }\n+\n+    fn offer_body_with_escrow(escrow_type: &str, extra: serde_json::Value) -> CreateOfferRequest {\n+        let mut body = serde_json::json!({\n+            \"offerType\": \"sell\",\n+            \"cryptocurrency\": \"USDT\",\n+            \"fiatCurrency\": \"ZAR\",\n+            \"pricingMode\": \"fixed\",\n+            \"fixedPrice\": 1800,\n+            \"minAmount\": 10000,\n+            \"maxAmount\": 1000000,\n+            \"escrowType\": escrow_type,\n+            \"paymentMethods\": [\"bank_transfer\"],\n+            \"timeLimitMinutes\": 30\n+        });\n+        if let (Some(base), Some(more)) = (body.as_object_mut(), extra.as_object()) {\n+            base.extend(more.clone());\n+        }\n+        serde_json::from_value(body).expect(\"offer body\")\n+    }\n+\n+    #[test]\n+    fn offer_escrow_is_refused_with_and_without_kyc_flags() {\n+        for extra in [\n+            serde_json::json!({}),\n+            serde_json::json!({\"requireIdDoc\": true, \"requireBankLetter\": true}),\n+        ] {\n+            let req = offer_body_with_escrow(\"offer_escrow\", extra);\n+            assert!(matches!(\n+                req.validate_business_rules(),\n+                Err(AppError::UnsupportedEscrowType)\n+            ));\n+        }\n+    }\n+\n+    #[test]\n+    fn on_chain_is_refused_without_kyc_flags() {\n+        let req = offer_body_with_escrow(\"on_chain\", serde_json::json!({}));\n+        assert!(matches!(\n+            req.validate_business_rules(),\n+            Err(AppError::UnsupportedEscrowType)\n+        ));\n+    }\n+\n+    #[test]\n+    fn custodial_and_btc_wallet_lock_offers_are_accepted() {\n+        for escrow in [\"custodial\", \"btc_wallet_lock\"] {\n+            let req = offer_body_with_escrow(escrow, serde_json::json!({}));\n+            assert!(req.validate_business_rules().is_ok(), \"{escrow}\");\n+        }\n     }\n\n     fn rs002_price_strategy() -> impl Strategy<Value = f64> {"
+  },
+  {
+   "claim": "Diff of src/api/escrow.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/api/escrow.rs",
+   "stdout": "diff --git a/src/api/escrow.rs b/src/api/escrow.rs\nindex ac89bd0..21fd2b1 100644\n--- a/src/api/escrow.rs\n+++ b/src/api/escrow.rs\n@@ -1456,7 +1456,7 @@ pub async fn link_onchain_escrow(\n     auth: AuthUser,\n     State(state): State<AppState>,\n     Path(trade_id): Path<Uuid>,\n-    Json(req): Json<LinkOnChainEscrowRequest>,\n+    Json(_req): Json<LinkOnChainEscrowRequest>,\n ) -> Result<Json<EscrowResponse>> {\n     let db = state.require_db()?;\n     let escrow = crate::repo::escrow::find_by_trade(db, trade_id).await?;\n@@ -1472,29 +1472,7 @@ pub async fn link_onchain_escrow(\n         ));\n     }\n\n-\n-\n-    if escrow.escrow_type != EscrowType::OnChain {\n-        crate::repo::escrow::update_escrow_type(db, escrow.id, EscrowType::OnChain).await?;\n-    }\n-\n-\n-    crate::repo::escrow::set_contract_address(db, escrow.id, &req.contract_address).await?;\n-    let updated =\n-        crate::repo::escrow::set_deposit(db, escrow.id, &req.contract_address, &req.tx_hash)\n-            .await?;\n-\n-    tracing::info!(\n-        escrow_id = %updated.id,\n-        trade_id = %trade_id,\n-        contract_address = %req.contract_address,\n-        deposit_tx_hash = %req.tx_hash,\n-        network = ?req.network,\n-        old_escrow_type = ?escrow.escrow_type,\n-        new_escrow_type = \"on_chain\",\n-        \"ESCROW_JOURNEY link_onchain: escrow linked with contract address and type updated to OnChain\"\n-    );\n-    Ok(Json(escrow_to_response(&updated)))\n+    Err(AppError::UnsupportedEscrowType)\n }\n\n pub async fn release_escrow("
+  },
+  {
+   "claim": "Diff of src/error.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/error.rs",
+   "stdout": "diff --git a/src/error.rs b/src/error.rs\nindex c9cf47a..6b9284e 100644\n--- a/src/error.rs\n+++ b/src/error.rs\n@@ -251,6 +251,9 @@ pub enum AppError {\n     #[error(\"deposit retry does not support this deposit's network\")]\n     UnsupportedNetwork,\n\n+    #[error(\"escrow type is not supported\")]\n+    UnsupportedEscrowType,\n+\n\n\n\n@@ -643,6 +646,7 @@ impl AppError {\n             AppError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,\n             AppError::TargetNotEligible { .. } => StatusCode::CONFLICT,\n             AppError::UnsupportedNetwork => StatusCode::UNPROCESSABLE_ENTITY,\n+            AppError::UnsupportedEscrowType => StatusCode::UNPROCESSABLE_ENTITY,\n             AppError::DepositNotPending { .. } => StatusCode::CONFLICT,\n             AppError::SharedSweepGroup { .. } => StatusCode::CONFLICT,\n             AppError::ChainDetectionUnavailable => StatusCode::SERVICE_UNAVAILABLE,\n@@ -705,6 +709,7 @@ impl AppError {\n             | AppError::MethodNotAllowed\n             | AppError::TargetNotEligible { .. }\n             | AppError::UnsupportedNetwork\n+            | AppError::UnsupportedEscrowType\n             | AppError::DepositNotPending { .. }\n             | AppError::SharedSweepGroup { .. }\n             | AppError::ChainDetectionUnavailable\n@@ -765,6 +770,7 @@ impl AppError {\n             AppError::MethodNotAllowed => \"method_not_allowed\",\n             AppError::TargetNotEligible { .. } => \"target_not_eligible\",\n             AppError::UnsupportedNetwork => \"unsupported_network\",\n+            AppError::UnsupportedEscrowType => \"unsupported_escrow_type\",\n             AppError::DepositNotPending { .. } => \"deposit_not_pending\",\n             AppError::SharedSweepGroup { .. } => \"shared_sweep_group\",\n             AppError::ChainDetectionUnavailable => \"chain_detection_unavailable\",\n@@ -850,6 +856,9 @@ impl AppError {\n             AppError::UnsupportedNetwork => {\n                 \"this deposit's network is not supported by deposit retry\".to_string()\n             }\n+            AppError::UnsupportedEscrowType => {\n+                \"This escrow type is not supported. Offers use custodial escrow.\".to_string()\n+            }\n             AppError::DepositNotPending { .. } => \"deposit is not pending\".to_string(),\n             AppError::SharedSweepGroup { .. } => {\n                 \"this deposit shares a custodial wallet sweep with other pending deposits\".to_string()\n@@ -1210,6 +1219,18 @@ mod tests {\n         assert!(body.get(\"data\").is_none(), \"{body}\");\n     }\n\n+    #[tokio::test]\n+    async fn unsupported_escrow_type_is_422_with_stable_code() {\n+        let (status, body) = render(AppError::UnsupportedEscrowType).await;\n+        assert_eq!(status, 422);\n+        assert_eq!(body[\"code\"], \"unsupported_escrow_type\");\n+        assert_eq!(\n+            body[\"message\"],\n+            \"This escrow type is not supported. Offers use custodial escrow.\"\n+        );\n+        assert!(body.get(\"data\").is_none(), \"{body}\");\n+    }\n+\n     #[tokio::test]\n     async fn deposit_not_pending_is_409_and_carries_target_status() {\n         let (status, body) = render(AppError::DepositNotPending {"
+  },
+  {
+   "claim": "Diff of src/services/money_request.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/services/money_request.rs",
+   "stdout": "diff --git a/src/services/money_request.rs b/src/services/money_request.rs\nindex 89ce9b2..60ec555 100644\n--- a/src/services/money_request.rs\n+++ b/src/services/money_request.rs\n@@ -250,7 +250,8 @@ pub fn is_recordable_refusal(err: &AppError) -> bool {\n         | AppError::Forbidden { .. }\n         | AppError::NotFound { .. }\n         | AppError::Conflict { .. }\n-        | AppError::Unprocessable { .. } => true,\n+        | AppError::Unprocessable { .. }\n+        | AppError::UnsupportedEscrowType => true,\n         AppError::Io(_)\n         | AppError::Json(_)\n         | AppError::Database(_)\n@@ -348,6 +349,11 @@ mod tests {\n         assert!(recordable(AppError::unprocessable(\"below minimum\")));\n     }\n\n+    #[test]\n+    fn unsupported_escrow_type_refusal_is_recordable() {\n+        assert!(recordable(AppError::UnsupportedEscrowType));\n+    }\n+\n     #[test]\n     fn gates_limits_server_errors_and_replays_are_not_recordable() {\n         assert!(!recordable(AppError::unauthorized(\"no\")));"
+  },
+  {
+   "claim": "Diff of src/types/enums.rs against origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/types/enums.rs",
+   "stdout": "diff --git a/src/types/enums.rs b/src/types/enums.rs\nindex 7732bd0..7b1e90d 100644\n--- a/src/types/enums.rs\n+++ b/src/types/enums.rs\n@@ -786,6 +786,15 @@ pub enum EscrowType {\n     BtcWalletLock,\n }\n\n+impl EscrowType {\n+    pub fn is_lock_backed(&self) -> bool {\n+        match self {\n+            EscrowType::Custodial | EscrowType::BtcWalletLock => true,\n+            EscrowType::OnChain | EscrowType::OfferEscrow => false,\n+        }\n+    }\n+}\n+\n impl fmt::Display for EscrowType {\n     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n         match self {\n@@ -3426,7 +3435,13 @@ mod tests {\n     use super::*;\n     use std::str::FromStr;\n\n-\n+    #[test]\n+    fn escrow_type_is_lock_backed_only_for_custodial_and_btc_wallet_lock() {\n+        assert!(EscrowType::Custodial.is_lock_backed());\n+        assert!(EscrowType::BtcWalletLock.is_lock_backed());\n+        assert!(!EscrowType::OnChain.is_lock_backed());\n+        assert!(!EscrowType::OfferEscrow.is_lock_backed());\n+    }\n\n     #[test]\n     fn currency_to_cryptocurrency_roundtrips_every_crypto() {"
+  },
+  {
+   "claim": "needs_wallet_lock no longer exists in trades.rs (carried action 1: no wallet-lock-conditional branch is left, including the post-commit one)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n needs_wallet_lock src/api/trades.rs; echo rc=$?",
+   "stdout": "rc=1"
+  },
+  {
+   "claim": "repo/wallet.rs is untouched: diff line count is 0 (carried action 2)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src/repo/wallet.rs | wc -l",
+   "stdout": "0"
+  },
+  {
+   "claim": "Writers of TradeStatus::EscrowFunded through repo::trade::update_status: the swap path and the create_trade funding block only",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n \"update_status(&mut \\*tx, trade.id, TradeStatus::EscrowFunded)\" src/api/trades.rs; grep -rn \"TradeStatus::EscrowFunded\" src --include=*.rs | grep -v \"^src/api/trades.rs\" | grep -i \"update_status\\|set_status\" ; echo rc=$?",
+   "stdout": "1315:    crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\n2138:        crate::repo::trade::update_status(&mut *tx, trade.id, TradeStatus::EscrowFunded).await?;\nrc=1"
+  },
+  {
+   "claim": "Owner rule recorded in run.log (Christian, PM, 21 Oct)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -n Christian run.log",
+   "stdout": "2:2026-10-22T14:27:47Z L1: owner rule (Christian, PM, confirmed 21 Oct, relayed by the parent session): check and lock the full amount including the fee in one transaction on every trade-start route; a failed attempt leaves no trade, no hold and no payment instruction"
+  },
+  {
+   "claim": "Suppression scan, tracked diff of src: no added let _ =, .ok();, unwrap(), unreachable! or _ =>",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src | grep -E \"^\\+.*(let _ =|\\.ok\\(\\);|unwrap\\(\\)|unreachable!|_ =>)\"; echo \"rc=$?\"",
+   "stdout": "rc=1"
+  },
+  {
+   "claim": "Suppression scan, tracked diff of tests: no added let _ =, .ok();, unwrap(), unreachable!",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- tests | grep -E \"^\\+.*(let _ =|\\.ok\\(\\);|unwrap\\(\\)|unreachable!)\"; echo \"rc=$?\"",
+   "stdout": "rc=1"
+  },
+  {
+   "claim": "Suppression scan, untracked new test file",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -nE \"(let _ =|\\.ok\\(\\);|unwrap\\(\\)|unreachable!|_ =>)\" tests/ticket_910_trade_funding_invariant.rs; echo \"rc=$?\"; git ls-files --others --exclude-standard",
+   "stdout": "rc=1\ntests/ticket_910_trade_funding_invariant.rs"
+  },
+  {
+   "claim": "Added comment lines in the tracked diff of src, tests, migrations and docs-excluded: the only matches",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src tests migrations | grep -nE \"^\\+\\s*(//|/\\*|--)\"; echo \"rc=$?\"",
+   "stdout": "rc=1"
+  },
+  {
+   "claim": "Comment lines in the untracked new test file",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -nE \"^\\s*(//|/\\*)\" tests/ticket_910_trade_funding_invariant.rs; echo \"rc=$?\"",
+   "stdout": "rc=1"
+  },
+  {
+   "claim": "Test inventory of the new integration file (async fn list)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n \"async fn \" tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "38:async fn seed_user_with_role(pool: &PgPool, label: &str, role: &str) -> Uuid {\n56:async fn seed_user(pool: &PgPool, label: &str) -> Uuid {\n60:async fn token_with_role(pool: &PgPool, user_id: Uuid, role: &Role) -> String {\n81:async fn token_for(pool: &PgPool, user_id: Uuid) -> String {\n85:async fn call(\n103:async fn seed_wallet(pool: &PgPool, user_id: Uuid, crypto: &str, balance: i64) {\n116:async fn balances(pool: &PgPool, user_id: Uuid, crypto: &str) -> (i64, i64) {\n128:async fn scalar(pool: &PgPool, sql: &str) -> i64 {\n135:async fn scalar_for(pool: &PgPool, sql: &str, bind: Uuid) -> i64 {\n157:async fn row_counts(pool: &PgPool) -> RowCounts {\n176:async fn insert_offer(\n217:async fn insert_usdt_offer(\n234:async fn insert_swap_offer(pool: &PgPool, seller: Uuid) -> Uuid {\n268:async fn insert_resell_offer(\n331:async fn key_state(pool: &PgPool, user: Uuid, key: &str) -> (String, Option<i32>, Option<String>) {\n354:async fn offer_create_refuses_unsupported_escrow_types_without_a_key_and_writes_nothing(pool: PgPool) {\n389:async fn offer_create_keyed_refusal_for_unsupported_escrow_types_replays_the_same_422(pool: PgPool) {\n422:async fn offer_create_still_accepts_custodial_escrow(pool: PgPool) {\n455:async fn trade_on_unsupported_escrow_offer_is_refused_and_writes_nothing(pool: PgPool) {\n502:async fn custodial_trade_is_funded_at_creation_with_lock_escrow_and_ledger_matching(pool: PgPool) {\n523:async fn assert_funded_trade(\n582:async fn custodial_trade_with_insufficient_seller_balance_is_refused_with_zero_new_rows(\n608:async fn concurrent_buyers_against_a_seller_funded_for_one_trade_open_exactly_one_funded_trade(\n681:async fn custodial_buy_offer_trade_is_funded_from_the_taker_wallet(pool: PgPool) {\n696:async fn sell_side_resell_trade_is_funded_from_the_vendor_wallet(pool: PgPool) {\n720:async fn buy_side_resell_trade_is_funded_from_the_taker_wallet(pool: PgPool) {\n737:async fn btc_wallet_lock_trade_is_funded_with_the_gas_reserve_in_the_lock(pool: PgPool) {\n775:async fn crypto_swap_trade_is_funded_at_creation_and_replays_without_new_rows(pool: PgPool) {\n803:async fn escrow_snapshot(\n818:async fn link_route_is_refused_for_buyer_seller_and_admin_and_leaves_the_escrow_unchanged(\n870:async fn patch_status_refuses_escrow_funded_for_buyer_seller_vendor_and_admin(pool: PgPool) {\n958:async fn refused_link_leaves_a_funded_trade_to_release_through_the_custodial_lock_path("
+  },
+  {
+   "claim": "Count of #[sqlx::test] attributes in the new file",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -c \"#\\[sqlx::test\" tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "15"
+  },
+  {
+   "claim": "trade_creation_mpr013: the on-chain success test is replaced by a refusal test, and the insufficient-balance and funded tests remain",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n \"^async fn create_trade_\" tests/trade_creation_mpr013.rs",
+   "stdout": "103:async fn create_trade_requires_auth() {\n141:async fn create_trade_on_chain_is_refused_with_unsupported_escrow_type() {\n256:async fn create_trade_custodial_insufficient_balance_returns_400() {\n362:async fn create_trade_custodial_with_balance_locks_and_escrow_funded() {\n516:async fn create_trade_rejects_paused_offer() {\n617:async fn create_trade_rejects_self_trade() {"
+  },
+  {
+   "claim": "Unit tests added in the library: offers.rs, enums.rs, error.rs, money_request.rs",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src | grep -E \"^\\+\\s*(async )?fn [a-z_0-9]+\\(\" | grep -E \"unsupported|lock_backed|refused|accepted|recordable|offer_body\"",
+   "stdout": "+    fn offer_body_with_escrow(escrow_type: &str, extra: serde_json::Value) -> CreateOfferRequest {\n+    fn offer_escrow_is_refused_with_and_without_kyc_flags() {\n+    fn on_chain_is_refused_without_kyc_flags() {\n+    fn custodial_and_btc_wallet_lock_offers_are_accepted() {\n+    async fn unsupported_escrow_type_is_422_with_stable_code() {\n+    fn unsupported_escrow_type_refusal_is_recordable() {\n+    fn escrow_type_is_lock_backed_only_for_custodial_and_btc_wallet_lock() {"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): A-910-unit",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" A-910-unit.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED A-910-unit.log)\"",
+   "stdout": "1 EXIT=0\n   1 test result: ok. 362 passed; 0 failed; 0 ignored; 0 measured; 3960 filtered out; finished in 0.30s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): B-910-run1",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" B-910-run1.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED B-910-run1.log)\"",
+   "stdout": "1 EXIT=0\n   1 test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.30s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): B-910-run2",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" B-910-run2.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED B-910-run2.log)\"",
+   "stdout": "1 EXIT=0\n   1 test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.98s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): B-910-run3",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" B-910-run3.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED B-910-run3.log)\"",
+   "stdout": "1 EXIT=0\n   1 test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.40s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): B-910-conc10",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" B-910-conc10.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED B-910-conc10.log)\"",
+   "stdout": "1 EXIT=0\n   2 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.66s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.69s\n   2 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.72s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.77s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.88s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.98s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 1.45s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 1.74s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder log (cited for counts, not the gate; run in the 910-only target before the shared-target window): C-910-final-3x",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT=\" C-910-final-3x.log | sort | uniq -c; echo \"FAILED_lines=$(grep -c FAILED C-910-final-3x.log)\"",
+   "stdout": "1 EXIT=0\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s\n   2 test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.76s\n   1 test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s\n   2 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s\n   1 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s\n   1 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s\n   1 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s\n   1 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s\n   1 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s\n   1 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s\n   1 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s\nFAILED_lines=0"
+  },
+  {
+   "claim": "Builder logs written in the shared cargo target after 2026-10-22T16:24Z, listed with their mtimes: unproven, not used as evidence",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "ls -l --time-style=full-iso B-910-existing2.log B-910-clippy.log 2>/dev/null || ls -lT B-910-existing2.log B-910-clippy.log",
+   "stdout": "-rw-r--r--@ 1 starbird  staff    638 Oct 22 20:32:25 2026 B-910-clippy.log\n-rw-r--r--@ 1 starbird  staff  42950 Oct 22 20:28:45 2026 B-910-existing2.log"
+  },
+  {
+   "claim": "Skill lists the two acceptable lib failures",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -n \"broadcast_spl_treasury_classified\\|quote_expiry_864_tests\" /Users/starbird/Workspace/Code/qic/.claude/skills/jev-qic-ship/SKILL.md",
+   "stdout": "1130:- `services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast`\n1133:- `services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract`"
+  },
+  {
+   "claim": "Fast gate on the private clone target-910 (log first lines echo DATABASE_URL and CARGO_TARGET_DIR)",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "QIC_GATE_ROOT=/Users/starbird/Workspace/Code/qic/.scratch/910/wt QIC_GATE_NO_ENV=1 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 DATABASE_URL=postgres://postgres@127.0.0.1:5433/$(cat .scratch/jev-qic-ship/910/gate2-db.txt) REQUIRE_TEST_DB=1 bash .claude/scripts/gate.sh --tests \"ticket_910_trade_funding_invariant trade_creation_mpr013 mpr001_trade_escrow_ledger_invariants mpr002_offer_version_trade_snapshot uz_seller_escrow_fee_quote ticket_741_merchant_tier_override_grants\"",
+   "log": ".scratch/jev-qic-ship/910/phase-1-gate.log",
+   "stdout": "DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_14\nCARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910\ngate --fast \u00b7 base origin/main \u00b7 receipts /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005\nbackend: 16 changed files\nbackend: pre-existing suppressions on base (not gated): let _ = 1, .ok(); 23\n  ok   suppression-added-let-underscore (0s)\n  ok   suppression-added-ok-discard (0s)\n  ok   migration-collisions (0s)\n  ok   cargo-check (319s)\n  ok   cargo-clippy (263s)\n  FAIL cargo-test-lib (524s) -> /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-lib.log\n       failures:\n\n       ---- services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast stdout ----\n\n       thread 'services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast' (1432625) panicked at src/services/blockchain/solana.rs:5385:17:\n       detail should explain the mismatch: Timeout\n\n       ---- services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract stdout ----\n\n       thread 'services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract' (1436602) panicked at src/services/prices.rs:4542:9:\n       refusing a database outside the local task or isolated CI allowlist\n\n\n       failures:\n           services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast\n           services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract\n\n       test result: FAILED. 4313 passed; 2 failed; 7 ignored; 0 measured; 0 filtered out; finished in 104.48s\n\n       error: test failed, to rerun pass `--lib`\nbackend: integration targets: 71\n  ok   fresh-test-db (0s)\n  ok   fresh-test-db (0s)\n  ok   cargo-test-targets (788s)\nGATE FAIL \u00b7 /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005\nEXIT=1",
+   "exit_code": 1
+  },
+  {
+   "claim": "Gate log head echoes DATABASE_URL and CARGO_TARGET_DIR",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "sed -n 1,2p .scratch/jev-qic-ship/910/phase-1-gate.log",
+   "stdout": "DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_14\nCARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910"
+  },
+  {
+   "claim": "Gate lib result line",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -n 'test result' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-lib.log",
+   "stdout": "4351:test result: FAILED. 4313 passed; 2 failed; 7 ignored; 0 measured; 0 filtered out; finished in 104.48s"
+  },
+  {
+   "claim": "Gate lib failing tests (failures list at the end of the lib log)",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "awk '/^failures:$/{n++} n>=2' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-lib.log | grep -E '^    [a-z_]+::' | sort -u",
+   "stdout": "services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast\n    services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract"
+  },
+  {
+   "claim": "Gate lib failure messages",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -n 'panicked at\\|refusing a database\\|^---- ' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-lib.log",
+   "stdout": "4336:---- services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast stdout ----\n4338:thread 'services::blockchain::solana::tests::broadcast_spl_treasury_classified_echoed_signature_mismatch_is_possibly_broadcast' (1432625) panicked at src/services/blockchain/solana.rs:5385:17:\n4341:---- services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract stdout ----\n4343:thread 'services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract' (1436602) panicked at src/services/prices.rs:4542:9:\n4344:refusing a database outside the local task or isolated CI allowlist"
+  },
+  {
+   "claim": "Gate integration targets run",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -c 'Running tests/' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-targets.log",
+   "stdout": "71"
+  },
+  {
+   "claim": "Gate integration test result lines that are not 0 failed",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -E 'test result' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-targets.log | grep -vc ' 0 failed'; true",
+   "stdout": "0"
+  },
+  {
+   "claim": "Gate integration: result line of each of the six named targets",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "awk '/Running tests\\/(ticket_910_trade_funding_invariant|trade_creation_mpr013|mpr001_trade_escrow_ledger_invariants|mpr002_offer_version_trade_snapshot|uz_seller_escrow_fee_quote|ticket_741_merchant_tier_override_grants)\\.rs/{split($0,a,\" \");print a[2];p=1;next} p&&/test result/{print;p=0}' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-targets.log",
+   "stdout": "tests/mpr001_trade_escrow_ledger_invariants.rs\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s\ntests/mpr002_offer_version_trade_snapshot.rs\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s\ntests/ticket_741_merchant_tier_override_grants.rs\ntest result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.97s\ntests/ticket_910_trade_funding_invariant.rs\ntest result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.13s\ntests/trade_creation_mpr013.rs\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s\ntests/uz_seller_escrow_fee_quote.rs\ntest result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s"
+  },
+  {
+   "claim": "Gate integration: total tests passed across targets",
+   "cwd": "/Users/starbird/Workspace/Code/qic",
+   "cmd": "grep -E 'test result' /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T205005/cargo-test-targets.log | awk '{p+=$4} END{print p\" passed across targets\"}'",
+   "stdout": "872 passed across targets"
+  },
+  {
+   "claim": "Solana lib failure rerun alone on the private target: first line echoes CARGO_TARGET_DIR",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 solana-flake-alone.log",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910"
+  },
+  {
+   "claim": "Solana lib failure rerun alone: 3 runs, each 1 passed",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -c \"1 passed\" solana-flake-alone.log",
+   "stdout": "3"
+  },
+  {
+   "claim": "Solana rerun log result lines",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -E \"test result|EXIT\" solana-flake-alone.log",
+   "stdout": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4321 filtered out; finished in 0.23s\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4321 filtered out; finished in 0.02s\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4321 filtered out; finished in 0.15s\nEXIT=0"
+  },
+  {
+   "claim": "Live check summary",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "sed -n 1,120p E-910-summary.md",
+   "stdout": "# E-910 live check (backend built in target-910, DB qic_631_910_r1_15, port 18910)\n\nDeviations from PLAN.md: none found in behaviour. Notes:\n- design-check failed on its first run (\"generated design docs were missing or stale and have been refreshed\": as-built/drift for merchant-tier, money-recovery-operation, treasury-sol-swap, 6 files under docs/design/.generated). Second run: OK (6 intended docs, 12 generated artifacts). Logs: E-910-design-check.log, E-910-design-check2.log. The refreshed files show as modified in the worktree.\n- Escrow fee here is 0.25% (fee_config platform_fee_bps 25), not 0.7%.\n- First live attempt used the shared target and is discarded (discarded/). Signup is rate limited to 4 per IP, so users were e910_buyer, e910_seller, e910_poor and e910_ops (admin role by SQL). FX needed several minutes of warm-up before offers worked.\n- Step 6 first call used an invalid network name (422 deserialisation, not the refusal); rerun as 6b with ethereum_mainnet is the real result.\n\nCalls and DB before/after: E-910-calls.jsonl, E-910-db.txt.\n1. POST /offers on_chain and offer_escrow, unkeyed, on_chain with K1 twice, offer_escrow with K2 twice: all 422 unsupported_escrow_type \"This escrow type is not supported. Offers use custodial escrow.\" offers 0, offer_versions 0 after. money_request_keys: K1 and K2 offer_publish refused 422 unsupported_escrow_type; GET /money-requests/e910-K1 outcome refused.\n2. Custodial offer 200 (fabde5ea-a553-4614-8667-a365ad812006). Buyer POST /trades 200 trade f2ef4cb2-b90a-4598-9685-f44f21d1e4d7 status escrow_funded. Seller 900000000/0 -> 849875000/50125000 (locked +50.125 = amount 50 + fee 0.125). wallet_locks 1 of 50125000; escrow custodial/held amount 50000000 fee 125000; one ledger escrow_lock debit 50000000 (ledger_entries 2 -> 3); trade_events trade_created. trade_messages: one system message \"You're buying 50.000000 USDT (~818.50 ZAR market value) for 1000.00 ZAR via Bank transfer. Your funds are being securely held in escrow.\" followed by 4 numbered steps (wait for seller's payment details, pay, mark as paid, seller releases).\n3. on_chain offer 26641cd9-90d4-48ca-9354-c33437285de8 (copied by SQL with an offer_versions row). POST /trades unkeyed, keyed K3, K3 repeat: all 422 unsupported_escrow_type. Counts for trades/escrows/wallet_locks/ledger/trade_messages/trade_events/money_request_keys unchanged; balances unchanged (see S3 before/after).\n4. Offer by e910_poor (5 USDT) 200 ffb6163c-673e-42ac-b618-8e2a2804fc9b; buyer POST /trades 400 VALIDATION_ERROR \"This offer cannot be filled right now - the seller's USDT balance is insufficient.\"; counts unchanged (S4 before/after).\n5. Created trade inserted by SQL (payment_reference QT-E910-CREATED). PATCH /trades/{id}/status escrow_funded by buyer, seller, admin: each 400 \"A trade is funded only when it is created. PATCH /status cannot fund a trade.\"; status stays created, trade_events for it 0 (S5 after).\n6. POST /escrow/{funded trade}/link (6b) by buyer, seller, admin: each 422 unsupported_escrow_type; escrow row byte-identical before/after (E-910-db.txt S6b).\n\nProcesses stopped: backend (bk910) killed, no cargo running from this worker. Postgres on 5433 is the shared one and was left running."
+  },
+  {
+   "claim": "Live check calls recorded",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "wc -l E-910-calls.jsonl",
+   "stdout": "34 E-910-calls.jsonl"
+  },
+  {
+   "claim": "Live check design-check result (second run) and first-run refusal reason",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "grep -n \"design-check: OK\\|checked \\|^EXIT\" E-910-design-check2.log; grep -n \"stale\\|missing\" E-910-design-check.log | head -3",
+   "stdout": "6:design-check: OK\n7:checked 6 intended entity design doc(s)\n8:checked 12 generated design artifact(s)\n9:EXIT=0\n9:generated design docs were missing or stale and have been refreshed: docs/design/.generated/as-built-merchant-tier.md, docs/design/.generated/drift-merchant-tier.md, docs/design/.generated/as-built-money-recovery-operation.md, docs/design/.generated/drift-money-recovery-operation.md, docs/design/.generated/as-built-treasury-sol-swap.md, docs/design/.generated/drift-treasury-sol-swap.md"
+  },
+  {
+   "claim": "Generated design files changed only by design-check refresh (files under docs/design/.generated)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git status --short docs/design/.generated",
+   "stdout": "M docs/design/.generated/as-built-merchant-tier.md\n M docs/design/.generated/as-built-money-recovery-operation.md\n M docs/design/.generated/as-built-treasury-sol-swap.md\n M docs/design/.generated/drift-merchant-tier.md\n M docs/design/.generated/drift-money-recovery-operation.md\n M docs/design/.generated/drift-treasury-sol-swap.md"
+  },
+  {
+   "claim": "Fix log (private target-910, CARGO_TARGET_DIR on line 1): B-910-fix-a1",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 B-910-fix-a1.log; grep -E \"test result|EXIT=|Finished\" B-910-fix-a1.log; echo \"FAILED_lines=$(grep -c FAILED B-910-fix-a1.log)\"",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 postgres://postgres@127.0.0.1:5433/qic_631_910_r1_16\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.00s\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.13s\nEXIT=0\nFAILED_lines=0"
+  },
+  {
+   "claim": "Fix log (private target-910, CARGO_TARGET_DIR on line 1): B-910-fix-a2",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 B-910-fix-a2.log; grep -E \"test result|EXIT=|Finished\" B-910-fix-a2.log; echo \"FAILED_lines=$(grep -c FAILED B-910-fix-a2.log)\"",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 postgres://postgres@127.0.0.1:5433/qic_631_910_r1_17\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.65s\nEXIT=0\nFAILED_lines=0"
+  },
+  {
+   "claim": "Fix log (private target-910, CARGO_TARGET_DIR on line 1): B-910-fix-a3",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 B-910-fix-a3.log; grep -E \"test result|EXIT=|Finished\" B-910-fix-a3.log; echo \"FAILED_lines=$(grep -c FAILED B-910-fix-a3.log)\"",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 postgres://postgres@127.0.0.1:5433/qic_631_910_r1_18\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.76s\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.84s\nEXIT=0\nFAILED_lines=0"
+  },
+  {
+   "claim": "Fix log (private target-910, CARGO_TARGET_DIR on line 1): B-910-fix-uz",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 B-910-fix-uz.log; grep -E \"test result|EXIT=|Finished\" B-910-fix-uz.log; echo \"FAILED_lines=$(grep -c FAILED B-910-fix-uz.log)\"",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 postgres://postgres@127.0.0.1:5433/qic_631_910_r1_19\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.48s\ntest result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s\nEXIT=0\nFAILED_lines=0"
+  },
+  {
+   "claim": "Fix log (private target-910, CARGO_TARGET_DIR on line 1): B-910-fix-clippy",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "head -1 B-910-fix-clippy.log; grep -E \"test result|EXIT=|Finished\" B-910-fix-clippy.log; echo \"FAILED_lines=$(grep -c FAILED B-910-fix-clippy.log)\"",
+   "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5m 56s\nEXIT=0\nFAILED_lines=0"
+  },
+  {
+   "claim": "Body of the new test that completes a trade after the refused link attempt",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "sed -n \"/^async fn refused_link_leaves_a_funded_trade/,/^}/p\" tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "async fn refused_link_leaves_a_funded_trade_to_release_through_the_custodial_lock_path(\n    pool: PgPool,\n) {\n    common::seed_zar_fx_rate(&pool).await;\n    let seller = seed_user(&pool, \"seller\").await;\n    let buyer = seed_user(&pool, \"buyer\").await;\n    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n    let offer = insert_usdt_offer(&pool, seller, OfferType::Sell, EscrowType::Custodial).await;\n    let buyer_token = token_for(&pool, buyer).await;\n    let seller_token = token_for(&pool, seller).await;\n    let (status, trade) = call(\n        &pool,\n        \"POST\",\n        \"/api/v1/trades\",\n        &buyer_token,\n        &trade_body(offer, None),\n    )\n    .await;\n    assert_eq!(status, StatusCode::OK, \"{trade}\");\n    let trade_id = trade_id_of(&trade);\n\n    let (link_status, link) = call(\n        &pool,\n        \"POST\",\n        &format!(\"/api/v1/escrow/{trade_id}/link\"),\n        &buyer_token,\n        &json!({\n            \"contractAddress\": \"TXyz910contractaddress\",\n            \"network\": \"tron_mainnet\",\n            \"txHash\": \"0xabc910\",\n        }),\n    )\n    .await;\n    assert_eq!(link_status, StatusCode::UNPROCESSABLE_ENTITY, \"{link}\");\n    assert_eq!(link[\"code\"], \"unsupported_escrow_type\", \"{link}\");\n\n    let (paid_status, paid) = call(\n        &pool,\n        \"POST\",\n        &format!(\"/api/v1/trades/{trade_id}/mark-paid\"),\n        &buyer_token,\n        &json!({}),\n    )\n    .await;\n    assert_eq!(paid_status, StatusCode::OK, \"{paid}\");\n    let (done_status, done) = call(\n        &pool,\n        \"POST\",\n        &format!(\"/api/v1/trades/{trade_id}/complete\"),\n        &seller_token,\n        &json!({}),\n    )\n    .await;\n    assert_eq!(done_status, StatusCode::OK, \"{done}\");\n\n    let escrow = escrow_snapshot(&pool, trade_id).await;\n    assert_eq!(escrow.0, \"custodial\");\n    assert_eq!(escrow.1, \"released\");\n    assert_eq!(escrow.2, None);\n    assert_eq!(escrow.3, None);\n    assert_eq!(escrow.4, None);\n    let lock_released: bool = sqlx::query_scalar(\n        \"SELECT released_at IS NOT NULL FROM wallet_locks WHERE trade_id = $1\",\n    )\n    .bind(trade_id)\n    .fetch_one(&pool)\n    .await\n    .expect(\"lock row\");\n    assert!(lock_released);\n    assert_eq!(balances(&pool, seller, \"USDT\").await.1, 0);\n    let stored: String = sqlx::query_scalar(\"SELECT status::text FROM trades WHERE id = $1\")\n        .bind(trade_id)\n        .fetch_one(&pool)\n        .await\n        .expect(\"trade status\");\n    assert_eq!(stored, \"completed\");\n}"
+  },
+  {
+   "claim": "The new test is the last test in the file; its attribute and name",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n -B1 \"refused_link_leaves_a_funded_trade\" tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "957-#[sqlx::test]\n958:async fn refused_link_leaves_a_funded_trade_to_release_through_the_custodial_lock_path("
+  }
+ ]
+}

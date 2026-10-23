@@ -1,0 +1,295 @@
+=== S1 before ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|0
+-- money_request_keys
+
+
+=== S1 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|0
+offer_versions|0
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 before trade ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|900000000|0
+-- counts
+offers|1
+offer_versions|1
+trades|0
+escrows|0
+wallet_locks|0
+ledger_entries|2
+trade_messages|0
+trade_events|0
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 after trade ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|1
+offer_versions|1
+trades|1
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S2 detail ===
+escrow|custodial|held|50000000|125000
+lock|50125000|t
+ledger|escrow_lock|debit|50000000
+msg|t|You're buying 50.000000 USDT (~818.50 ZAR market value) for 1000.00 ZAR via Bank transfer. Your funds are being securely held in escrow.
+1. Wait for the seller to share their payment details.
+2. Send your payment of 1000.00 ZAR using the agreed method.
+3. Click "Mark as Paid" once payment is sent.
+4. The seller will verify and release the USDT to your wallet.
+event|trade_created
+
+=== S3 before (on_chain offer inserted by SQL) ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|2
+offer_versions|2
+trades|1
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|2
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+
+=== S3 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|2
+offer_versions|2
+trades|1
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S4 before ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|1
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S4 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|1
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S5 before (created trade inserted by SQL 000ffd62-3c2e-4b7a-a254-1a98079cdaad) ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S5 after ===
+trade_status|created
+trade_events|0
+
+=== S5 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S6 before ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S6 escrow row unchanged: True ===
+ff885dc5-b519-4ca9-9b8b-f33073db5993|f2ef4cb2-b90a-4598-9685-f44f21d1e4d7|fabde5ea-a553-4614-8667-a365ad812006|de7bf024-3467-4137-9ffd-60972bffe01f|7cfb3baf-0409-44a2-9adf-fccc2efa7071|custodial|held|USDT|50000000|125000|||||||||||2026-10-22 20:55:27.188395+04|2026-10-22 20:55:27.188395+04||f|
+
+=== S6 after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S6b before (valid body) ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+
+=== S6b escrow row unchanged: True ===
+ff885dc5-b519-4ca9-9b8b-f33073db5993|f2ef4cb2-b90a-4598-9685-f44f21d1e4d7|fabde5ea-a553-4614-8667-a365ad812006|de7bf024-3467-4137-9ffd-60972bffe01f|7cfb3baf-0409-44a2-9adf-fccc2efa7071|custodial|held|USDT|50000000|125000|||||||||||2026-10-22 20:55:27.188395+04|2026-10-22 20:55:27.188395+04||f|
+
+=== S6b after ===
+-- wallets
+e910_buyer|USDT|0|0
+e910_poor|USDT|5000000|0
+e910_seller|USDT|849875000|50125000
+-- counts
+offers|3
+offer_versions|3
+trades|2
+escrows|1
+wallet_locks|1
+ledger_entries|3
+trade_messages|1
+trade_events|1
+money_request_keys|3
+-- money_request_keys
+e910-K1|offer_publish|refused|422|unsupported_escrow_type
+e910-K2|offer_publish|refused|422|unsupported_escrow_type
+e910-K3|trade_start|refused|422|unsupported_escrow_type
+

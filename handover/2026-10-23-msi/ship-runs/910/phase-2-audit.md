@@ -1,0 +1,1 @@
+Phase 2 audit (910): one MEDIUM test-strength finding fixed in one round; TEMPER overran its slice (fix round 30 min + full re-gate + about an hour of idle agent wait). Prevention: TEMPER=25 slice for L money tickets (recorded); when a reviewer or writer is silent for 20 minutes with no process running, nudge it and replace it if it does not answer.

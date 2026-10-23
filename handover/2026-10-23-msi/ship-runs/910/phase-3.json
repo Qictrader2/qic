@@ -1,0 +1,112 @@
+{
+ "run_id": "910-r1",
+ "task": "910",
+ "phase": 3,
+ "phase_name": "DRY",
+ "objective": "De-duplicate what was written; re-verify",
+ "summary": "DRY scan of the 910 diff found no mechanical duplication in production code. The one test-helper duplication (tests/common fund_usdt_wallet vs the 910 file's seed_wallet) is not a drop-in: seed_wallet takes any cryptocurrency and balance and the 910 tests use BTC and several USDT amounts, while the common helper seeds a fixed 10_000_000_000 USDT. Left as is. No file changed in DRY, so cargo was not rerun; the tree is the one the TEMPER gate passed. The gate is green except the environment-bound 864 test.",
+ "requirements": [
+  "AC1: An offer that uses an escrow mode the platform does not support is refused when it is created, with a clear error to the caller.",
+  "AC2: No trade can open without the seller's USDT being locked in the same step, so no customer sees an open trade that is not funded.",
+  "AC3: A trade cannot be marked funded by hand, so funded always means the seller's USDT is locked.",
+  "AC4: Custodial offers, resells and crypto swaps are created and funded exactly as they are today."
+ ],
+ "evidence": {
+  "duplication_searches": [
+   0,
+   1,
+   2
+  ],
+  "diff_stats": [
+   3
+  ],
+  "unchanged_tree": [
+   4,
+   5
+  ]
+ },
+ "deterministic_checks": [
+  {
+   "name": "Production diff has no mechanical duplication left to consolidate",
+   "status": "pass",
+   "citations": [
+    2
+   ]
+  },
+  {
+   "name": "Common wallet helper is not a drop-in for the 910 seed_wallet",
+   "status": "pass",
+   "citations": [
+    0,
+    1
+   ]
+  },
+  {
+   "name": "No source change in DRY, tree equals the tree the TEMPER gate passed",
+   "status": "pass",
+   "citations": [
+    3,
+    4,
+    5
+   ]
+  }
+ ],
+ "open_findings": [
+  {
+   "severity": "low",
+   "detail": "seed_wallet in the 910 test file and fund_usdt_wallet in tests/common overlap in purpose but differ in crypto and amount; left as is per the decision rule (test-only)"
+  }
+ ],
+ "next_phase": "PUSH",
+ "proposed_transition": "advance",
+ "citations": [
+  {
+   "claim": "Two wallet seeders: tests/common fund_usdt_wallet (fixed USDT, find_or_create, fixed balance) vs 910 seed_wallet (any crypto and balance, raw insert)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n 'fn fund_usdt_wallet\\|FUNDED_USDT_BALANCE\\|fn seed_wallet' tests/common/mod.rs tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "tests/common/mod.rs:547:pub const FUNDED_USDT_BALANCE: i64 = 10_000_000_000;\ntests/common/mod.rs:549:pub async fn fund_usdt_wallet(pool: &PgPool, user_id: Uuid) {\ntests/common/mod.rs:557:    qictrader_backend_rs::repo::wallet::update_balance(pool, wallet.id, FUNDED_USDT_BALANCE, 0, 0)\ntests/ticket_910_trade_funding_invariant.rs:103:async fn seed_wallet(pool: &PgPool, user_id: Uuid, crypto: &str, balance: i64) {\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "910 test calls seed_wallet with BTC and with 1_000_000 and other amounts, so the common helper (USDT, 10_000_000_000) is not a drop-in",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "grep -n 'seed_wallet(&pool' tests/ticket_910_trade_funding_invariant.rs",
+   "stdout": "459:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n506:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n633:    seed_wallet(&pool, seller, \"USDT\", 1_000_000).await;\n661:        seed_wallet(&pool, seller, \"USDT\", ONE_TRADE_ONLY_START).await;\n730:    seed_wallet(&pool, taker, \"USDT\", SELLER_START).await;\n746:    seed_wallet(&pool, vendor, \"USDT\", SELLER_START).await;\n770:    seed_wallet(&pool, taker, \"USDT\", SELLER_START).await;\n786:    seed_wallet(&pool, seller, \"BTC\", BTC_SELLER_START).await;\n827:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n828:    seed_wallet(&pool, buyer, \"BTC\", SWAP_BUYER_BTC).await;\n870:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n1009:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n1086:    seed_wallet(&pool, seller, \"USDT\", SELLER_START).await;\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "No repeated added production lines of length over 50 in the src diff beyond one error arm",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff origin/main -- src | grep -E '^\\+' | grep -vE '^\\+\\+\\+' | sort | uniq -c | sort -rn | awk '$1>1 && length($0)>50' | head",
+   "stdout": "   2 +            Err(AppError::UnsupportedEscrowType)\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "git diff --stat origin/main",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git diff --stat origin/main | tail -25",
+   "stdout": " docs/as-built/as-built-state-machines.md           |   9 +-\n docs/as-built/money-flow.md                        |   2 +\n docs/design/.generated/as-built-merchant-tier.md   |   2 +-\n .../as-built-money-recovery-operation.md           |   2 +-\n .../.generated/as-built-treasury-sol-swap.md       |   2 +-\n docs/design/.generated/drift-merchant-tier.md      |   2 +-\n .../.generated/drift-money-recovery-operation.md   |   2 +-\n docs/design/.generated/drift-treasury-sol-swap.md  |   2 +-\n docs/intended-entity-state-machines.md             |   6 +-\n src/api/escrow.rs                                  |  26 +--\n src/api/offers.rs                                  |  58 ++++++-\n src/api/trades.rs                                  |  28 ++--\n src/error.rs                                       |  21 +++\n src/repo/escrow.rs                                 |  34 ----\n src/services/money_request.rs                      |   8 +-\n src/types/enums.rs                                 |  17 +-\n tests/common/mod.rs                                |  15 ++\n tests/mpr001_trade_escrow_ledger_invariants.rs     |   6 +-\n tests/mpr002_offer_version_trade_snapshot.rs       |   3 +-\n tests/ticket_741_merchant_tier_override_grants.rs  |  22 ++-\n tests/trade_creation_mpr013.rs                     | 184 +++++++++++----------\n tests/uz_seller_escrow_fee_quote.rs                |  23 ++-\n 22 files changed, 293 insertions(+), 181 deletions(-)\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "BE tree status (unchanged by DRY)",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+   "cmd": "git status --short",
+   "stdout": " M docs/as-built/as-built-state-machines.md\n M docs/as-built/money-flow.md\n M docs/design/.generated/as-built-merchant-tier.md\n M docs/design/.generated/as-built-money-recovery-operation.md\n M docs/design/.generated/as-built-treasury-sol-swap.md\n M docs/design/.generated/drift-merchant-tier.md\n M docs/design/.generated/drift-money-recovery-operation.md\n M docs/design/.generated/drift-treasury-sol-swap.md\n M docs/intended-entity-state-machines.md\n M src/api/escrow.rs\n M src/api/offers.rs\n M src/api/trades.rs\n M src/error.rs\n M src/repo/escrow.rs\n M src/services/money_request.rs\n M src/types/enums.rs\n M tests/common/mod.rs\n M tests/mpr001_trade_escrow_ledger_invariants.rs\n M tests/mpr002_offer_version_trade_snapshot.rs\n M tests/ticket_741_merchant_tier_override_grants.rs\n M tests/trade_creation_mpr013.rs\n M tests/uz_seller_escrow_fee_quote.rs\n?? tests/ticket_910_trade_funding_invariant.rs\n",
+   "exit_code": 0
+  },
+  {
+   "claim": "TEMPER gate log last 8 lines",
+   "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+   "cmd": "tail -8 phase-2-gate.log",
+   "stdout": "       \n       error: test failed, to rerun pass `--lib`\nbackend: integration targets: 71\n  ok   fresh-test-db (0s)\n  ok   fresh-test-db (0s)\n  ok   cargo-test-targets (453s)\nGATE FAIL \u00b7 /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427\nEXIT=1\n",
+   "exit_code": 0
+  }
+ ],
+ "cited_numbers_exempt": [
+  {
+   "number": 864,
+   "why": "Trello ticket number of the environment-bound test, not a line reference"
+  }
+ ]
+}

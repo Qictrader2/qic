@@ -1,0 +1,405 @@
+{
+  "run_id": "910-r1",
+  "task": "910 https://trello.com/c/6acd983a914864e091d819ad",
+  "phase": 2,
+  "phase_name": "TEMPER",
+  "objective": "A fresh reviewer grades the diff independently against the prepared diagnosis; every HIGH and MEDIUM is fixed and re-checked; fast gate green on the fixed tree",
+  "summary": "TEMPER round 1 returned NEEDS_FIXES with one MEDIUM (funding tests did not pin exact minor-unit values), fixed in code, plus LOW findings of which dead repo functions and the PATCH refusal order are fixed. Fixer logs show zero FAILED. Suppression scan and added-comment scan are clean. The fast gate on the fixed tree is green except the environment-bound 864 lib test (4314 passed, 1 failed) with 71 integration targets and none failing. Round 2 verdict recorded. TEMPER overran its slice and continued as a scoped run.",
+  "requirements": [
+    "AC1: An offer that uses an escrow mode the platform does not support is refused when it is created, with a clear error to the caller.",
+    "AC2: No trade can open without the seller's USDT being locked in the same step, so no customer sees an open trade that is not funded.",
+    "AC3: A trade cannot be marked funded by hand, so funded always means the seller's USDT is locked.",
+    "AC4: Custodial offers, resells and crypto swaps are created and funded exactly as they are today."
+  ],
+  "evidence": {
+    "rounds": [
+      {
+        "round": 1,
+        "reviewer": "opus55, independent",
+        "verdict": "NEEDS_FIXES",
+        "citations": [
+          0
+        ],
+        "findings": [
+          {
+            "severity": "MEDIUM",
+            "item": "Funding regression tests checked only internal consistency, never exact minor-unit amounts, fee, lock and buyer crypto amount",
+            "status": "FIXED",
+            "citations": [
+              1,
+              7,
+              8,
+              9
+            ]
+          },
+          {
+            "severity": "LOW",
+            "item": "update_escrow_type and set_contract_address lost their only caller and were dead",
+            "status": "FIXED",
+            "citations": [
+              3
+            ]
+          },
+          {
+            "severity": "LOW",
+            "item": "PATCH escrow_funded on a non-Created trade returned the generic invalid-transition error instead of the funding refusal",
+            "status": "FIXED",
+            "citations": [
+              2
+            ]
+          },
+          {
+            "severity": "LOW",
+            "item": "Frontend e2e fixtures use escrowType on_chain and PATCH escrow_funded",
+            "status": "NOT FIXED",
+            "citations": [
+              0
+            ]
+          },
+          {
+            "severity": "LOW",
+            "item": "Swap regression drops trades_fiat_amount_check (pre-existing crypto-swap CHECK bug, untracked)",
+            "status": "NOT FIXED",
+            "citations": [
+              0
+            ]
+          },
+          {
+            "severity": "LOW",
+            "item": "Two wallet-seeding helpers do the same job",
+            "status": "NOT FIXED",
+            "citations": [
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "reviewer": "fresh reviewer",
+        "citations": [
+          26
+        ],
+        "verdict": "APPROVED"
+      }
+    ],
+    "builder_note": {
+      "note": "Pinned expected values were derived from the current fixtures, not from an origin/main baseline.",
+      "citations": [
+        1
+      ]
+    },
+    "followups": {
+      "items": [
+        "Frontend e2e fixtures using escrowType on_chain and PATCH escrow_funded will fail against staging after deploy: Qictrader2/Frontend e2e",
+        "Crypto-swap CHECK bug out of scope per owner USDT-only rule"
+      ],
+      "citations": [
+        0
+      ]
+    },
+    "timing": {
+      "note": "TEMPER overran its slice; continued as a scoped run per the owner's stance.",
+      "citations": [
+        25
+      ]
+    },
+    "suppression_scan": {
+      "note": "No added let _ =, .ok(); or unwrap() over the diff plus untracked source.",
+      "citations": [
+        14,
+        15,
+        16
+      ]
+    },
+    "added_comments": {
+      "note": "Counts include unchanged context lines; plus-prefixed and untracked comment lines are checked separately.",
+      "citations": [
+        17,
+        18,
+        19
+      ]
+    },
+    "fast_gate": {
+      "note": "Green except the environment-bound 864 test.",
+      "citations": [
+        20,
+        21,
+        22,
+        23,
+        24
+      ]
+    }
+  },
+  "deterministic_checks": [
+    {
+      "name": "MEDIUM fixed in code: exact minor-unit values pinned; LOW dead functions removed and refusal order fixed",
+      "status": "pass",
+      "citations": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "Fixer logs show passing results and zero FAILED",
+      "status": "pass",
+      "citations": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "name": "Suppression scan clean",
+      "status": "pass",
+      "citations": [
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "name": "No added comments",
+      "status": "pass",
+      "citations": [
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "name": "Fast gate green on the fixed tree except the environment-bound 864 test",
+      "status": "pass",
+      "citations": [
+        20,
+        21,
+        22,
+        23,
+        24
+      ]
+    },
+    {
+      "name": "Round-2 review verdict recorded",
+      "status": "pass",
+      "citations": [
+        26
+      ]
+    }
+  ],
+  "open_findings": [
+    {
+      "severity": "low",
+      "detail": "Frontend e2e fixtures using escrowType on_chain and PATCH escrow_funded will fail against staging after deploy (Qictrader2/Frontend e2e)"
+    },
+    {
+      "severity": "low",
+      "detail": "Crypto-swap trades_fiat_amount_check bug is out of scope under the owner USDT-only rule"
+    },
+    {
+      "severity": "low",
+      "detail": "Duplicate wallet-seeding helpers in tests"
+    }
+  ],
+  "next_phase": "DRY",
+  "proposed_transition": "advance",
+  "citations": [
+    {
+      "claim": "Round 1 review: verdict NEEDS_FIXES with one MEDIUM and several LOW findings",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "sed -n 1,200p phase-2-review-round1.md",
+      "stdout": "# 910 PHASE 2 TEMPER review, round 1 (opus55 independent reviewer)\n\nVerdict: NEEDS_FIXES\n\nScope reviewed: `git diff origin/main` (8fda17fa) in /Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs plus untracked tests/ticket_910_trade_funding_invariant.rs. I judged from code only.\n\nRe-run: `cargo test --test ticket_910_trade_funding_invariant --test trade_creation_mpr013`, using CARGO_TARGET_DIR=.scratch/910/target-910, CARGO_INCREMENTAL=0, minted DB qic_631_910_r1_20, REQUIRE_TEST_DB=1, RUST_MIN_STACK=2147483648 and ulimit -s unlimited. Result: 15/15 and 6/6 passed, EXIT=0. Log: /Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910/phase-2-review-opus.log\n\n## What holds\n\n1. Root cause is addressed. `create_trade` (src/api/trades.rs:1633) refuses `!offer.escrow_type.is_lock_backed()` after the read-only eligibility checks. The refusal comes before the swap dispatch, the quote, the transaction and the keyed claim, so it covers both POST /trades routes (fiat and crypto swap) with or without a key. The lock branch is now unconditional (`wallet_lock_id` is a plain `Uuid`, `attach_lock_to_trade` and the Held/EscrowFunded/EscrowLock block always run). No path in `create_trade` can commit a trade without its lock, and every error inside `business` still reaches `rollback_then`. The only other trade inserts are `create_crypto_swap` (always locks, unchanged) and the super-admin `seed_affiliate_scenario` test seeder (pre-existing, not a trade-start route).\n2. PATCH /trades/{id}/status refuses `escrow_funded` for every caller (trades.rs:2669). The refusal comes after the role check and `can_transition_to`, and before `update_status`, the event and the notifications. POST /escrow/{trade_id}/link returns 422 after the participant check and writes nothing. Offer creation refuses in `validate_business_rules` before the publish transaction. That function is its only caller, and `UpdateOfferRequest` has no `escrow_type`.\n3. 920 contract: `UnsupportedEscrowType` is in all exhaustive matches in error.rs and in `is_recordable_refusal`. The keyed 422 replays are tested for both offer publish and trade start, and the key row is `refused/422/unsupported_escrow_type`.\n4. Money: the lock is amount + fee (+ `btc_gas_reserve_sats` for btc_wallet_lock), and the ledger records the amount. The code is unchanged for lock-backed types, and the tests assert lock = escrows.amount + escrows.fee_amount (+ reserve), the wallet deltas, and ledger = escrows.amount.\n5. Migrated fixtures: I found no weakened assertion. The only removed assertions are the old `create_trade_on_chain_success` success checks, which now form a refusal test with zero-row and balance checks. The cleanup queries now skip ledger-linked rows, and that only affects cleanup.\n6. Docs: the intended and as-built docs match the owner rule of 13 Oct. design-check is OK. The six regenerated .generated files change hashes only and must travel with the commit.\n\n## Findings\n\n| Severity | File:line | Finding | Concrete fix |\n|---|---|---|---|\n| MEDIUM | tests/ticket_910_trade_funding_invariant.rs:523-579 (used by :502, :681, :696, :720, :737, :775) | `assert_funded_trade` checks only internal consistency: the lock equals whatever the escrow row says (amount + fee). It never pins exact minor-unit values. PLAN AC4 (resell) requires \"exact minor-unit values\" for lock amount, escrows.amount, escrows.fee_amount, buyer_crypto_amount and the ledger entry. AC2 gives a worked fee (0.7%), and Risks says the regression tests must compare amounts before and after. A regression that changed or zeroed the fee, or changed the amount, in both the escrow row and the lock would pass all six regression tests. buyer_crypto_amount is never asserted. | Pass expected `(amount, fee, buyer_crypto_amount)` into `assert_funded_trade` and `assert_eq!` them. Custodial sell and buy at 5000 ZAR / 20.00 ZAR per USDT with the test-default 70 bps should give amount 250_000_000 and fee 1_750_000, so the lock is 251_750_000. For the resell, BTC and swap cases, record the values the same fixtures produce on origin/main 8fda17fa and pin those, or derive them from `Config::test_default()` fee bps. Also assert `fee > 0` so the \"amount + fee\" lock check proves something. |\n| LOW | src/repo/escrow.rs:354, :371 | `update_escrow_type` and `set_contract_address` lost their only caller (link_onchain_escrow) and are now dead pub functions. Root CLAUDE.md says to delete dead code. `LinkOnChainEscrowRequest` is now parsed only to be ignored. | Delete the two repo functions, or record them for the planned on_chain removal follow-up. |\n| LOW | frontend/e2e (19 `escrowType: 'on_chain'` fixtures, e.g. e2e/tests/smoke/critical-path.test.ts:59, idor.test.ts:32; PATCH `status: 'escrow_funded'` in e2e/tests/system/full-trade-journey.test.ts:98, dispute-resolution-journey.test.ts:50) | The frontend Playwright API suites build trades on on_chain offers and hand-fund them through PATCH. After this deploy they will fail against staging. The frontend repo has no CI, so nothing flags it. The PLAN checked only app source. | Open a follow-up card (or a companion frontend PR) to move these fixtures to funded custodial offers and drop the PATCH funding step. |\n| LOW | tests/ticket_910_trade_funding_invariant.rs:776 | The swap regression drops `trades_fiat_amount_check` to run at all, so it tests a schema that production does not have. In production every swap insert fails today. The owner ruled the bug out of scope, but run.log:24 says \"no Trello card\", so nothing tracks it. | Record the swap constraint bug on a card so the test's DROP can be removed when it is fixed. |\n| LOW | tests/common/mod.rs:547 vs tests/ticket_910_trade_funding_invariant.rs:103 | This diff adds two wallet-seeding helpers that do the same job (`fund_usdt_wallet` and a local `seed_wallet`). | Optional: have the 910 file use a parameterised common helper. |\n| LOW | src/api/trades.rs:2632-2671 | The order is `can_transition_to` first, then the fund refusal. So PATCH escrow_funded on a non-Created trade returns the generic \"Invalid transition\" 400 instead of `PATCH_STATUS_FUND_REFUSAL`. It is still refused before any write. | Optional: move the EscrowFunded refusal above `can_transition_to` so the message is stable. |\n\nPrevious gate's non-blocking notes, graded:\n1. Fast gate not rerun after the test-only fix: LOW. My re-run of the full 910 file and mpr013 passes. Clippy on the lib is unaffected by a test-only change.\n2. Live-check signups returned 500 because SMTP is unset locally: environment only, not a finding.\n3. Six regenerated design files must be committed: agreed, LOW (hash-only changes, design-check OK).\n\nRequired actions: fix the MEDIUM (pin exact minor-unit amounts, fee and buyer_crypto_amount in the AC2/AC4 regression tests).",
+      "exit_code": 0
+    },
+    {
+      "claim": "MEDIUM fixed: expected-funding struct and pinned minor-unit values (amount, fee, lock, buyer crypto) in the 910 test",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "grep -n \"struct ExpectedFunding\\|250_000_000\\|1_750_000\\|251_750_000\\|513_500\\|10_070_000\" tests/ticket_910_trade_funding_invariant.rs",
+      "stdout": "523:struct ExpectedFunding {\n531:    amount: 250_000_000,\n532:    fee: 1_750_000,\n534:    lock: 251_750_000,\n538:    amount: 250_000_000,\n539:    fee: 1_750_000,\n540:    buyer_crypto_amount: Some(250_000_000),\n541:    lock: 251_750_000,\n548:    lock: 513_500,\n555:    lock: 10_070_000,",
+      "exit_code": 0
+    },
+    {
+      "claim": "LOW fixed: the PATCH escrow_funded refusal now comes before can_transition_to",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "grep -n \"PATCH_STATUS_FUND_REFUSAL\\|can_transition_to\" src/api/trades.rs",
+      "stdout": "1309:    if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\n2132:        if !trade.status.can_transition_to(&TradeStatus::EscrowFunded) {\n2632:        return Err(AppError::validation(PATCH_STATUS_FUND_REFUSAL));\n2635:    if !old_status.can_transition_to(&req.status) {\n2872:pub const PATCH_STATUS_FUND_REFUSAL: &str =\n2921:    if !status.can_transition_to(&TradeStatus::Cancelled) {\n3247:    if !old_trade.status.can_transition_to(&TradeStatus::Released)\n3248:        && !old_trade.status.can_transition_to(&TradeStatus::Completed)\n4622:    if !old_trade.status.can_transition_to(&TradeStatus::Paid) {\n4826:    if !old_trade.status.can_transition_to(&TradeStatus::Disputed) {\n6438:        assert!(!TradeStatus::Disputed.can_transition_to(&TradeStatus::Cancelled));",
+      "exit_code": 0
+    },
+    {
+      "claim": "LOW fixed: dead update_escrow_type and set_contract_address are gone",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "grep -rn \"fn update_escrow_type\\|fn set_contract_address\" src; echo rc=$?",
+      "stdout": "rc=1",
+      "exit_code": 0
+    },
+    {
+      "claim": "Diff against origin/main after the fixes",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git diff --stat origin/main",
+      "stdout": " docs/as-built/as-built-state-machines.md           |   9 +-\n docs/as-built/money-flow.md                        |   2 +\n docs/design/.generated/as-built-merchant-tier.md   |   2 +-\n .../as-built-money-recovery-operation.md           |   2 +-\n .../.generated/as-built-treasury-sol-swap.md       |   2 +-\n docs/design/.generated/drift-merchant-tier.md      |   2 +-\n .../.generated/drift-money-recovery-operation.md   |   2 +-\n docs/design/.generated/drift-treasury-sol-swap.md  |   2 +-\n docs/intended-entity-state-machines.md             |   6 +-\n src/api/escrow.rs                                  |  26 +--\n src/api/offers.rs                                  |  58 ++++++-\n src/api/trades.rs                                  |  28 ++--\n src/error.rs                                       |  21 +++\n src/repo/escrow.rs                                 |  34 ----\n src/services/money_request.rs                      |   8 +-\n src/types/enums.rs                                 |  17 +-\n tests/common/mod.rs                                |  15 ++\n tests/mpr001_trade_escrow_ledger_invariants.rs     |   6 +-\n tests/mpr002_offer_version_trade_snapshot.rs       |   3 +-\n tests/ticket_741_merchant_tier_override_grants.rs  |  22 ++-\n tests/trade_creation_mpr013.rs                     | 184 +++++++++++----------\n tests/uz_seller_escrow_fee_quote.rs                |  23 ++-\n 22 files changed, 293 insertions(+), 181 deletions(-)",
+      "exit_code": 0
+    },
+    {
+      "claim": "Fixer log B-910-t1-lib.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-lib.log | sort | uniq -c; grep -c FAILED B-910-t1-lib.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 85 passed; 0 failed; 0 ignored; 0 measured; 4237 filtered out; finished in 0.12s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-clippy.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-clippy.log | sort | uniq -c; grep -c FAILED B-910-t1-clippy.log",
+      "stdout": "   1 EXIT=0\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-run1.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-run1.log | sort | uniq -c; grep -c FAILED B-910-t1-run1.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.76s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-run2.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-run2.log | sort | uniq -c; grep -c FAILED B-910-t1-run2.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.25s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-run3.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-run3.log | sort | uniq -c; grep -c FAILED B-910-t1-run3.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.81s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-conc10.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-conc10.log | sort | uniq -c; grep -c FAILED B-910-t1-conc10.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.87s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.16s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.17s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.19s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.33s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.44s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.49s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.91s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 2.05s\n   1 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 2.89s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-mpr013.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-mpr013.log | sort | uniq -c; grep -c FAILED B-910-t1-mpr013.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.77s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer log B-910-t1-status.log result lines and FAILED count",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -E \"test result|EXIT=\" B-910-t1-status.log | sort | uniq -c; grep -c FAILED B-910-t1-status.log",
+      "stdout": "   1 EXIT=0\n   1 test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s\n   1 test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.96s\n   1 test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s\n   1 test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.74s\n   1 test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s\n   1 test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.27s\n   1 test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s\n   1 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s\n   1 test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s\n   1 test result: ok. 55 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s\n   1 test result: ok. 71 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.08s\n0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fixer ran with CARGO_TARGET_DIR target-910",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "head -2 B-910-t1-lib.log",
+      "stdout": "CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 postgres://postgres@127.0.0.1:5433/qic_631_910_r1_31\n   Compiling qictrader-backend-rs v0.1.0 (/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs)",
+      "exit_code": 0
+    },
+    {
+      "claim": "Suppression scan over tracked diff and untracked source: no added let _ =, .ok(); or unwrap()",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "{ git diff origin/main -- src; git ls-files --others --exclude-standard -- src | xargs cat; } | grep -nE \"let _ =|\\.ok\\(\\);|unwrap\\(\\)\" ; echo rc=$?",
+      "stdout": "rc=1",
+      "exit_code": 0
+    },
+    {
+      "claim": "Catch-all scan over the diff and untracked source",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "{ git diff origin/main -- src; git ls-files --others --exclude-standard -- src | xargs cat; } | grep -nE \"_ =>\" ; echo rc=$?",
+      "stdout": "rc=1",
+      "exit_code": 0
+    },
+    {
+      "claim": "No added catch-all line in the diff",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git diff origin/main -- src | grep -nE \"^\\+.*_ =>\"; echo rc=$?",
+      "stdout": "rc=1",
+      "exit_code": 0
+    },
+    {
+      "claim": "Added comment lines in backend src, tests and migrations (includes context lines)",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "{ git diff origin/main -- src tests migrations; git ls-files --others --exclude-standard -- src tests migrations | xargs cat; } | grep -cE '^\\+?\\s*(//|/\\*)'",
+      "stdout": "9",
+      "exit_code": 0
+    },
+    {
+      "claim": "Added comment lines, stricter: plus-prefixed diff lines",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git diff origin/main -- src tests migrations | grep -cE '^\\+\\s*(//|/\\*)'; true",
+      "stdout": "0",
+      "exit_code": 0
+    },
+    {
+      "claim": "Comment lines in untracked backend source, test and migration files",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/910/wt/qictrader-backend-rs",
+      "cmd": "git ls-files --others --exclude-standard -- src tests migrations | xargs grep -cE '^\\s*(//|/\\*|--)'",
+      "stdout": "0",
+      "exit_code": 1
+    },
+    {
+      "claim": "Fast gate on the fixed tree: step lines, the GATE verdict and EXIT (green except the environment-bound 864 test)",
+      "cwd": "/Users/starbird/Workspace/Code/qic",
+      "cmd": "QIC_GATE_ROOT=/Users/starbird/Workspace/Code/qic/.scratch/910/wt QIC_GATE_NO_ENV=1 CARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910 DATABASE_URL=postgres://postgres@127.0.0.1:5433/$(cat .scratch/jev-qic-ship/910/gate3-db.txt) REQUIRE_TEST_DB=1 bash .claude/scripts/gate.sh --tests \"ticket_910_trade_funding_invariant trade_creation_mpr013 mpr001_trade_escrow_ledger_invariants mpr002_offer_version_trade_snapshot uz_seller_escrow_fee_quote ticket_741_merchant_tier_override_grants\"",
+      "stdout": "DATABASE_URL=postgres://postgres@127.0.0.1:5433/qic_631_910_r1_32\nCARGO_TARGET_DIR=/Users/starbird/Workspace/Code/qic/.scratch/910/target-910\ngate --fast \u00b7 base origin/main \u00b7 receipts /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427\nbackend: 23 changed files\nbackend: pre-existing suppressions on base (not gated): let _ = 1, .ok(); 23\n  ok   suppression-added-let-underscore (0s)\n  ok   suppression-added-ok-discard (0s)\n  ok   migration-collisions (0s)\n  ok   cargo-check (104s)\n  ok   cargo-clippy (1s)\n  FAIL cargo-test-lib (219s) -> /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427/cargo-test-lib.log\n       test types::pagination::tests::total_pages_is_minimal ... ok\n       test types::pagination::tests::zero_total_zero_pages ... ok\n       test types::pagination::tests::total_pages_cover_all_items ... ok\n       test types::withdrawal_fault_injection::tests::pause_before_sign_waits_at_least_the_configured_duration ... ok\n       test services::withdrawal_stage::db_tests::timed_out_stage_records_elapsed_ms_and_outcome_timed_out ... ok\n       \n       failures:\n       \n       ---- services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract stdout ----\n       \n       thread 'services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract' (1657386) panicked at src/services/prices.rs:4542:9:\n       refusing a database outside the local task or isolated CI allowlist\n       \n       \n       failures:\n           services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract\n       \n       test result: FAILED. 4314 passed; 1 failed; 7 ignored; 0 measured; 0 filtered out; finished in 68.30s\n       \n       error: test failed, to rerun pass `--lib`\nbackend: integration targets: 71\n  ok   fresh-test-db (0s)\n  ok   fresh-test-db (0s)\n  ok   cargo-test-targets (453s)\nGATE FAIL \u00b7 /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427\nEXIT=1",
+      "exit_code": 1,
+      "log": ".scratch/jev-qic-ship/910/phase-2-gate.log"
+    },
+    {
+      "claim": "Gate lib log: failing test names and result line",
+      "cwd": "/Users/starbird/Workspace/Code/qic",
+      "cmd": "grep -E \"^test .*FAILED|test result\" /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427/cargo-test-lib.log; true",
+      "stdout": "test services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract ... FAILED\ntest result: FAILED. 4314 passed; 1 failed; 7 ignored; 0 measured; 0 filtered out; finished in 68.30s",
+      "exit_code": 0
+    },
+    {
+      "claim": "Gate ran integration test targets",
+      "cwd": "/Users/starbird/Workspace/Code/qic",
+      "cmd": "grep -c \"Running tests/\" /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427/cargo-test-targets.log",
+      "stdout": "71",
+      "exit_code": 0
+    },
+    {
+      "claim": "Integration result lines that are not 0 failed",
+      "cwd": "/Users/starbird/Workspace/Code/qic",
+      "cmd": "grep -E \"test result\" /Users/starbird/Workspace/Code/qic/.scratch/910/wt/.scratch/gate/20261022T222427/cargo-test-targets.log | grep -vc \" 0 failed\"; true",
+      "stdout": "0",
+      "exit_code": 0
+    },
+    {
+      "claim": "quote_expiry_864_tests is the documented environment-bound failure",
+      "cwd": "/Users/starbird/Workspace/Code/qic",
+      "cmd": "grep -n quote_expiry_864_tests /Users/starbird/Workspace/Code/qic/.claude/skills/jev-qic-ship/SKILL.md",
+      "stdout": "1134:- `services::prices::quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract`",
+      "exit_code": 0
+    },
+    {
+      "claim": "Timing: TEMPER overran its slice and continued as a scoped run",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "grep -n \"scoped run\" run.log | head -2",
+      "stdout": "23:2026-10-22T17:14:20Z L1: 906 session pre-approved (relaying the owner rule): if BOIL hits its 3h stop because of the shared-target re-run, continue as a scoped run, log it and apply the retro rule; 917/964 holding cargo until the 910 gate finishes\n28:2026-10-22T19:05:06Z L1: TEMPER phase-overrun (1h22 of 45 min, stop 1h08) caused by a 30-min fix round plus a full re-gate on target-910; continuing as a scoped run under the owner's stance relayed by the 906 session (budget-slice stops are process artefacts; no process questions). Retro: L money tickets start the clock with --slice TEMPER=25 as well as QA=30. Gate run 3: green except quote_expiry_864 (lib 4314 passed), 71/71 integration targets.\n",
+      "exit_code": 0
+    },
+    {
+      "claim": "Round 2 review verdict",
+      "cwd": "/Users/starbird/Workspace/Code/qic/.scratch/jev-qic-ship/910",
+      "cmd": "sed -n 1,200p phase-2-review-round2.md",
+      "stdout": "# 910 PHASE 2 TEMPER review, round 2 (opus55 independent reviewer)\n\nVerdict: APPROVED\n\nI re-reviewed the whole `git diff origin/main` (8fda17fa) in .scratch/910/wt/qictrader-backend-rs plus the untracked tests/ticket_910_trade_funding_invariant.rs. Diff sha at review time: 190411687dbb; new test file sha e387fe0acf1f.\n\n## Round-1 findings, rechecked\n\n1. MEDIUM (exact amounts), fixed. `assert_funded_trade` (tests/ticket_910_trade_funding_invariant.rs:558) now takes a literal `ExpectedFunding` and asserts escrows.amount, fee_amount, buyer_crypto_amount and wallet_locks.amount exactly. It also checks wallet deltas against the lock and the EscrowLock ledger against the escrow amount. I checked the values against the fixtures and the `Config::test_default()` fees (70 bps platform and vendor-resell):\n   - Sell, buy and resell: 250_000_000 + 1_750_000 = 251_750_000.\n   - BTC: 500_000 + 3_500 + 10_000 gas reserve = 513_500.\n   - Swap: 10_000_000 + 70_000 = 10_070_000.\n\n   These match the AC2 0.7% worked example. On the baseline question: the trades.rs diff changes only the lock conditional and the PATCH guard. `lock_amount`, `escrow_fee`, the quote, the `escrow::create` arguments and the ledger amount are identical to origin/main for lock-backed offers, so values taken from the current fixtures equal the baseline. I accept the builder's inference.\n2. LOW (PATCH order), fixed. The `EscrowFunded` refusal now sits after the participant check and before `can_transition_to` (src/api/trades.rs:2631). The new Paid-trade test asserts `PATCH_STATUS_FUND_REFUSAL`, status `paid` and unchanged row counts.\n3. LOW (dead code), fixed. `update_escrow_type` and `set_contract_address` are deleted from src/repo/escrow.rs. No references remain, and the `EscrowType` import is still used.\n\nNothing else in the source changed since round 1, so the round-1 grading of root cause, the 920 contract, unchanged flows, money effects, roles and fixtures stands.\n\n## Gate receipt\n\nphase-2-gate.log ends `GATE FAIL` / `EXIT=1`. The only failure is cargo-test-lib `quote_expiry_864_tests::persisted_database_admission_and_offer_expiry_contract`, which panics with \"refusing a database outside the local task or isolated CI allowlist\". That is the environment-bound test on the skill's acceptable list. 4314 lib tests passed. All other gate checks passed: suppression scans, migrations, cargo-check, clippy, and cargo-test-targets with 71 of 71 targets, including all 6 changed test files. The gate started at 22:24Z, after the last edits at 21:41Z, so it covers the reviewed tree.\n\n## Findings (none blocking)\n\n| Severity | File:line | Finding | Fix |\n|---|---|---|---|\n| LOW | frontend/e2e (e.g. smoke/critical-path.test.ts:59, system/full-trade-journey.test.ts:98) | 19 Playwright fixtures use on_chain offers or PATCH escrow_funded. They will fail on staging, and there is no frontend CI to catch it. | Follow-up card or companion frontend PR. |\n| LOW | tests/ticket_910_trade_funding_invariant.rs (swap test) | The test drops trades_fiat_amount_check. The owner ruled the bug out of scope, but no card tracks it. | Card the swap constraint bug. |\n| LOW | tests/common/mod.rs:547 vs ticket_910 test file:103 | Two wallet-seeding helpers do the same job. | Optional consolidation. |\n| LOW | docs/design/.generated/* (6 files) | Regenerated, hash-only changes. | Commit them with the change. |\n\nNo HIGH or MEDIUM findings. Required actions: none.",
+      "exit_code": 0
+    }
+  ]
+}

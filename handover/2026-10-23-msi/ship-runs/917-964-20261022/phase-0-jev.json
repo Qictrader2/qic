@@ -1,0 +1,30 @@
+{
+  "citations_replayed": 16,
+  "confidence": 0.86,
+  "credential_source": "/Users/starbird/Workspace/.env:TYPESAFE_JEV_API_KEY",
+  "decision": "rework",
+  "deterministic_checks_passed": true,
+  "gate": "jev-typesafe",
+  "generated_at": "2026-10-22T14:42:26.479978+00:00",
+  "model": "jev-latest",
+  "model_transition": "advance",
+  "next_phase": "BOIL",
+  "objective_demonstrated": 0.5,
+  "open_findings_blocking": false,
+  "phase": 0,
+  "phase_name": "INVESTIGATE",
+  "probe_answers": {
+    "finding_contradicts_summary": 0.11,
+    "summary_overclaims": 0.55,
+    "verification_gap": 0.66
+  },
+  "proposed_transition": "advance",
+  "reasons": [
+    "objective 0.50 < 0.75",
+    "a required verification (staging, test, or build) appears to be missing from the evidence"
+  ],
+  "rework_reason_kind": "score_threshold",
+  "run_id": "917-964-20261022",
+  "safe_to_advance": 0.84,
+  "task": "917 https://trello.com/c/WOXYFLpt and 964 https://trello.com/c/0Bji1QKU (combined change; tick each card's ACs separately). Route: .scratch/ship/917-964-20261022T1200/route.json"
+}
