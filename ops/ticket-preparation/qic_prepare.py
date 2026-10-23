@@ -16,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -36,6 +37,7 @@ DESIGN_SUFFIXES = {".png", ".pdf", ".html", ".css", ".json", ".md"}
 MAX_FILE = 9 * 1024 * 1024
 STATE = ROOT / ".scratch/ticket-preparation/runtime"
 MANAGED = "qic-prep-"
+MANAGED_LABEL = "scope: "
 SEVERITIES = {"cosmetic", "logic", "financial", "security", "state-machine"}
 # Ship sizes and budgets (first calibration; see .scratch/walkaway-ship/spec.md). Budget minutes
 # exclude usage pauses and the CI wait, which has its own allowance. Recalibrate from the scoreboard.
@@ -100,23 +102,13 @@ def claude_usage():
     if 0 <= age < 60:
         return cache["usage"]
     try:
-        token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
-        if not token:
-            if sys.platform == "darwin":
-                result = subprocess.run(["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
-                                        capture_output=True, text=True, timeout=10)
-                credentials = json.loads(result.stdout) if result.returncode == 0 else read_json(Path.home() / ".claude/.credentials.json", {})
-            else:
-                credentials = read_json(Path.home() / ".claude/.credentials.json", {})
-            token = credentials["claudeAiOauth"]["accessToken"]
-        if not isinstance(token, str) or not token:
-            raise ValueError("Missing OAuth token")
-        request = urllib.request.Request("https://api.anthropic.com/api/oauth/usage", headers={
-            "Authorization": "Bearer " + token, "anthropic-beta": "oauth-2025-04-20", "User-Agent": "qic-prepare/1"})
-        # Reject redirects so the credential cannot be forwarded to another host.
-        opener = urllib.request.build_opener(NoUsageRedirect())
-        with opener.open(request, timeout=20) as response:
-            payload = json.load(response)
+        try:
+            payload = fetch_usage(stored_oauth_token())
+        except urllib.error.HTTPError as error:
+            if error.code != 401 or os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+                raise
+            refresh_cli_login()
+            payload = fetch_usage(stored_oauth_token())
         percent = weekly_percent(payload)
         usage = {"seven_day": {"utilization": percent}}
         atomic_json(cache_path, {"checked_at": now.isoformat(), "usage": usage})
@@ -125,6 +117,36 @@ def claude_usage():
         if 0 <= age < 300:
             return cache["usage"]
         raise WorkerCapacityError("Cannot read fresh Claude weekly usage; preparation deferred") from None
+
+
+def stored_oauth_token():
+    token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
+    if not token:
+        if sys.platform == "darwin":
+            result = subprocess.run(["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+                                    capture_output=True, text=True, timeout=10)
+            credentials = json.loads(result.stdout) if result.returncode == 0 else read_json(Path.home() / ".claude/.credentials.json", {})
+        else:
+            credentials = read_json(Path.home() / ".claude/.credentials.json", {})
+        token = credentials["claudeAiOauth"]["accessToken"]
+    if not isinstance(token, str) or not token:
+        raise ValueError("Missing OAuth token")
+    return token
+
+
+def fetch_usage(token):
+    request = urllib.request.Request("https://api.anthropic.com/api/oauth/usage", headers={
+        "Authorization": "Bearer " + token, "anthropic-beta": "oauth-2025-04-20", "User-Agent": "qic-prepare/1"})
+    # Reject redirects so the credential cannot be forwarded to another host.
+    opener = urllib.request.build_opener(NoUsageRedirect())
+    with opener.open(request, timeout=20) as response:
+        return json.load(response)
+
+
+def refresh_cli_login():
+    """An expired stored login (no CLI run since a restart) answers 401; one tiny CLI call refreshes it."""
+    subprocess.run(["claude", "-p", "Reply with the single word ok.", "--model", "claude-haiku-5-5", "--max-turns", "1"],
+                   capture_output=True, text=True, timeout=120, cwd=tempfile.gettempdir())
 
 
 class NoUsageRedirect(urllib.request.HTTPRedirectHandler):
@@ -267,7 +289,7 @@ def safe_relative(value):
 def ticket_input(card):
     return {
         "id": card["id"], "name": card["name"], "desc": card.get("desc", ""),
-        "labels": sorted(x["name"] for x in card.get("labels", [])),
+        "labels": sorted(x["name"] for x in card.get("labels", []) if not x["name"].startswith(MANAGED_LABEL)),
         "criteria": [{"id": i["id"], "name": i["name"]} for i in criteria(card)],
         "comments": [{"id": x["id"], "text": x["data"].get("text", "")} for x in card.get("comments", [])],
         "attachments": [{k: a.get(k) for k in ("id", "name", "url", "bytes")} for a in card.get("attachments", [])

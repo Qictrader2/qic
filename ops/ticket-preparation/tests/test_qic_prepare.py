@@ -41,6 +41,34 @@ class ContractTests(unittest.TestCase):
             with self.assertRaises(q.WorkerCapacityError):
                 q.route_for_usage(usage)
 
+    def test_expired_stored_login_is_refreshed_once_then_usage_is_read(self):
+        import os, urllib.error
+        from unittest import mock
+        expired = urllib.error.HTTPError("https://api.anthropic.com/api/oauth/usage", 401, "Unauthorized", {}, None)
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(q, "STATE", Path(tmp)), \
+                mock.patch.dict(os.environ, {}, clear=False), \
+                mock.patch.object(q, "stored_oauth_token", return_value="t"), \
+                mock.patch.object(q, "fetch_usage", side_effect=[expired, {"seven_day": {"utilization": 42}}]) as fetch, \
+                mock.patch.object(q, "refresh_cli_login") as refresh:
+            os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            self.assertEqual(q.claude_usage(), {"seven_day": {"utilization": 42}})
+        self.assertEqual(refresh.call_count, 1)
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_still_unauthorized_after_refresh_defers(self):
+        import os, urllib.error
+        from unittest import mock
+        expired = urllib.error.HTTPError("https://api.anthropic.com/api/oauth/usage", 401, "Unauthorized", {}, None)
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(q, "STATE", Path(tmp)), \
+                mock.patch.dict(os.environ, {}, clear=False), \
+                mock.patch.object(q, "stored_oauth_token", return_value="t"), \
+                mock.patch.object(q, "fetch_usage", side_effect=[expired, expired]), \
+                mock.patch.object(q, "refresh_cli_login") as refresh:
+            os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
+            with self.assertRaises(q.WorkerCapacityError):
+                q.claude_usage()
+        self.assertEqual(refresh.call_count, 1)
+
     def test_codex_bypasses_claude_cooldown_and_claude_still_obeys_it(self):
         now = datetime(2026, 10, 9, tzinfo=timezone.utc)
         capacity = {"retry_at": "2026-10-10T00:00:00+00:00", "reason": "Claude quota"}
@@ -300,6 +328,16 @@ class ContractTests(unittest.TestCase):
         b["attachments"] = [{"id": "p", "name": "PLAN.md"}, {"id": "d", "name": "qic-prep-10-design.png"}]
         b["checklists"][0]["checkItems"][0]["state"] = "complete"
         self.assertEqual(q.digest(q.ticket_input(a)), q.digest(q.ticket_input(b)))
+
+    def test_ship_scope_label_does_not_invalidate_requirements(self):
+        a = card(); b = copy.deepcopy(a)
+        b["labels"] = a.get("labels", []) + [{"name": "scope: L"}]
+        self.assertEqual(q.digest(q.ticket_input(a)), q.digest(q.ticket_input(b)))
+
+    def test_other_new_label_invalidates_requirements(self):
+        a = card(); b = copy.deepcopy(a)
+        b["labels"] = a.get("labels", []) + [{"name": "frontend"}]
+        self.assertNotEqual(q.digest(q.ticket_input(a)), q.digest(q.ticket_input(b)))
 
     def test_new_owner_decision_invalidates_plan(self):
         a = card(); b = copy.deepcopy(a)
