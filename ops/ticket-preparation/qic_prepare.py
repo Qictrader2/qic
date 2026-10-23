@@ -16,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -36,7 +37,18 @@ DESIGN_SUFFIXES = {".png", ".pdf", ".html", ".css", ".json", ".md"}
 MAX_FILE = 9 * 1024 * 1024
 STATE = ROOT / ".scratch/ticket-preparation/runtime"
 MANAGED = "qic-prep-"
+MANAGED_LABEL = "scope: "
 SEVERITIES = {"cosmetic", "logic", "financial", "security", "state-machine"}
+# Ship sizes and budgets (first calibration; see .scratch/walkaway-ship/spec.md). Budget minutes
+# exclude usage pauses and the CI wait, which has its own allowance. Recalibrate from the scoreboard.
+SIZE_TABLE_DATE = "2026-10-16"
+SIZE_LIMITS = {"S": {"lines": 150, "files": 5, "criteria": 4},
+               "M": {"lines": 500, "files": 12, "criteria": 8},
+               "L": {"lines": 3000, "files": 50, "criteria": 12}}
+# Owner decision 2026-10-16: a cosmetic or logic ticket is M across both repos when the planner tags none of these.
+RISK_AREAS = ("money", "authorization", "state-transition", "migration", "background-job")
+BUDGET_MINUTES = {"S": 90, "M": 180, "L": 300}
+CI_ALLOWANCE_MINUTES = 45
 try:
     DUBAI = ZoneInfo("Asia/Dubai")
 except ZoneInfoNotFoundError:
@@ -90,23 +102,13 @@ def claude_usage():
     if 0 <= age < 60:
         return cache["usage"]
     try:
-        token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
-        if not token:
-            if sys.platform == "darwin":
-                result = subprocess.run(["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
-                                        capture_output=True, text=True, timeout=10)
-                credentials = json.loads(result.stdout) if result.returncode == 0 else read_json(Path.home() / ".claude/.credentials.json", {})
-            else:
-                credentials = read_json(Path.home() / ".claude/.credentials.json", {})
-            token = credentials["claudeAiOauth"]["accessToken"]
-        if not isinstance(token, str) or not token:
-            raise ValueError("Missing OAuth token")
-        request = urllib.request.Request("https://api.anthropic.com/api/oauth/usage", headers={
-            "Authorization": "Bearer " + token, "anthropic-beta": "oauth-2025-04-20", "User-Agent": "qic-prepare/1"})
-        # Reject redirects so the credential cannot be forwarded to another host.
-        opener = urllib.request.build_opener(NoUsageRedirect())
-        with opener.open(request, timeout=20) as response:
-            payload = json.load(response)
+        try:
+            payload = fetch_usage(stored_oauth_token())
+        except urllib.error.HTTPError as error:
+            if error.code != 401 or os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+                raise
+            refresh_cli_login()
+            payload = fetch_usage(stored_oauth_token())
         percent = weekly_percent(payload)
         usage = {"seven_day": {"utilization": percent}}
         atomic_json(cache_path, {"checked_at": now.isoformat(), "usage": usage})
@@ -115,6 +117,36 @@ def claude_usage():
         if 0 <= age < 300:
             return cache["usage"]
         raise WorkerCapacityError("Cannot read fresh Claude weekly usage; preparation deferred") from None
+
+
+def stored_oauth_token():
+    token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
+    if not token:
+        if sys.platform == "darwin":
+            result = subprocess.run(["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+                                    capture_output=True, text=True, timeout=10)
+            credentials = json.loads(result.stdout) if result.returncode == 0 else read_json(Path.home() / ".claude/.credentials.json", {})
+        else:
+            credentials = read_json(Path.home() / ".claude/.credentials.json", {})
+        token = credentials["claudeAiOauth"]["accessToken"]
+    if not isinstance(token, str) or not token:
+        raise ValueError("Missing OAuth token")
+    return token
+
+
+def fetch_usage(token):
+    request = urllib.request.Request("https://api.anthropic.com/api/oauth/usage", headers={
+        "Authorization": "Bearer " + token, "anthropic-beta": "oauth-2025-04-20", "User-Agent": "qic-prepare/1"})
+    # Reject redirects so the credential cannot be forwarded to another host.
+    opener = urllib.request.build_opener(NoUsageRedirect())
+    with opener.open(request, timeout=20) as response:
+        return json.load(response)
+
+
+def refresh_cli_login():
+    """An expired stored login (no CLI run since a restart) answers 401; one tiny CLI call refreshes it."""
+    subprocess.run(["claude", "-p", "Reply with the single word ok.", "--model", "claude-haiku-5-5", "--max-turns", "1"],
+                   capture_output=True, text=True, timeout=120, cwd=tempfile.gettempdir())
 
 
 class NoUsageRedirect(urllib.request.HTTPRedirectHandler):
@@ -257,7 +289,7 @@ def safe_relative(value):
 def ticket_input(card):
     return {
         "id": card["id"], "name": card["name"], "desc": card.get("desc", ""),
-        "labels": sorted(x["name"] for x in card.get("labels", [])),
+        "labels": sorted(x["name"] for x in card.get("labels", []) if not x["name"].startswith(MANAGED_LABEL)),
         "criteria": [{"id": i["id"], "name": i["name"]} for i in criteria(card)],
         "comments": [{"id": x["id"], "text": x["data"].get("text", "")} for x in card.get("comments", [])],
         "attachments": [{k: a.get(k) for k in ("id", "name", "url", "bytes")} for a in card.get("attachments", [])
@@ -385,6 +417,10 @@ def validate_investigation(p, card):
     for key in ("risks", "questions", "acceptance"):
         if not isinstance(p[key], list):
             raise PrepError(f"Planner {key} must be a list")
+    if "risk_areas" in p:
+        areas = p["risk_areas"]
+        if not isinstance(areas, list) or any(a not in RISK_AREAS for a in areas) or len(set(areas)) != len(areas):
+            raise PrepError(f"Planner risk_areas must be a list of distinct values from {', '.join(RISK_AREAS)}")
     implementation_gates(p)
     expected = {x["id"] for x in criteria(card)}
     actual = [a.get("criterion_id") for a in p["acceptance"]]
@@ -398,11 +434,116 @@ def validate_investigation(p, card):
                 raise PrepError("Every QA case needs setup, expected result and evidence")
     if any(x["name"].lower() == "frontend" for x in card.get("labels", [])):
         p["frontend"] = True
-    p["track"] = "LIGHT" if (p["severity"] in {"cosmetic", "logic"} and not p["risks"]
+    p["track"] = "LIGHT" if (low_risk(p)
                               and 0 <= p.get("estimated_lines", 9999) <= 150
-                              and 0 < p.get("estimated_files", 9999) <= 5
-                              and len(set(p["watch"]) - {"root"}) <= 1) else "FULL"
+                              and 0 < p.get("estimated_files", 9999) <= 5) else "FULL"
+    p["size"], p["size_limit_exceeded"] = size_for(p)
+    p.update(budget_for(p["size"]))
     return p
+
+
+def low_risk(p):
+    return (p["severity"] in {"cosmetic", "logic"} and not p["risks"] and not p.get("risk_areas")
+            and len(set(p["watch"]) - {"root"}) <= 1)
+
+
+def no_tagged_risk(p):
+    """True only when the planner explicitly tagged no risk area; a plan without the tag never qualifies."""
+    areas = p.get("risk_areas")
+    return p["severity"] in {"cosmetic", "logic"} and isinstance(areas, list) and not areas
+
+
+def eligible_sizes(p):
+    return {"S": low_risk(p), "M": low_risk(p) or no_tagged_risk(p), "L": True}
+
+
+def size_facts(p):
+    lines, files = p.get("estimated_lines"), p.get("estimated_files")
+    return {"lines": lines if isinstance(lines, int) and not isinstance(lines, bool) and lines >= 0 else None,
+            "files": files if isinstance(files, int) and not isinstance(files, bool) and files > 0 else None,
+            "criteria": len(p["acceptance"])}
+
+
+def size_for(p):
+    """Size from plan facts alone. A missing estimate can only be L, never S or M."""
+    facts = size_facts(p)
+    eligible = eligible_sizes(p)
+    for size, limit in SIZE_LIMITS.items():
+        if not eligible[size]:
+            continue
+        if size != "L" and (facts["lines"] is None or facts["files"] is None):
+            continue
+        if all(facts[k] is None or facts[k] <= limit[k] for k in ("lines", "files", "criteria")):
+            return size, None
+    over = [f'{k} {facts[k]} > {SIZE_LIMITS["L"][k]}' for k in ("lines", "files", "criteria")
+            if facts[k] is not None and facts[k] > SIZE_LIMITS["L"][k]]
+    return "XL", "; ".join(over)
+
+
+def risk_areas_text(p):
+    areas = p.get("risk_areas")
+    if not isinstance(areas, list):
+        return "not recorded"
+    return ", ".join(areas) if areas else "none"
+
+
+def budget_for(size):
+    return {"budget_minutes": BUDGET_MINUTES.get(size), "ci_allowance_minutes": CI_ALLOWANCE_MINUTES if size in BUDGET_MINUTES else None,
+            "size_table": SIZE_TABLE_DATE}
+
+
+def local_investigation(card_id, state=None):
+    """The newest planner investigation kept locally for a card, or None. Read-only."""
+    root = (STATE if state is None else state) / "cards" / str(card_id)
+    candidates = sorted(root.glob("*/investigation.json"), key=lambda p: p.stat().st_mtime) if root.is_dir() else []
+    for path in reversed(candidates):
+        try:
+            p = read_json(path)
+        except (OSError, ValueError):
+            continue
+        if isinstance(p, dict) and isinstance(p.get("acceptance"), list) and isinstance(p.get("risks"), list) \
+                and isinstance(p.get("watch"), dict) and p.get("severity") in SEVERITIES:
+            return p
+    return None
+
+
+def sizing_from_meta(meta, state=None):
+    """Size of an attached plan. A plan older than the size table is sized from the card's local
+    investigation when one exists, else from its track: LIGHT is S, FULL is L."""
+    if meta.get("size") in BUDGET_MINUTES:
+        return {"size": meta["size"], "budget_minutes": meta.get("budget_minutes"), "ci_allowance_minutes": meta.get("ci_allowance_minutes"),
+                "size_source": "plan"}
+    p = local_investigation(meta.get("card_id"), state) if meta.get("card_id") else None
+    if p is not None:
+        size, exceeded = size_for(p)
+        result = {"size": size, **{k: v for k, v in budget_for(size).items() if k != "size_table"},
+                  "size_source": "derived-from-local-investigation", "size_facts": size_facts(p)}
+        if exceeded:
+            result["size_limit_exceeded"] = exceeded
+            result["warning"] = "XL by the local investigation; split before shipping"
+        return result
+    size = "S" if meta.get("track") == "LIGHT" else "L"
+    return {"size": size, **{k: v for k, v in budget_for(size).items() if k != "size_table"}, "size_source": "derived-from-track"}
+
+
+def split_proposal(card, p):
+    """Body of split-proposal.md for an XL ticket; the owner creates the cards with /newticket."""
+    names = {c["id"]: c["name"] for c in criteria(card)}
+    lines = [f'# Split proposal for ticket {card["idShort"]}: {card["name"]}', "",
+             f'XL: {p["size_limit_exceeded"]}. An XL ticket never ships as one card. Limits (table {SIZE_TABLE_DATE}): '
+             + ", ".join(f'{s} up to {v["lines"]} lines, {v["files"]} files, {v["criteria"]} criteria' for s, v in SIZE_LIMITS.items()) + ".", ""]
+    segments = p.get("segments") if isinstance(p.get("segments"), list) else []
+    if segments:
+        for index, s in enumerate(segments, 1):
+            lines += [f'## Segment {index}: {s.get("name", "unnamed")}',
+                      "Criteria: " + (", ".join(names.get(c, c) for c in s.get("criteria", [])) or "none listed"),
+                      "Files: " + (", ".join(s.get("files", [])) or "none listed"),
+                      f'Estimate: {s.get("estimated_lines", "?")} lines, {s.get("estimated_files", "?")} files',
+                      "Depends on: " + (", ".join(str(d) for d in s.get("depends_on", [])) or "nothing"), ""]
+    else:
+        lines += ["The planner gave no segments. Split by acceptance criterion and re-prepare each card:", ""]
+        lines += [f"- {name}" for name in names.values()] + [""]
+    return "\n".join(lines)
 
 
 class SafeRedirect(urllib.request.HTTPRedirectHandler):
@@ -749,7 +890,9 @@ def worker(role, directory, source, timeout, render_pass=0):
 
 def render_body(card, p, designs):
     sections = [f'# Ticket {card["idShort"]}: {card["name"]}',
-                f'Severity: {p["severity"]}\nTrack: {p["track"]}\nFrontend: {p["frontend"]}',
+                f'Severity: {p["severity"]}\nTrack: {p["track"]}\nSize: {p["size"]}\nBudget: {p["budget_minutes"]} min\n'
+                f'CI allowance: {p["ci_allowance_minutes"]} min\nSize table: {p["size_table"]}\n'
+                f'Risk areas: {risk_areas_text(p)}\nFrontend: {p["frontend"]}',
                 "## Expected behaviour\n" + p["expected_behaviour"], "## Diagnosis\n" + p["diagnosis"],
                 "## Scope\n" + p["scope"], "## Implementation\n" + p["implementation"],
                 "## Risks\n" + ("\n".join("- " + x for x in p["risks"]) or "No listed high-risk changes."),
@@ -925,6 +1068,14 @@ def prepare(api, card, base, timeout=1800):
             atomic_json(state_path, state)
             atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "local_evidence": inputs, "reason": state["reason"], "preparation_revision": PREPARATION_REVISION})
             return {"ticket": card["idShort"], "status": "blocked", "reason": state["reason"]}
+        if p["size"] == "XL":
+            proposal = directory / "split-proposal.md"
+            proposal.write_text(split_proposal(card, p))
+            reason = f'XL ticket ({p["size_limit_exceeded"]}); split it into S, M or L cards before shipping, see {proposal}'
+            state.update(status="blocked", reason=reason)
+            atomic_json(state_path, state)
+            atomic_json(blocked_path, {"card_id": card["id"], "ticket_hash": digest(ticket_input(card)), "watches": watches, "local_evidence": inputs, "reason": reason, "preparation_revision": PREPARATION_REVISION})
+            return {"ticket": card["idShort"], "status": "blocked", "reason": reason, "size": "XL", "split_proposal": str(proposal)}
         design_paths = []
         if p["frontend"]:
             design_deadline = time.monotonic() + timeout
@@ -969,7 +1120,8 @@ def prepare(api, card, base, timeout=1800):
                 "local_evidence": inputs,
                 "created_at": datetime.now(timezone.utc).isoformat(), "source": base, "watches": watches,
                 "frontend": p["frontend"], "severity": p["severity"], "track": p["track"], "designs": designs,
-                "body_sha256": digest(body.encode())}
+                "size": p["size"], "budget_minutes": p["budget_minutes"], "ci_allowance_minutes": p["ci_allowance_minutes"],
+                "size_table": p["size_table"], "risk_areas": p.get("risk_areas"), "body_sha256": digest(body.encode())}
         saved = directory / "PLAN.md"
         existing = saved.read_bytes() if saved.exists() else None
         old_meta = parse_plan(existing)[0] if existing else {}
@@ -988,7 +1140,8 @@ def prepare(api, card, base, timeout=1800):
         state.update(status="ready", reason="", attachment_id=a["id"])
         atomic_json(state_path, state)
         return {"ticket": card["idShort"], "status": "proposal-ready" if gates else "ready",
-                "implementation_gates": gates, "frontend": p["frontend"], "plan": str(saved)}
+                "implementation_gates": gates, "frontend": p["frontend"], "plan": str(saved),
+                "size": p["size"], "budget_minutes": p["budget_minutes"], "ci_allowance_minutes": p["ci_allowance_minutes"]}
     except WorkerCapacityError as e:
         state.update(status="deferred", attempts=state["attempts"] - 1, reason=str(e))
         atomic_json(state_path, state)
@@ -1151,7 +1304,7 @@ def main(argv=None):
                         dest.write_bytes(attached[2])
                         gates = implementation_gates(attached[0])
                         result = {"ticket": card["idShort"], "status": "awaiting-approval" if gates else "current",
-                                  "plan": str(dest), "implementation_gates": gates}
+                                  "plan": str(dest), "implementation_gates": gates, **sizing_from_meta(attached[0])}
                         if args.command == "start" and not gates:
                             result["list"] = api.start_development(card)
                     elif args.command in {"preflight", "start"}:
