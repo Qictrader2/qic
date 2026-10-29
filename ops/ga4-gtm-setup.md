@@ -114,12 +114,12 @@ For each variable below: **Variables → User-Defined Variables → New → Data
 
 | Variable Name (GTM) | Data Layer Variable Name | Default Value | Notes |
 |---------------------|--------------------------|---------------|-------|
-| `dlv.currency` | `currency` | `(empty)` | ZAR / BTC / USDT / ETH / SOL — frontend already constrains via TS union |
+| `dlv.currency` | `currency` | `(empty)` | A fiat code (for example `ZAR`) or `USDT`. USDT is the only traded asset |
 | `dlv.amount` | `amount` | `0` | Numeric, in `currency` units |
 | `dlv.method` | `method` | `(empty)` | Sign-up method: `email` / `google` / `wallet` |
 | `dlv.user_id_hash` | `user_id_hash` | `(empty)` | Pseudonymous user identifier; **never** push raw email or wallet address into the data layer |
 | `dlv.offer_type` | `offer_type` | `(empty)` | `buy` / `sell` — set on `first_offer_created` |
-| `dlv.cryptocurrency` | `cryptocurrency` | `(empty)` | ZAR / BTC / USDT / ETH / SOL — set on `first_offer_created` |
+| `dlv.cryptocurrency` | `cryptocurrency` | `(empty)` | Always `USDT` (the only traded asset). Set on `first_offer_created` |
 | `dlv.fiat_currency` | `fiat_currency` | `(empty)` | Three-letter fiat code (e.g. `ZAR`) — set on `first_offer_created` |
 
 Version 2: leave Data Layer Variable type as **Version 2** (default). Version 1 only reads the most recent push — we want the merged state.

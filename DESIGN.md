@@ -91,6 +91,8 @@
 
 ### 2.7 Cryptocurrency Colors
 
+USDT is the only asset users trade, and TRX and SOL appear only as network gas. Use the USDT color for traded amounts. The BTC and ETH rows are legacy tokens kept for existing code; new UI must not present BTC or ETH as tradable.
+
 | Coin | Color | Hex |
 |------|-------|-----|
 | BTC | Orange | `#F7931A` |

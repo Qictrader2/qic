@@ -1,5 +1,11 @@
 # Token / Coin Swap — Feasibility & Scoping Assessment
 
+> **Superseded on 29 Oct 2026.** The owner confirmed that USDT is the only asset users
+> trade, that TRX and SOL are network gas only, and that the platform has no
+> crypto-to-crypto trades or swaps. This assessment is kept as history and is not a
+> plan. Removal of the leftover swap code is tracked in Trello card 1033
+> (https://trello.com/c/JkqyYv2N).
+
 **Trello:** #367 (Scope Token / Coin Swap Feature for QicTrader)
 **Status:** Scoping / feasibility (no implementation in this ticket)
 **Author:** Engineering
