@@ -4,6 +4,14 @@ QIC Trader is a crypto P2P trading platform. Two submodules:
 - `frontend/` — Next.js 16 + React 19 + TypeScript (bun, Tailwind, Shadcn, Redux, Zustand, React Query, Socket.IO, Wagmi/Viem)
 - `qictrader-backend-rs/` — Rust + Axum + SQLx + PostgreSQL
 
+## Product rules (owner, 29 Oct 2026)
+
+- USDT is the only asset users trade. TRX and SOL are network gas for USDT moves on Tron and Solana, and no user can trade them.
+- There are no crypto-to-crypto trades and no offers priced in a crypto.
+- Escrow has no modes. It is always a ledger lock of the seller's USDT on their balance, taken in the same step the trade opens. `on_chain`, `offer_escrow` and `btc_wallet_lock` in the code are legacy (Trello cards 1032, 1033, 1034), not product modes.
+
+Code or docs that say otherwise are wrong and get fixed, not followed.
+
 ## Design Intent Documents
 
 **Read these before implementing any ticket.** They define what we are building and how it actually works today.
